@@ -41,21 +41,101 @@ io.use((socket, next) => {
   }
 });
 
+// Store active users for P2P discovery
+const activeUsers = new Map(); // userId -> { socketId, username, rooms }
+
 io.on('connection', (socket) => {
   console.log('client connected', socket.user && socket.user.username);
-  socket.on('join', (room) => {
-    socket.join(room);
-    socket.emit('joined', room);
+  
+  // Register user for P2P discovery
+  const userId = socket.user.sub;
+  activeUsers.set(userId, {
+    socketId: socket.id,
+    username: socket.user.username,
+    rooms: new Set()
   });
 
+  // Notify others of new user (for P2P discovery)
+  socket.broadcast.emit('user_online', {
+    userId,
+    username: socket.user.username
+  });
+
+  socket.on('join', (room) => {
+    socket.join(room);
+    activeUsers.get(userId)?.rooms.add(room);
+    socket.emit('joined', room);
+    
+    // Send current room members for P2P discovery
+    const roomMembers = Array.from(activeUsers.entries())
+      .filter(([_, user]) => user.rooms.has(room))
+      .map(([id, user]) => ({ userId: id, username: user.username }));
+    socket.emit('room_members', { room, members: roomMembers });
+  });
+
+  // Traditional room-based messaging (goes through server)
   socket.on('message', (data) => {
     // expect { room, text }
     if (!data || !data.room) return;
-    io.to(data.room).emit('message', { from: socket.user.username, text: data.text, time: new Date().toISOString() });
+    io.to(data.room).emit('message', { 
+      from: socket.user.username, 
+      text: data.text, 
+      time: new Date().toISOString(),
+      type: 'room'
+    });
+  });
+
+  // P2P direct messaging (server just routes, doesn't store)
+  socket.on('p2p_message', (data) => {
+    // expect { targetUserId, text, messageId }
+    const targetUser = activeUsers.get(data.targetUserId);
+    if (!targetUser) {
+      socket.emit('p2p_error', { error: 'User not online', messageId: data.messageId });
+      return;
+    }
+    
+    // Route directly to target user
+    io.to(targetUser.socketId).emit('p2p_message', {
+      from: socket.user.username,
+      fromUserId: userId,
+      text: data.text,
+      messageId: data.messageId,
+      time: new Date().toISOString(),
+      type: 'p2p'
+    });
+    
+    // Send delivery confirmation to sender
+    socket.emit('p2p_delivered', { messageId: data.messageId, to: data.targetUserId });
+  });
+
+  // P2P presence/typing indicators
+  socket.on('p2p_typing', (data) => {
+    const targetUser = activeUsers.get(data.targetUserId);
+    if (targetUser) {
+      io.to(targetUser.socketId).emit('p2p_typing', {
+        fromUserId: userId,
+        username: socket.user.username,
+        isTyping: data.isTyping
+      });
+    }
+  });
+
+  // Get online users list
+  socket.on('get_online_users', () => {
+    const onlineUsers = Array.from(activeUsers.entries()).map(([id, user]) => ({
+      userId: id,
+      username: user.username
+    }));
+    socket.emit('online_users', onlineUsers);
   });
 
   socket.on('disconnect', () => {
-    // cleanup
+    activeUsers.delete(userId);
+    // Notify others of user going offline
+    socket.broadcast.emit('user_offline', {
+      userId,
+      username: socket.user.username
+    });
   });
 });
 
