@@ -46,6 +46,23 @@ services:
     networks:
       - school-net
 
+  sms-gateway:
+    build: ./services/sms-gateway
+    environment:
+      - PORT=6000
+      - API_URL=http://api:3000
+      - AUTH_URL=http://auth:4000
+      - TWILIO_SID=${TWILIO_SID}
+      - TWILIO_TOKEN=${TWILIO_TOKEN}
+      - TWILIO_PHONE=${TWILIO_PHONE}
+    ports:
+      - "6000:6000"
+    depends_on:
+      - auth
+      - api
+    networks:
+      - school-net
+
 networks:
   school-net:
     driver: bridge
