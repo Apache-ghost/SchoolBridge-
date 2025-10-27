@@ -25,7 +25,8 @@ SchoolBridge — Distributed Communication Platform (First Draft)
 - Services included:
   - `auth` — Express service with register/login and JWT
   - `api` — small API that proxies auth and exposes a protected endpoint
-  - `ws` — Socket.IO server with Redis adapter support for multi-node communication
+  - `ws` — Socket.IO server with **P2P capabilities** and Redis adapter for multi-node communication
+  - `sms-gateway` — **SMS/USSD integration** for offline access (Twilio-based)
   - `redis` — Pub/sub for scaling WS instances
 - `docker-compose.yml` provided to run everything locally
 
@@ -34,8 +35,10 @@ SchoolBridge — Distributed Communication Platform (First Draft)
 ## Slide: Demo flow (live)
 1. Start the stack: `docker-compose up --build`
 2. Use the demo client (`client/index.html`) to register and login
-3. Connect to `ws` with the JWT, join a room, and send messages
-4. Scale `ws` (e.g., `--scale ws=3`) and show messages propagate across nodes via Redis
+3. **Room chat**: Connect to `ws` with the JWT, join a room, and send messages
+4. **P2P messaging**: See online users, send direct messages (no central routing)
+5. **SMS integration**: Send SMS commands to the gateway (if Twilio configured)
+6. Scale `ws` (e.g., `--scale ws=3`) and show messages propagate across nodes via Redis
 
 ---
 
@@ -51,7 +54,8 @@ SchoolBridge — Distributed Communication Platform (First Draft)
 - In-memory user store (not persistent)
 - No production-grade security (secrets/exposed ports)
 - No monitoring, metrics, or CI
-- SMS/USSD, CDN, and multi-region deployment are design-level only (not implemented)
+- ~~SMS/USSD~~ ✅ **IMPLEMENTED** - CDN, and multi-region deployment are design-level only
+- P2P messaging ✅ **IMPLEMENTED** - direct user-to-user communication
 
 ---
 
@@ -73,4 +77,6 @@ SchoolBridge — Distributed Communication Platform (First Draft)
 
 ## Slide: Contact / Notes
 - This is a first-draft prototype to demonstrate architecture and basic flows.
-- I can expand any area (persistence, mobile client, SMS gateway, infra) next.
+- **✅ Added P2P WebSocket layer** - direct messaging without server routing
+- **✅ Added SMS/USSD gateway** - offline access via SMS commands and USSD menus  
+- I can expand any area (persistence, mobile client, advanced SMS features, infra) next.

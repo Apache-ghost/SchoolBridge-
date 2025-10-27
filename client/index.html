@@ -37,13 +37,24 @@
   </div>
 
   <div class="card">
-    <h3>Realtime Chat</h3>
+    <h3>Room Chat</h3>
     <label>Room<br/><input id="room" value="lobby" /></label>
     <button id="btnJoin">Join Room</button>
     <div id="messages"></div>
     <div style="margin-top:8px">
       <input id="msgInput" placeholder="Type a message" style="width:70%;" />
-      <button id="btnSend">Send</button>
+      <button id="btnSend">Send to Room</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>P2P Direct Messages</h3>
+    <label>Online Users<br/><select id="onlineUsers"><option>Select user...</option></select></label>
+    <button id="btnRefreshUsers">Refresh</button>
+    <div id="p2pMessages" style="height:150px; overflow:auto; background:#071026; padding:8px; border-radius:6px; margin:8px 0;"></div>
+    <div style="margin-top:8px">
+      <input id="p2pInput" placeholder="Type direct message" style="width:60%;" />
+      <button id="btnSendP2P">Send P2P</button>
     </div>
   </div>
 
@@ -63,12 +74,17 @@
     const btnJoin = document.getElementById('btnJoin');
     const btnSend = document.getElementById('btnSend');
     const messages = document.getElementById('messages');
+    const btnRefreshUsers = document.getElementById('btnRefreshUsers');
+    const btnSendP2P = document.getElementById('btnSendP2P');
+    const onlineUsers = document.getElementById('onlineUsers');
+    const p2pMessages = document.getElementById('p2pMessages');
 
     let socket = null;
     let currentToken = '';
+    let messageIdCounter = 1;
 
-    function appendMsg(text, klass){
-      const d = document.createElement('div'); d.className = 'msg '+(klass||''); d.textContent = text; messages.appendChild(d); messages.scrollTop = messages.scrollHeight;
+    function appendMsg(text, klass, container = messages){
+      const d = document.createElement('div'); d.className = 'msg '+(klass||''); d.textContent = text; container.appendChild(d); container.scrollTop = container.scrollHeight;
     }
 
     async function post(url, body){
@@ -105,10 +121,48 @@
       if (!currentToken){ alert('Please login first to get a token'); return; }
       connState.textContent = 'Connecting...';
       socket = io(wsUrl, { auth: { token: currentToken } });
-      socket.on('connect', ()=>{ connState.textContent = 'Connected ('+socket.id+')'; appendMsg('Connected to WS as ' + (document.getElementById('username').value),'me'); });
+      socket.on('connect', ()=>{ 
+        connState.textContent = 'Connected ('+socket.id+')'; 
+        appendMsg('Connected to WS as ' + (document.getElementById('username').value),'me'); 
+        socket.emit('get_online_users');
+      });
       socket.on('connect_error', (err)=>{ connState.textContent = 'Connect error: '+(err && err.message); appendMsg('Connect error: '+(err&&err.message)); });
-      socket.on('message', (m)=>{ appendMsg((m.time||'') + ' | ' + (m.from||'') + ': ' + (m.text||'')); });
+      
+      // Room messages
+      socket.on('message', (m)=>{ 
+        if(m.type === 'room') appendMsg((m.time||'') + ' | ' + (m.from||'') + ': ' + (m.text||'')); 
+      });
       socket.on('joined', (room)=>{ appendMsg('Joined ' + room); });
+      
+      // P2P messages
+      socket.on('p2p_message', (m)=>{ 
+        appendMsg('P2P from ' + (m.from||'') + ': ' + (m.text||''), '', p2pMessages); 
+      });
+      socket.on('p2p_delivered', (data)=>{ 
+        appendMsg('✓ Message delivered to ' + data.to, 'me', p2pMessages); 
+      });
+      socket.on('p2p_error', (data)=>{ 
+        appendMsg('✗ P2P Error: ' + data.error, '', p2pMessages); 
+      });
+      
+      // Online users management
+      socket.on('online_users', (users)=>{ 
+        onlineUsers.innerHTML = '<option>Select user...</option>';
+        users.forEach(u => {
+          if(u.username !== document.getElementById('username').value) {
+            const opt = document.createElement('option');
+            opt.value = u.userId;
+            opt.textContent = u.username;
+            onlineUsers.appendChild(opt);
+          }
+        });
+      });
+      socket.on('user_online', (user)=>{ 
+        appendMsg('• ' + user.username + ' came online', '', p2pMessages); 
+      });
+      socket.on('user_offline', (user)=>{ 
+        appendMsg('• ' + user.username + ' went offline', '', p2pMessages); 
+      });
     });
 
     btnJoin.addEventListener('click', ()=>{
@@ -124,6 +178,24 @@
       socket.emit('message', { room, text });
       appendMsg('Me: ' + text, 'me');
       document.getElementById('msgInput').value = '';
+    });
+
+    btnRefreshUsers.addEventListener('click', ()=>{
+      if (!socket) return alert('Connect first');
+      socket.emit('get_online_users');
+    });
+
+    btnSendP2P.addEventListener('click', ()=>{
+      const targetUserId = onlineUsers.value;
+      const text = document.getElementById('p2pInput').value;
+      if (!socket) return alert('Connect first');
+      if (!targetUserId || targetUserId === 'Select user...') return alert('Select a user first');
+      if (!text.trim()) return;
+      
+      const messageId = 'msg_' + (messageIdCounter++);
+      socket.emit('p2p_message', { targetUserId, text, messageId });
+      appendMsg('Me → ' + onlineUsers.options[onlineUsers.selectedIndex].text + ': ' + text, 'me', p2pMessages);
+      document.getElementById('p2pInput').value = '';
     });
   </script>
 </body>
