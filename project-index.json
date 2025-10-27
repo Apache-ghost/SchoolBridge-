@@ -1,0 +1,25 @@
+{
+  "generated": "2025-10-27T14:28:02.825Z",
+  "root": "C:\\Users\\SOP\\Documents\\Distributed system\\school",
+  "count": 3,
+  "files": [
+    {
+      "path": "arch.js",
+      "size": 10785,
+      "mtime": "2025-10-27T14:25:28.464Z",
+      "sha1": "478985af7a5c32e978e3db537aabc881d9d8bb82"
+    },
+    {
+      "path": "README.md",
+      "size": 693,
+      "mtime": "2025-10-27T14:27:43.763Z",
+      "sha1": "ee7e47092a3728ff4fc6c95cf54fb2acb12b54a0"
+    },
+    {
+      "path": "scripts/generate-index.js",
+      "size": 1881,
+      "mtime": "2025-10-27T14:27:30.495Z",
+      "sha1": "b6f4973d94a1df0f6e6ab1e1df56c59343eb8521"
+    }
+  ]
+}
