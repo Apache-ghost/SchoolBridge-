@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  auth:
+    build: ./services/auth
+    environment:
+      - PORT=4000
+      - JWT_SECRET=${JWT_SECRET}
+    ports:
+      - "4000:4000"
+    depends_on:
+      - redis
+    networks:
+      - school-net
+
+  api:
+    build: ./services/api
+    environment:
+      - PORT=3000
+      - JWT_SECRET=${JWT_SECRET}
+      - AUTH_URL=http://auth:4000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth
+    networks:
+      - school-net
+
+  ws:
+    build: ./services/ws
+    environment:
+      - PORT=5000
+      - JWT_SECRET=${JWT_SECRET}
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "5000:5000"
+    depends_on:
+      - redis
+      - auth
+    networks:
+      - school-net
+
+networks:
+  school-net:
+    driver: bridge
