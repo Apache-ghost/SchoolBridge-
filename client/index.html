@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SchoolBridge - Demo Client (First Draft)</title>
+  <style>
+    body { font-family: Inter,Segoe UI,Arial,sans-serif; background: #0f172a; color: #e6eef8; padding: 24px; }
+    .card{ background:#0b1220; border:1px solid #112035; padding:12px; border-radius:8px; margin-bottom:12px }
+    input,button,select{ padding:8px; margin:4px 0; border-radius:6px; border:1px solid #213244; background:#071024; color:#e6eef8 }
+    button{ cursor:pointer }
+    #messages{ height:200px; overflow:auto; background:#071026; padding:8px; border-radius:6px }
+    .msg { padding:6px; border-bottom:1px solid #0f2233 }
+    .me { color:#9be15d }
+  </style>
+</head>
+<body>
+  <h1>SchoolBridge — Quick Demo Client (First Draft)</h1>
+  <p class="card">This static demo lets you register/login against the local `auth` service and connect to the Socket.IO WS service with the received JWT to send/receive messages.</p>
+
+  <div class="card">
+    <h3>Auth</h3>
+    <label>Username<br/><input id="username" value="teacher1" /></label><br/>
+    <label>Password<br/><input id="password" type="password" value="pass123" /></label><br/>
+    <button id="btnRegister">Register</button>
+    <button id="btnLogin">Login</button>
+    <div id="authResult"></div>
+  </div>
+
+  <div class="card">
+    <h3>Connection</h3>
+    <label>API Base URL<br/><input id="apiBase" value="http://localhost:3000" /></label><br/>
+    <label>Auth Base URL<br/><input id="authBase" value="http://localhost:4000" /></label><br/>
+    <label>WS URL<br/><input id="wsUrl" value="http://localhost:5000" /></label><br/>
+    <button id="btnConnect">Connect WebSocket</button>
+    <div id="connState">Not connected</div>
+  </div>
+
+  <div class="card">
+    <h3>Realtime Chat</h3>
+    <label>Room<br/><input id="room" value="lobby" /></label>
+    <button id="btnJoin">Join Room</button>
+    <div id="messages"></div>
+    <div style="margin-top:8px">
+      <input id="msgInput" placeholder="Type a message" style="width:70%;" />
+      <button id="btnSend">Send</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Token (debug)</h3>
+    <textarea id="token" style="width:100%;height:80px"></textarea>
+  </div>
+
+  <script src="https://cdn.socket.io/4.8.0/socket.io.min.js"></script>
+  <script>
+    const btnRegister = document.getElementById('btnRegister');
+    const btnLogin = document.getElementById('btnLogin');
+    const authResult = document.getElementById('authResult');
+    const tokenArea = document.getElementById('token');
+    const btnConnect = document.getElementById('btnConnect');
+    const connState = document.getElementById('connState');
+    const btnJoin = document.getElementById('btnJoin');
+    const btnSend = document.getElementById('btnSend');
+    const messages = document.getElementById('messages');
+
+    let socket = null;
+    let currentToken = '';
+
+    function appendMsg(text, klass){
+      const d = document.createElement('div'); d.className = 'msg '+(klass||''); d.textContent = text; messages.appendChild(d); messages.scrollTop = messages.scrollHeight;
+    }
+
+    async function post(url, body){
+      const r = await fetch(url, { method: 'POST', body: JSON.stringify(body), headers: {'Content-Type':'application/json'} });
+      return r;
+    }
+
+    btnRegister.addEventListener('click', async ()=>{
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const authBase = document.getElementById('authBase').value;
+      const r = await post(authBase + '/register', { username, password });
+      const data = await r.json();
+      authResult.textContent = JSON.stringify(data);
+    });
+
+    btnLogin.addEventListener('click', async ()=>{
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const authBase = document.getElementById('authBase').value;
+      const r = await post(authBase + '/login', { username, password });
+      const data = await r.json();
+      if (r.ok && data.token){
+        currentToken = data.token;
+        tokenArea.value = data.token;
+        authResult.textContent = 'Login OK';
+      } else {
+        authResult.textContent = JSON.stringify(data);
+      }
+    });
+
+    btnConnect.addEventListener('click', ()=>{
+      const wsUrl = document.getElementById('wsUrl').value;
+      if (!currentToken){ alert('Please login first to get a token'); return; }
+      connState.textContent = 'Connecting...';
+      socket = io(wsUrl, { auth: { token: currentToken } });
+      socket.on('connect', ()=>{ connState.textContent = 'Connected ('+socket.id+')'; appendMsg('Connected to WS as ' + (document.getElementById('username').value),'me'); });
+      socket.on('connect_error', (err)=>{ connState.textContent = 'Connect error: '+(err && err.message); appendMsg('Connect error: '+(err&&err.message)); });
+      socket.on('message', (m)=>{ appendMsg((m.time||'') + ' | ' + (m.from||'') + ': ' + (m.text||'')); });
+      socket.on('joined', (room)=>{ appendMsg('Joined ' + room); });
+    });
+
+    btnJoin.addEventListener('click', ()=>{
+      const room = document.getElementById('room').value;
+      if (!socket) return alert('Connect first');
+      socket.emit('join', room);
+    });
+
+    btnSend.addEventListener('click', ()=>{
+      const room = document.getElementById('room').value;
+      const text = document.getElementById('msgInput').value;
+      if (!socket) return alert('Connect first');
+      socket.emit('message', { room, text });
+      appendMsg('Me: ' + text, 'me');
+      document.getElementById('msgInput').value = '';
+    });
+  </script>
+</body>
+</html>
