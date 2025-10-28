@@ -43,7 +43,7 @@ class SchoolBridgeSystemManager {
             {
                 name: 'communication-service',
                 path: 'services/communication-service',
-                port: 3000,
+                port: 8000,
                 description: 'Core communication hub and WebRTC signaling'
             }
         ];
