@@ -63,6 +63,23 @@ services:
     networks:
       - school-net
 
+  communication-service:
+    build: ./services/communication-service
+    environment:
+      - PORT=8000
+      - JWT_SECRET=${JWT_SECRET}
+      - AUTH_URL=http://auth:4000
+      - SMS_GATEWAY_URL=http://sms-gateway:6000
+      - WS_SERVICE_URL=http://ws:5000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - auth
+      - sms-gateway
+      - ws
+    networks:
+      - school-net
+
   web-app:
     build: ./web-app
     ports:
