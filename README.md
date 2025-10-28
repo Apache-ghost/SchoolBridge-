@@ -59,6 +59,8 @@ Frontend Features:
 - **Room Chat**: Join multiple chat rooms, real-time messaging
 - **P2P Direct Messages**: Direct user-to-user messaging with online presence
 - **WebRTC Video Calls**: Peer-to-peer video/audio calls with call management
+- **Offline SMS Nodes**: Local school servers with SMS gateway for offline operation
+- **Hybrid Sync**: Automatic synchronization between offline nodes and cloud
 - **Real-time Updates**: Live connection status and user presence indicators
 
 ## WebRTC Features
@@ -86,9 +88,41 @@ The system includes peer-to-peer video calling capabilities:
 - **Protocols**: STUN/TURN server configuration for NAT traversal
 - **Fallback**: WebSocket messaging remains available during calls
 
+## Offline SMS Gateway Nodes
+
+The system now includes **offline-capable local nodes** for hybrid distributed communication:
+
+### Key Features
+- **Offline Operation**: Local SQLite storage ensures functionality without internet
+- **SMS Integration**: Twilio-powered SMS for reaching parents without smartphones
+- **Auto Sync**: Nodes automatically sync with cloud when connectivity returns
+- **Multi-Campus**: Support for multiple school locations with independent nodes
+- **Command Interface**: Interactive SMS commands (STATUS, MESSAGES, REGISTER, HELP)
+
+### Deployment Options
+```bash
+# Standard deployment (cloud-only)
+docker-compose up --build
+
+# Hybrid deployment (with offline nodes)
+docker-compose -f docker-compose.hybrid.yml up --build
+
+# Demo offline nodes functionality
+node scripts/demo-offline-nodes.js
+```
+
+### Services Architecture
+- **Cloud Sync Service** (`port 7000`): Manages node registration and synchronization
+- **Offline Node 1** (`port 6000`): Main campus SMS gateway with local storage
+- **Offline Node 2** (`port 6001`): Satellite campus independent operation
+- **SQLite Storage**: Each node maintains local database for offline resilience
+
+📚 **Detailed Documentation**: See [OFFLINE-NODES.md](./OFFLINE-NODES.md) for complete setup and API reference
+
 If you'd like, I can:
 - Wire the API to a Postgres DB and add a migration/seed script.
 - Add a `package.json` at the monorepo root with helper scripts.
 - Expand SMS/USSD functionality with more sophisticated workflows.
 - Add mobile-responsive improvements or PWA features to the web app.
 - Configure TURN servers for production deployment across NATs/firewalls.
+- Add mesh networking between offline nodes for distributed resilience.

@@ -1,0 +1,30 @@
+{
+  "name": "offline-sms-node",
+  "version": "0.1.0",
+  "description": "Offline-capable SMS gateway node for distributed school communication",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "sqlite3": "^5.1.6",
+    "twilio": "^4.19.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "keywords": [
+    "sms",
+    "offline",
+    "distributed",
+    "school",
+    "communication",
+    "gateway",
+    "sync"
+  ],
+  "author": "SchoolBridge",
+  "license": "MIT"
+}

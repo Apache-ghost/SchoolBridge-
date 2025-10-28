@@ -1,0 +1,130 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  auth:
+    build: ./services/auth
+    environment:
+      - PORT=4000
+      - JWT_SECRET=${JWT_SECRET}
+    ports:
+      - "4000:4000"
+    depends_on:
+      - redis
+    networks:
+      - school-net
+
+  api:
+    build: ./services/api
+    environment:
+      - PORT=3000
+      - JWT_SECRET=${JWT_SECRET}
+      - AUTH_URL=http://auth:4000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth
+    networks:
+      - school-net
+
+  ws:
+    build: ./services/ws
+    environment:
+      - PORT=5000
+      - JWT_SECRET=${JWT_SECRET}
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "5000:5000"
+    depends_on:
+      - redis
+      - auth
+    networks:
+      - school-net
+
+  sms-gateway:
+    build: ./services/sms-gateway
+    environment:
+      - PORT=4001
+      - TWILIO_SID=${TWILIO_SID}
+      - TWILIO_TOKEN=${TWILIO_TOKEN}
+      - TWILIO_PHONE=${TWILIO_PHONE}
+    ports:
+      - "4001:4001"
+    networks:
+      - school-net
+
+  # New Offline-Capable Node Services
+  sync-service:
+    build: ./services/sync-service
+    environment:
+      - PORT=7000
+    ports:
+      - "7000:7000"
+    networks:
+      - school-net
+
+  offline-node-1:
+    build: ./services/offline-node
+    environment:
+      - PORT=6000
+      - NODE_ID=node-school-main
+      - SCHOOL_ID=main-campus
+      - CLOUD_SYNC_URL=http://sync-service:7000
+      - TWILIO_SID=${TWILIO_SID}
+      - TWILIO_TOKEN=${TWILIO_TOKEN}
+      - TWILIO_PHONE=${TWILIO_PHONE}
+    ports:
+      - "6000:6000"
+    volumes:
+      - offline_node_1_data:/usr/src/app/data
+    depends_on:
+      - sync-service
+    networks:
+      - school-net
+
+  offline-node-2:
+    build: ./services/offline-node
+    environment:
+      - PORT=6000
+      - NODE_ID=node-school-satellite
+      - SCHOOL_ID=satellite-campus
+      - CLOUD_SYNC_URL=http://sync-service:7000
+      - TWILIO_SID=${TWILIO_SID}
+      - TWILIO_TOKEN=${TWILIO_TOKEN}
+      - TWILIO_PHONE=${TWILIO_PHONE}
+    ports:
+      - "6001:6000"
+    volumes:
+      - offline_node_2_data:/usr/src/app/data
+    depends_on:
+      - sync-service
+    networks:
+      - school-net
+
+  web-app:
+    build: ./web-app
+    environment:
+      - REACT_APP_API_BASE=http://localhost:3000
+      - REACT_APP_WS_URL=http://localhost:5000
+      - REACT_APP_AUTH_BASE=http://localhost:4000
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+      - ws
+      - auth
+    networks:
+      - school-net
+
+networks:
+  school-net:
+    driver: bridge
+
+volumes:
+  offline_node_1_data:
+  offline_node_2_data:
