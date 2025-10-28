@@ -58,10 +58,37 @@ Frontend Features:
 - **Authentication**: Login/register with JWT token management
 - **Room Chat**: Join multiple chat rooms, real-time messaging
 - **P2P Direct Messages**: Direct user-to-user messaging with online presence
+- **WebRTC Video Calls**: Peer-to-peer video/audio calls with call management
 - **Real-time Updates**: Live connection status and user presence indicators
+
+## WebRTC Features
+
+The system includes peer-to-peer video calling capabilities:
+
+### WebRTC Implementation
+- **Direct P2P Connection**: WebRTC establishes direct connections between parents and teachers
+- **Signaling Server**: WebSocket service handles offer/answer/ICE candidate exchange
+- **Call Management**: Answer, reject, and end call functionality with modal interface
+- **Media Streaming**: Supports both video and audio streaming with local/remote video display
+- **Connection State**: Real-time connection status and call progress indicators
+
+### Using Video Calls
+1. Login to the web application at `http://localhost:3000`
+2. Navigate to the P2P Chat section
+3. Select a user from the online users list
+4. Click the "Call" button next to the message input
+5. The recipient will receive an incoming call notification
+6. Accept/reject calls through the video call modal interface
+
+### Technical Architecture
+- **Frontend**: React components with useWebRTC hook for peer connection management
+- **Backend**: Enhanced WebSocket service with WebRTC signaling endpoints
+- **Protocols**: STUN/TURN server configuration for NAT traversal
+- **Fallback**: WebSocket messaging remains available during calls
 
 If you'd like, I can:
 - Wire the API to a Postgres DB and add a migration/seed script.
 - Add a `package.json` at the monorepo root with helper scripts.
 - Expand SMS/USSD functionality with more sophisticated workflows.
 - Add mobile-responsive improvements or PWA features to the web app.
+- Configure TURN servers for production deployment across NATs/firewalls.

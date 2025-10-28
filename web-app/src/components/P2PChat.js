@@ -251,7 +251,7 @@ const P2PChat = () => {
             />
             <button
               type="button"
-              onClick={() => selectedUser && initiateCall(selectedUser.id)}
+              onClick={() => selectedUser && startCall(selectedUser.id)}
               className="btn-secondary flex items-center space-x-2"
               disabled={!selectedUser || connections.has(selectedUser.id)}
               title={connections.has(selectedUser.id) ? "Call in progress" : "Start video call"}

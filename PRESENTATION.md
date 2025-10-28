@@ -25,9 +25,9 @@ SchoolBridge — Distributed Communication Platform (First Draft)
 - Services included:
   - `auth` — Express service with register/login and JWT
   - `api` — small API that proxies auth and exposes a protected endpoint
-  - `ws` — Socket.IO server with **P2P capabilities** and Redis adapter for multi-node communication
+  - `ws` — Socket.IO server with **P2P capabilities**, **WebRTC signaling**, and Redis adapter for multi-node communication
   - `sms-gateway` — **SMS/USSD integration** for offline access (Twilio-based)
-  - `web-app` — **React with Tailwind CSS** for responsive web interface
+  - `web-app` — **React with Tailwind CSS** for responsive web interface with **WebRTC video calling**
   - `redis` — Pub/sub for scaling WS instances
 - `docker-compose.yml` provided to run everything locally
 
@@ -35,18 +35,34 @@ SchoolBridge — Distributed Communication Platform (First Draft)
 
 ## Slide: Demo flow (live)
 1. Start the stack: `docker-compose up --build`
-2. Open the React web app at `http://localhost:8080`
+2. Open the React web app at `http://localhost:3000` (dev mode) or `http://localhost:8080` (production)
 3. **Register/Login**: Create account or sign in with existing credentials
 4. **Room chat**: Join rooms like `#lobby`, send real-time messages
 5. **P2P messaging**: Switch to Direct Messages tab, see online users, send private messages
-6. **SMS integration**: Send SMS commands to the gateway (if Twilio configured)
-7. Scale `ws` (e.g., `--scale ws=3`) and show messages propagate across nodes via Redis
+6. **WebRTC Video Calls**: Click "Call" button to initiate peer-to-peer video calls with direct media connection
+7. **SMS integration**: Send SMS commands to the gateway (if Twilio configured)
+8. Scale `ws` (e.g., `--scale ws=3`) and show messages propagate across nodes via Redis
+
+---
+
+## Slide: WebRTC Peer-to-Peer Communication
+- **Direct Connection**: Parents ↔ Teachers communication bypasses central server bottleneck
+- **WebRTC Implementation**: 
+  - Signaling server handles offer/answer/ICE candidate exchange
+  - Direct media streaming (video/audio) between browser peers
+  - Fallback to WebSocket messaging for chat during calls
+- **Benefits**:
+  - Reduced server load and bandwidth costs
+  - Lower latency for real-time communication
+  - Privacy-enhanced direct connections
+- **UI Features**: Call initiation, answer/reject modal, in-call controls
 
 ---
 
 ## Slide: Tech choices & rationale
 - **Backend**: Node.js + Express: fast to prototype, good ecosystem
-- **WebSocket**: Socket.IO: easy WebSocket + reconnection patterns
+- **WebSocket**: Socket.IO: easy WebSocket + reconnection patterns + WebRTC signaling
+- **WebRTC**: Direct peer-to-peer media streaming with STUN/TURN support
 - **Frontend**: React + Tailwind CSS: modern, responsive, component-based UI
 - **Scaling**: Redis: battle-tested pub/sub & adapter for socket.io
 - **Orchestration**: Docker Compose: simple local orchestration for demos
