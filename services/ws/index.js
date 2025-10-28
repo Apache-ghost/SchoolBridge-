@@ -41,19 +41,34 @@ io.use((socket, next) => {
   }
 });
 
+const { v4: uuidv4 } = require('uuid');
+
 // Store active users for P2P discovery
-const activeUsers = new Map(); // userId -> { socketId, username, rooms }
+const activeUsers = new Map(); // userId -> { socketId, username, rooms, role }
+const peerConnections = new Map(); // connectionId -> { caller, callee, status, createdAt }
+const offlineMessageQueue = new Map(); // userId -> [messages]
 
 io.on('connection', (socket) => {
   console.log('client connected', socket.user && socket.user.username);
   
   // Register user for P2P discovery
   const userId = socket.user.sub;
+  const userRole = socket.user.role || 'user'; // Default role if not specified
   activeUsers.set(userId, {
     socketId: socket.id,
     username: socket.user.username,
+    role: userRole,
     rooms: new Set()
   });
+
+  // Deliver any queued offline messages
+  if (offlineMessageQueue.has(userId)) {
+    const queuedMessages = offlineMessageQueue.get(userId);
+    queuedMessages.forEach(message => {
+      socket.emit('p2p_message', message);
+    });
+    offlineMessageQueue.delete(userId);
+  }
 
   // Notify others of new user (for P2P discovery)
   socket.broadcast.emit('user_online', {
