@@ -15,6 +15,12 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
+// Add middleware for request logging
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} ${req.method} ${req.url} from ${req.ip}`);
+  next();
+});
+
 console.log('Express app configured...');
 
 // Simple in-memory user store for prototype
@@ -22,8 +28,14 @@ const users = new Map();
 let nextId = 1;
 
 app.get('/health', (req, res) => {
-  console.log('Health check requested');
-  res.json({ status: 'ok' });
+  console.log('Health check requested from:', req.ip);
+  res.json({ 
+    status: 'ok', 
+    service: 'auth-service',
+    port: PORT,
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
 });
 
 app.post('/register', async (req, res) => {
@@ -61,8 +73,28 @@ app.get('/me', (req, res) => {
   }
 });
 
-app.listen(PORT, '127.0.0.1', () => {
-  console.log(`Auth service running on http://127.0.0.1:${PORT}`);
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Auth service running on http://0.0.0.0:${PORT}`);
+  console.log(`Health check available at: http://localhost:${PORT}/health`);
 }).on('error', (err) => {
-  console.error('Server failed to start:', err);
+  console.error('Server failed to start:', err.message);
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use. Try a different port.`);
+  }
+  process.exit(1);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('Received SIGTERM, shutting down gracefully');
+  server.close(() => {
+    console.log('Auth service stopped');
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('Received SIGINT, shutting down gracefully');
+  server.close(() => {
+    console.log('Auth service stopped');
+  });
 });

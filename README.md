@@ -21,7 +21,24 @@ Enables offline access through SMS and USSD for low-income parents, ensuring no 
 ### 🤝 **Collaborative Ecosystem**
 Promotes accountability, transparency, and collaboration across the education ecosystem through direct parent-teacher communication and real-time engagement.
 
-## 🚀 Quick Start
+## � **P2P Communication Layer**
+
+SchoolBridge integrates a **robust peer-to-peer (P2P) communication layer** that enables:
+
+- 🔒 **Secure, Encrypted Real-Time Exchanges** via WebRTC and WebSocket connections
+- ⚡ **Reduced Dependency** on single nodes with direct teacher-parent connections  
+- 🚀 **Increased System Responsiveness** with sub-second message delivery
+- 🛡️ **Resilient Connectivity** - teachers can communicate even during partial system outages
+
+**P2P Benefits**:
+- Direct WebRTC connections bypass server bottlenecks
+- Automatic fallback: WebRTC → WebSocket → SMS
+- End-to-end encrypted file transfers and video calls
+- Works independently of Communication Service availability
+
+📚 **Complete P2P Documentation**: [P2P-ARCHITECTURE.md](./P2P-ARCHITECTURE.md)
+
+## �🚀 Quick Start
 
 ### Communication Service (Core Feature)
 
