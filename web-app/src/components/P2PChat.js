@@ -7,8 +7,7 @@ import {
   PaperAirplaneIcon, 
   UserIcon, 
   SignalIcon, 
-  VideoCameraIcon,
-  PhoneIcon 
+  VideoCameraIcon
 } from '@heroicons/react/24/outline';
 
 const P2PChat = () => {
@@ -75,8 +74,8 @@ const P2PChat = () => {
     }
   };
 
-  const selectedUser = onlineUsers.find(u => u.userId === selectedUserId);
-  const currentUserFilteredUsers = onlineUsers.filter(u => u.username !== user?.username);
+  const selectedUser = onlineUsers?.find(u => u.userId === selectedUserId);
+  const currentUserFilteredUsers = onlineUsers?.filter(u => u.username !== user?.username) || [];
   const activeConnection = Array.from(connections.values()).find(conn => 
     conn.targetUserId === selectedUserId && conn.status === 'connected'
   );
@@ -87,6 +86,18 @@ const P2PChat = () => {
       minute: '2-digit' 
     });
   };
+
+  // Show loading state if user is not loaded yet
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-64 text-slate-400">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p>Loading user data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -197,7 +208,7 @@ const P2PChat = () => {
               </div>
             ) : (
               <div className="space-y-3">
-                {p2pMessages.map((message, index) => (
+                {(p2pMessages || []).map((message, index) => (
                   <div key={index}>
                     {message.type === 'system' || message.type === 'error' ? (
                       <div className="text-center">
@@ -251,10 +262,10 @@ const P2PChat = () => {
             />
             <button
               type="button"
-              onClick={() => selectedUser && startCall(selectedUser.id)}
+              onClick={() => selectedUser && startCall(selectedUser.userId)}
               className="btn-secondary flex items-center space-x-2"
-              disabled={!selectedUser || connections.has(selectedUser.id)}
-              title={connections.has(selectedUser.id) ? "Call in progress" : "Start video call"}
+              disabled={!selectedUser || connections.has(selectedUser.userId)}
+              title={connections.has(selectedUser.userId) ? "Call in progress" : "Start video call"}
             >
               <VideoCameraIcon className="h-4 w-4" />
               <span>Call</span>
