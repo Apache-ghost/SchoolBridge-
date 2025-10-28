@@ -19,12 +19,32 @@ services:
     networks:
       - school-net
 
+  # Distributed Storage Service - Replicated data across nodes
+  distributed-storage:
+    build: ./services/distributed-storage
+    environment:
+      - PORT=7000
+      - NODE_ID=primary
+      - REPLICATION_NODES=http://storage-replica-1:7001,http://storage-replica-2:7002
+    ports:
+      - "7000:7000"
+    volumes:
+      - storage-data:/usr/src/app/data
+    networks:
+      - school-net
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:7000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   api:
     build: ./services/api
     environment:
       - PORT=3000
       - JWT_SECRET=${JWT_SECRET}
       - AUTH_URL=http://auth:4000
+      - STORAGE_URL=http://distributed-storage:7000
     ports:
       - "3000:3000"
     depends_on:
@@ -94,3 +114,7 @@ services:
 networks:
   school-net:
     driver: bridge
+
+volumes:
+  storage-data:
+    driver: local
