@@ -102,9 +102,8 @@ class MultiRegionDemo {
   async startRegionalServices() {
     log('\\n🚀 Starting Regional Communication Services...', 'bright');
     
-    // Install dependencies first
-    log('📦 Installing dependencies...', 'cyan');
-    await this.runCommand('npm install', './services/multi-region-service');
+    // Skip npm install for demo
+    log('📦 Skipping dependency installation for demo...', 'cyan');
     
     for (const [regionId, config] of Object.entries(this.regions)) {
       try {
@@ -147,8 +146,8 @@ class MultiRegionDemo {
     log('\\n⚖️ Starting Global Load Balancer...', 'bright');
     
     try {
-      // Install load balancer dependencies
-      await this.runCommand('npm install http-proxy-middleware', '.');
+      // Skip load balancer dependencies installation for demo
+      log('📦 Skipping load balancer dependencies for demo...', 'cyan');
       
       const process = spawn('node', ['./services/load-balancer/index.js'], {
         stdio: ['ignore', 'pipe', 'pipe']
