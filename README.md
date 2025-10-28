@@ -38,6 +38,23 @@ SchoolBridge integrates a **robust peer-to-peer (P2P) communication layer** that
 
 📚 **Complete P2P Documentation**: [P2P-ARCHITECTURE.md](./P2P-ARCHITECTURE.md)
 
+## �️ **Distributed Data Storage**
+
+SchoolBridge implements **comprehensive distributed data replication** that ensures:
+
+- 📊 **Multi-Node Replication**: All student records, announcements, and message logs replicated across distributed databases
+- 🔄 **Asynchronous Propagation**: Updates propagate asynchronously for optimal performance and eventual consistency  
+- 🛡️ **Automatic Failover**: If one database node fails, others continue providing service without interruption
+- ✅ **Data Integrity**: Guarantees continuous access, reliability, and data integrity throughout the network
+
+**Replication Benefits**:
+- Each node maintains synchronized copy of critical data
+- Version control prevents conflicts and ensures consistency
+- Health monitoring with automatic backup node selection
+- Zero data loss with complete audit trail of all changes
+
+📚 **Complete Storage Documentation**: [DISTRIBUTED-STORAGE.md](./DISTRIBUTED-STORAGE.md)
+
 ## �🚀 Quick Start
 
 ### Communication Service (Core Feature)
