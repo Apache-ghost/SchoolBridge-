@@ -63,6 +63,17 @@ services:
     networks:
       - school-net
 
+  web-app:
+    build: ./web-app
+    ports:
+      - "8080:80"
+    depends_on:
+      - auth
+      - api
+      - ws
+    networks:
+      - school-net
+
 networks:
   school-net:
     driver: bridge

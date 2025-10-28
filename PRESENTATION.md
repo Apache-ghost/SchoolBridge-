@@ -27,6 +27,7 @@ SchoolBridge — Distributed Communication Platform (First Draft)
   - `api` — small API that proxies auth and exposes a protected endpoint
   - `ws` — Socket.IO server with **P2P capabilities** and Redis adapter for multi-node communication
   - `sms-gateway` — **SMS/USSD integration** for offline access (Twilio-based)
+  - `web-app` — **React with Tailwind CSS** for responsive web interface
   - `redis` — Pub/sub for scaling WS instances
 - `docker-compose.yml` provided to run everything locally
 
@@ -34,19 +35,21 @@ SchoolBridge — Distributed Communication Platform (First Draft)
 
 ## Slide: Demo flow (live)
 1. Start the stack: `docker-compose up --build`
-2. Use the demo client (`client/index.html`) to register and login
-3. **Room chat**: Connect to `ws` with the JWT, join a room, and send messages
-4. **P2P messaging**: See online users, send direct messages (no central routing)
-5. **SMS integration**: Send SMS commands to the gateway (if Twilio configured)
-6. Scale `ws` (e.g., `--scale ws=3`) and show messages propagate across nodes via Redis
+2. Open the React web app at `http://localhost:8080`
+3. **Register/Login**: Create account or sign in with existing credentials
+4. **Room chat**: Join rooms like `#lobby`, send real-time messages
+5. **P2P messaging**: Switch to Direct Messages tab, see online users, send private messages
+6. **SMS integration**: Send SMS commands to the gateway (if Twilio configured)
+7. Scale `ws` (e.g., `--scale ws=3`) and show messages propagate across nodes via Redis
 
 ---
 
 ## Slide: Tech choices & rationale
-- Node.js + Express: fast to prototype, good ecosystem
-- Socket.IO: easy WebSocket + reconnection patterns
-- Redis: battle-tested pub/sub & adapter for socket.io
-- Docker Compose: simple local orchestration for demos
+- **Backend**: Node.js + Express: fast to prototype, good ecosystem
+- **WebSocket**: Socket.IO: easy WebSocket + reconnection patterns
+- **Frontend**: React + Tailwind CSS: modern, responsive, component-based UI
+- **Scaling**: Redis: battle-tested pub/sub & adapter for socket.io
+- **Orchestration**: Docker Compose: simple local orchestration for demos
 
 ---
 
@@ -70,8 +73,8 @@ SchoolBridge — Distributed Communication Platform (First Draft)
 ## Slide: How to run the demo (quick)
 - Copy `.env.example` -> `.env` and set `JWT_SECRET`
 - `docker-compose up --build`
-- Serve the client: `npx http-server client -p 8080`
-- Open the client, register/login, connect to WS
+- Open web app: `http://localhost:8080`
+- Register/login, try room chat and P2P messaging
 
 ---
 

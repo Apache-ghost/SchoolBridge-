@@ -18,7 +18,7 @@ Notes
 
 ## Distributed prototype (quickstart)
 
-I added a small prototype that demonstrates a minimal distributed architecture: an `auth` service (JWT), an `api` service (protected endpoints), a `ws` service (Socket.IO with P2P capabilities), `sms-gateway` service (SMS/USSD integration), and `redis` for pub/sub. The orchestration is provided via `docker-compose.yml`.
+I added a small prototype that demonstrates a minimal distributed architecture: an `auth` service (JWT), an `api` service (protected endpoints), a `ws` service (Socket.IO with P2P capabilities), `sms-gateway` service (SMS/USSD integration), `web-app` (React with Tailwind CSS), and `redis` for pub/sub. The orchestration is provided via `docker-compose.yml`.
 
 How to run the prototype locally (requires Docker and Docker Compose):
 
@@ -29,6 +29,8 @@ copy .env.example .env
 # edit .env and set JWT_SECRET
 docker-compose up --build
 ```
+
+The web application will be available at: http://localhost:8080
 
 Scale the WebSocket service to simulate multiple nodes (in another terminal):
 
@@ -51,8 +53,15 @@ Testing SMS/USSD (optional):
 - SMS commands: `LOGIN username password`, `MESSAGES`, `HELP`.
 - USSD: Configure webhook at `/ussd` for USSD menu system.
 
+Frontend Features:
+- **React Web App**: Modern responsive UI with Tailwind CSS
+- **Authentication**: Login/register with JWT token management
+- **Room Chat**: Join multiple chat rooms, real-time messaging
+- **P2P Direct Messages**: Direct user-to-user messaging with online presence
+- **Real-time Updates**: Live connection status and user presence indicators
+
 If you'd like, I can:
-- Add a small React/Flutter demo client to demonstrate registration/login and realtime messaging.
 - Wire the API to a Postgres DB and add a migration/seed script.
 - Add a `package.json` at the monorepo root with helper scripts.
 - Expand SMS/USSD functionality with more sophisticated workflows.
+- Add mobile-responsive improvements or PWA features to the web app.
