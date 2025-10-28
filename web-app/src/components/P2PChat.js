@@ -64,8 +64,22 @@ const P2PChat = () => {
     }
   };
 
+  const handleStartCall = async () => {
+    if (selectedUserId) {
+      try {
+        await startCall(selectedUserId);
+      } catch (error) {
+        console.error('Failed to start call:', error);
+        alert('Failed to start call. Please check your camera and microphone permissions.');
+      }
+    }
+  };
+
   const selectedUser = onlineUsers.find(u => u.userId === selectedUserId);
   const currentUserFilteredUsers = onlineUsers.filter(u => u.username !== user?.username);
+  const activeConnection = Array.from(connections.values()).find(conn => 
+    conn.targetUserId === selectedUserId && conn.status === 'connected'
+  );
 
   const formatTime = (timestamp) => {
     return new Date(timestamp).toLocaleTimeString([], { 
@@ -75,6 +89,18 @@ const P2PChat = () => {
   };
 
   return (
+    <>
+      {/* Video Call Modal */}
+      <VideoCallModal
+        incomingCall={incomingCall}
+        activeCall={Array.from(connections.values())[0]} // Show first active call
+        localStream={localStream}
+        remoteStream={selectedUserId ? remoteStreams.get(selectedUserId) : null}
+        onAnswer={answerCall}
+        onReject={rejectCall}
+        onEnd={endCall}
+      />
+      
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Online Users */}
       <div className="lg:col-span-1">
@@ -140,9 +166,21 @@ const P2PChat = () => {
               )}
             </h3>
             {selectedUser && (
-              <div className="flex items-center space-x-2 text-sm text-green-400">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span>P2P Connection</span>
+                    <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2 text-sm text-green-400">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span>P2P Connection</span>
+                </div>
+                
+                {/* Video call button */}
+                <button
+                  onClick={handleStartCall}
+                  className="btn-secondary flex items-center space-x-2 text-sm"
+                  disabled={!selectedUser || activeConnection}
+                >
+                  <VideoCameraIcon className="h-4 w-4" />
+                  <span>{activeConnection ? 'In Call' : 'Video Call'}</span>
+                </button>
               </div>
             )}
           </div>
@@ -212,6 +250,16 @@ const P2PChat = () => {
               disabled={!selectedUser}
             />
             <button
+              type="button"
+              onClick={() => selectedUser && initiateCall(selectedUser.id)}
+              className="btn-secondary flex items-center space-x-2"
+              disabled={!selectedUser || connections.has(selectedUser.id)}
+              title={connections.has(selectedUser.id) ? "Call in progress" : "Start video call"}
+            >
+              <VideoCameraIcon className="h-4 w-4" />
+              <span>Call</span>
+            </button>
+            <button
               type="submit"
               className="btn-primary flex items-center space-x-2"
               disabled={!messageText.trim() || !selectedUser}
@@ -230,6 +278,7 @@ const P2PChat = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
