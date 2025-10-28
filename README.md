@@ -1,24 +1,51 @@
-# Project indexer
+# 🎯 SchoolBridge - Distributed Communication Platform
 
-This repository contains a small index generator that scans the project and writes a JSON index file (`project-index.json`). Use it to get a quick inventory of files (paths, sizes, modification times, and SHA-1 for small files).
+**The Heart of School Communication** - A comprehensive distributed system for modern educational institutions.
 
-How to run
+At the center of SchoolBridge lies the **Communication Service** - a unified hub that manages all school communications including attendance alerts, report card delivery, fee notifications, chat messages, and event broadcasts.
 
-Open a PowerShell terminal at the repository root and run:
+## 🚀 Quick Start
 
+### Communication Service (Core Feature)
+
+```bash
+# Start all services including the Communication Service
+docker-compose up --build
+
+# Demo the Communication Service features  
+node scripts/demo-communication-service.js
+```
+
+The Communication Service (`port 8000`) provides:
+- 🚨 **Attendance Alerts** - Automated parent notifications
+- 📊 **Report Card Delivery** - Digital report cards with GPA calculation  
+- 💰 **Fee Notifications** - Priority-based payment reminders
+- 💬 **Chat & Messages** - Real-time parent-teacher communication
+- 📢 **Event Broadcasting** - School-wide announcements
+
+### Project Indexing
+
+Generate project inventory:
+
+```powershell
 node .\scripts\generate-index.js
+```
 
-This will produce `project-index.json` in the repo root.
+## 🏗️ Architecture Overview
 
-Notes
+SchoolBridge implements a **distributed microservices architecture** with the Communication Service as the central coordinator:
 
-- The generator skips `.git`, `node_modules`, and `.vscode`.
-- Files larger than 10MB won't be hashed to avoid long runtime and memory pressure.
-- The generator is intentionally simple; adapt `scripts/generate-index.js` for additional metadata or filters.
+### Core Services
+- 🎯 **Communication Service** (`port 8000`) - **The Heart**: Manages all school communications
+- 🔐 **Auth Service** (`port 4000`) - JWT authentication and user management  
+- 🌐 **API Service** (`port 3000`) - RESTful API gateway and data access
+- 📡 **WebSocket Service** (`port 5000`) - Real-time messaging with WebRTC signaling
+- 📱 **SMS Gateway** (`port 6000`) - SMS/USSD integration for offline access
+- 🖥️ **Web Application** (`port 8080`) - React frontend with Tailwind CSS
 
-## Distributed prototype (quickstart)
-
-I added a small prototype that demonstrates a minimal distributed architecture: an `auth` service (JWT), an `api` service (protected endpoints), a `ws` service (Socket.IO with P2P capabilities), `sms-gateway` service (SMS/USSD integration), `web-app` (React with Tailwind CSS), and `redis` for pub/sub. The orchestration is provided via `docker-compose.yml`.
+### Infrastructure  
+- 🗄️ **Redis** - Pub/sub messaging and session management
+- 📦 **Docker Compose** - Service orchestration and deployment
 
 How to run the prototype locally (requires Docker and Docker Compose):
 
@@ -52,6 +79,34 @@ Testing SMS/USSD (optional):
 - Set Twilio credentials in `.env` to enable SMS integration.
 - SMS commands: `LOGIN username password`, `MESSAGES`, `HELP`.
 - USSD: Configure webhook at `/ussd` for USSD menu system.
+
+## 🎯 Communication Service Features
+
+**The Central Hub of SchoolBridge** - All school communications flow through this unified service:
+
+### Core Communication Types
+- 🚨 **Attendance Alerts**: Automated notifications for absences, late arrivals, early dismissals
+- 📊 **Report Card Delivery**: Digital report cards with GPA calculation and multi-channel delivery
+- 💰 **Fee Notifications**: Priority-based payment reminders with SMS backup for urgent fees
+- 💬 **Chat & Messages**: Real-time messaging between parents, teachers, and administrators
+- 📢 **Event Broadcasting**: School-wide announcements with targeted audience selection
+
+### Advanced Features
+- 📊 **Analytics Dashboard**: Communication statistics and delivery success rates
+- 📝 **Template System**: Reusable message templates with variable substitution
+- 🔄 **Multi-Channel Delivery**: App notifications, SMS, and email integration
+- ⚡ **Priority Handling**: Urgent communications get immediate SMS delivery
+- 📱 **Real-time Integration**: WebSocket connections for instant notifications
+
+### API Endpoints
+- `POST /attendance/alert` - Create attendance alerts
+- `POST /reports/deliver` - Deliver report cards
+- `POST /fees/notify` - Send fee notifications  
+- `POST /chat/send` - Send messages
+- `POST /events/broadcast` - Broadcast events
+- `GET /analytics/overview` - Get communication analytics
+
+📚 **Complete API Documentation**: [COMMUNICATION-API.md](./COMMUNICATION-API.md)
 
 Frontend Features:
 - **React Web App**: Modern responsive UI with Tailwind CSS
