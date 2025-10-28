@@ -102,22 +102,36 @@ io.on('connection', (socket) => {
 
   // P2P direct messaging (server just routes, doesn't store)
   socket.on('p2p_message', (data) => {
-    // expect { targetUserId, text, messageId }
+    // expect { targetUserId, text, messageId, priority }
     const targetUser = activeUsers.get(data.targetUserId);
-    if (!targetUser) {
-      socket.emit('p2p_error', { error: 'User not online', messageId: data.messageId });
-      return;
-    }
     
-    // Route directly to target user
-    io.to(targetUser.socketId).emit('p2p_message', {
+    const message = {
       from: socket.user.username,
       fromUserId: userId,
       text: data.text,
       messageId: data.messageId,
       time: new Date().toISOString(),
-      type: 'p2p'
-    });
+      type: 'p2p',
+      priority: data.priority || 'normal'
+    };
+    
+    if (!targetUser) {
+      // Queue message for offline delivery
+      if (!offlineMessageQueue.has(data.targetUserId)) {
+        offlineMessageQueue.set(data.targetUserId, []);
+      }
+      offlineMessageQueue.get(data.targetUserId).push(message);
+      
+      socket.emit('p2p_queued', { 
+        messageId: data.messageId, 
+        to: data.targetUserId,
+        reason: 'User offline - message queued for delivery'
+      });
+      return;
+    }
+    
+    // Route directly to target user
+    io.to(targetUser.socketId).emit('p2p_message', message);
     
     // Send delivery confirmation to sender
     socket.emit('p2p_delivered', { messageId: data.messageId, to: data.targetUserId });
@@ -139,9 +153,90 @@ io.on('connection', (socket) => {
   socket.on('get_online_users', () => {
     const onlineUsers = Array.from(activeUsers.entries()).map(([id, user]) => ({
       userId: id,
-      username: user.username
+      username: user.username,
+      role: user.role
     }));
     socket.emit('online_users', onlineUsers);
+  });
+
+  // WebRTC Signaling for direct peer connections
+  socket.on('webrtc_offer', (data) => {
+    // expect { targetUserId, offer, connectionId }
+    const targetUser = activeUsers.get(data.targetUserId);
+    if (!targetUser) {
+      socket.emit('webrtc_error', { error: 'Target user not online', connectionId: data.connectionId });
+      return;
+    }
+    
+    const connectionId = data.connectionId || uuidv4();
+    peerConnections.set(connectionId, {
+      caller: userId,
+      callee: data.targetUserId,
+      status: 'offering',
+      createdAt: new Date()
+    });
+    
+    // Forward offer to target user
+    io.to(targetUser.socketId).emit('webrtc_offer', {
+      from: socket.user.username,
+      fromUserId: userId,
+      offer: data.offer,
+      connectionId: connectionId
+    });
+  });
+
+  socket.on('webrtc_answer', (data) => {
+    // expect { connectionId, answer }
+    const connection = peerConnections.get(data.connectionId);
+    if (!connection || connection.callee !== userId) {
+      socket.emit('webrtc_error', { error: 'Invalid connection', connectionId: data.connectionId });
+      return;
+    }
+    
+    const callerUser = activeUsers.get(connection.caller);
+    if (!callerUser) {
+      socket.emit('webrtc_error', { error: 'Caller no longer online', connectionId: data.connectionId });
+      return;
+    }
+    
+    connection.status = 'answered';
+    
+    // Forward answer to caller
+    io.to(callerUser.socketId).emit('webrtc_answer', {
+      answer: data.answer,
+      connectionId: data.connectionId
+    });
+  });
+
+  socket.on('webrtc_ice_candidate', (data) => {
+    // expect { connectionId, candidate, targetUserId }
+    const targetUser = activeUsers.get(data.targetUserId);
+    if (!targetUser) return;
+    
+    // Forward ICE candidate to target
+    io.to(targetUser.socketId).emit('webrtc_ice_candidate', {
+      candidate: data.candidate,
+      connectionId: data.connectionId,
+      fromUserId: userId
+    });
+  });
+
+  socket.on('webrtc_hang_up', (data) => {
+    // expect { connectionId, targetUserId }
+    const connection = peerConnections.get(data.connectionId);
+    if (connection) {
+      const otherUserId = connection.caller === userId ? connection.callee : connection.caller;
+      const otherUser = activeUsers.get(otherUserId);
+      
+      if (otherUser) {
+        io.to(otherUser.socketId).emit('webrtc_hang_up', {
+          connectionId: data.connectionId,
+          fromUserId: userId
+        });
+      }
+      
+      peerConnections.delete(data.connectionId);
+    }
   });
 
   socket.on('disconnect', () => {

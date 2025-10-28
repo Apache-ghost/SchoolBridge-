@@ -56,7 +56,15 @@ export const SocketProvider = ({ children }) => {
 
       newSocket.on('p2p_delivered', (data) => {
         setP2pMessages(prev => [...prev, { 
-          text: `Message delivered to ${data.to}`, 
+          text: `✓ Message delivered to ${data.to}`, 
+          type: 'system',
+          direction: 'sent'
+        }]);
+      });
+
+      newSocket.on('p2p_queued', (data) => {
+        setP2pMessages(prev => [...prev, { 
+          text: `📫 Message queued: ${data.reason}`, 
           type: 'system',
           direction: 'sent'
         }]);
@@ -64,7 +72,7 @@ export const SocketProvider = ({ children }) => {
 
       newSocket.on('p2p_error', (data) => {
         setP2pMessages(prev => [...prev, { 
-          text: `Error: ${data.error}`, 
+          text: `❌ Error: ${data.error}`, 
           type: 'error',
           direction: 'system'
         }]);

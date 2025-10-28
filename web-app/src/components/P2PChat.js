@@ -1,15 +1,56 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSocket } from '../contexts/SocketContext';
 import { useAuth } from '../contexts/AuthContext';
-import { PaperAirplaneIcon, UserIcon, SignalIcon } from '@heroicons/react/24/outline';
+import useWebRTC from '../hooks/useWebRTC';
+import VideoCallModal from './VideoCallModal';
+import { 
+  PaperAirplaneIcon, 
+  UserIcon, 
+  SignalIcon, 
+  VideoCameraIcon,
+  PhoneIcon 
+} from '@heroicons/react/24/outline';
 
 const P2PChat = () => {
   const [selectedUserId, setSelectedUserId] = useState('');
   const [messageText, setMessageText] = useState('');
   const messagesEndRef = useRef(null);
   
-  const { onlineUsers, p2pMessages, sendP2PMessage } = useSocket();
+  const { socket, onlineUsers, p2pMessages, sendP2PMessage } = useSocket();
   const { user } = useAuth();
+  
+  // WebRTC hook for video/audio calls
+  const {
+    connections,
+    incomingCall,
+    localStream,
+    remoteStreams,
+    startCall,
+    answerCall,
+    endCall,
+    rejectCall,
+    handleWebRTCOffer,
+    handleWebRTCAnswer,
+    handleWebRTCIceCandidate,
+    handleWebRTCHangUp
+  } = useWebRTC(socket, user?.sub);
+
+  // Register WebRTC event handlers
+  useEffect(() => {
+    if (socket) {
+      socket.on('webrtc_offer', handleWebRTCOffer);
+      socket.on('webrtc_answer', handleWebRTCAnswer);
+      socket.on('webrtc_ice_candidate', handleWebRTCIceCandidate);
+      socket.on('webrtc_hang_up', handleWebRTCHangUp);
+
+      return () => {
+        socket.off('webrtc_offer', handleWebRTCOffer);
+        socket.off('webrtc_answer', handleWebRTCAnswer);
+        socket.off('webrtc_ice_candidate', handleWebRTCIceCandidate);
+        socket.off('webrtc_hang_up', handleWebRTCHangUp);
+      };
+    }
+  }, [socket, handleWebRTCOffer, handleWebRTCAnswer, handleWebRTCIceCandidate, handleWebRTCHangUp]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
