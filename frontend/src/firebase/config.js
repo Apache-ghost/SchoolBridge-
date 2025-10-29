@@ -33,7 +33,7 @@ export default app;
 // SchoolBridge Communication Service Configuration
 export const COMMUNICATION_CONFIG = {
   // Communication Service URL (adjust based on environment)
-  serviceUrl: process.env.REACT_APP_COMMUNICATION_SERVICE_URL || 'http://localhost:6000',
+  serviceUrl: import.meta.env.VITE_COMMUNICATION_SERVICE_URL || 'http://localhost:5000',
   
   // Real-time connection settings
   socketOptions: {
@@ -46,6 +46,6 @@ export const COMMUNICATION_CONFIG = {
   },
   
   // School node configuration (can be set per school)
-  defaultSchoolCode: process.env.REACT_APP_SCHOOL_CODE || 'MAIN001',
-  defaultDistrict: process.env.REACT_APP_SCHOOL_DISTRICT || 'district-main'
+  defaultSchoolCode: import.meta.env.VITE_SCHOOL_CODE || 'MAIN001',
+  defaultDistrict: import.meta.env.VITE_SCHOOL_DISTRICT || 'district-main'
 };

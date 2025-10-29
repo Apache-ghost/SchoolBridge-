@@ -8,6 +8,10 @@ export default defineConfig({
       include: "**/*.{jsx,js}",
     })
   ],
+  define: {
+    'process.env': {},
+    'process.env.REACT_APP_BASE_URL': JSON.stringify('http://localhost:5000'),
+  },
   esbuild: {
     include: /src\/.*\.[jt]sx?$/,
     exclude: [],
