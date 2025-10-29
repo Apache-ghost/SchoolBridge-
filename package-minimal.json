@@ -1,0 +1,32 @@
+// Minimal package.json for core functionality only
+{
+  "name": "schoolbridge-minimal",
+  "version": "1.0.0",
+  "description": "School Management System - Core Features Only",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    // Essential dependencies only
+    "express": "^4.18.2",
+    "mongoose": "^7.0.4", 
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.0",
+    
+    // Optional - only if you want SMS
+    // "twilio": "^4.15.0",
+    
+    // Optional - only if you want push notifications  
+    // "firebase-admin": "^11.9.0",
+    
+    // Optional - only if you want email
+    // "nodemailer": "^6.9.3"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  }
+}

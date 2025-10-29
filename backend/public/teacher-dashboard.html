@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SchoolBridge - Teacher Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .header p {
+            opacity: 0.9;
+            margin-top: 0.5rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+            border-left: 4px solid #667eea;
+        }
+
+        .stat-card h3 {
+            color: #667eea;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .stat-card p {
+            color: #666;
+            margin-top: 0.5rem;
+        }
+
+        .quick-actions {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+        }
+
+        .quick-actions h2 {
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .action-card {
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .action-card:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.15);
+        }
+
+        .action-card h3 {
+            color: #333;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: background 0.3s ease;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background: #5a67d8;
+        }
+
+        .btn-danger {
+            background: #e53e3e;
+        }
+
+        .btn-danger:hover {
+            background: #c53030;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .alert.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .recent-communications {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+        }
+
+        .communication-item {
+            padding: 1rem;
+            border-left: 3px solid #667eea;
+            background: #f8f9ff;
+            margin-bottom: 1rem;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .communication-meta {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .stats-grid,
+            .actions-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📚 SchoolBridge Teacher Dashboard</h1>
+        <p>Simple parent-teacher communication that actually works</p>
+    </div>
+
+    <div class="container">
+        <!-- Stats Section -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3 id="todayMessages">--</h3>
+                <p>Messages Today</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="unreadResponses">--</h3>
+                <p>Unread Parent Responses</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="totalCommunications">--</h3>
+                <p>Total Communications</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="urgentMessages">--</h3>
+                <p>Urgent Messages</p>
+            </div>
+        </div>
+
+        <!-- Alert Messages -->
+        <div id="alertContainer"></div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <h2>🚀 Quick Communication Actions</h2>
+            
+            <div class="actions-grid">
+                <!-- Attendance Alert -->
+                <div class="action-card">
+                    <h3>📋 Mark Student Absent</h3>
+                    <form id="attendanceForm">
+                        <div class="form-group">
+                            <label>Student Name</label>
+                            <select id="studentSelect" required>
+                                <option value="">Select Student...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Notes (optional)</label>
+                            <input type="text" id="attendanceNotes" placeholder="e.g., Called in sick">
+                        </div>
+                        <button type="submit" class="btn">Send Absence Alert</button>
+                    </form>
+                </div>
+
+                <!-- Assignment Update -->
+                <div class="action-card">
+                    <h3>📝 Assignment Update</h3>
+                    <form id="assignmentForm">
+                        <div class="form-group">
+                            <label>Assignment Title</label>
+                            <input type="text" id="assignmentTitle" required placeholder="e.g., Math Homework Ch. 5">
+                        </div>
+                        <div class="form-group">
+                            <label>Due Date</label>
+                            <input type="date" id="assignmentDue" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Class</label>
+                            <select id="assignmentClass" required>
+                                <option value="">Select Class...</option>
+                                <option value="Grade-1A">Grade 1A</option>
+                                <option value="Grade-1B">Grade 1B</option>
+                                <option value="Grade-2A">Grade 2A</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn">Send to Parents</button>
+                    </form>
+                </div>
+
+                <!-- Meeting Request -->
+                <div class="action-card">
+                    <h3>🤝 Request Parent Meeting</h3>
+                    <form id="meetingForm">
+                        <div class="form-group">
+                            <label>Student</label>
+                            <select id="meetingStudent" required>
+                                <option value="">Select Student...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Purpose</label>
+                            <select id="meetingPurpose" required>
+                                <option value="">Select Purpose...</option>
+                                <option value="Academic Performance">Academic Performance</option>
+                                <option value="Behavior Discussion">Behavior Discussion</option>
+                                <option value="Progress Update">Progress Update</option>
+                                <option value="Special Needs">Special Needs Discussion</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Urgent?</label>
+                            <select id="meetingUrgent">
+                                <option value="false">No</option>
+                                <option value="true">Yes - Urgent</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn">Request Meeting</button>
+                    </form>
+                </div>
+
+                <!-- Class Announcement -->
+                <div class="action-card">
+                    <h3>📢 Class Announcement</h3>
+                    <form id="announcementForm">
+                        <div class="form-group">
+                            <label>Class</label>
+                            <select id="announcementClass" required>
+                                <option value="">Select Class...</option>
+                                <option value="Grade-1A">Grade 1A</option>
+                                <option value="Grade-1B">Grade 1B</option>
+                                <option value="Grade-2A">Grade 2A</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Message</label>
+                            <textarea id="announcementMessage" required placeholder="e.g., Tomorrow's field trip to the science museum. Please pack lunch and wear comfortable shoes."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Priority</label>
+                            <select id="announcementPriority">
+                                <option value="normal">Normal</option>
+                                <option value="high">High Priority</option>
+                                <option value="urgent">Urgent</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn">Send to All Parents</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Communications -->
+        <div class="recent-communications">
+            <h2>📨 Recent Communications</h2>
+            <div id="recentList">
+                <p>Loading recent communications...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Demo data - in real app, this would come from API
+        const DEMO_STUDENTS = [
+            { id: '1', name: 'John Smith', class: 'Grade-1A' },
+            { id: '2', name: 'Emma Johnson', class: 'Grade-1A' },
+            { id: '3', name: 'Michael Brown', class: 'Grade-1B' },
+            { id: '4', name: 'Sarah Davis', class: 'Grade-2A' }
+        ];
+
+        const TEACHER_ID = 'teacher123'; // In real app, get from auth
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStudentOptions();
+            loadDashboardStats();
+            loadRecentCommunications();
+            setupFormHandlers();
+        });
+
+        // Load student options into dropdowns
+        function loadStudentOptions() {
+            const studentSelects = ['studentSelect', 'meetingStudent'];
+            studentSelects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                select.innerHTML = '<option value="">Select Student...</option>';
+                DEMO_STUDENTS.forEach(student => {
+                    select.innerHTML += `<option value="${student.id}">${student.name} (${student.class})</option>`;
+                });
+            });
+        }
+
+        // Load dashboard stats
+        function loadDashboardStats() {
+            // In real app, fetch from API: /api/communication/dashboard/stats/${TEACHER_ID}
+            document.getElementById('todayMessages').textContent = '12';
+            document.getElementById('unreadResponses').textContent = '3';
+            document.getElementById('totalCommunications').textContent = '156';
+            document.getElementById('urgentMessages').textContent = '1';
+        }
+
+        // Load recent communications
+        function loadRecentCommunications() {
+            const recentList = document.getElementById('recentList');
+            
+            // Demo data - in real app, fetch from API
+            const recentComms = [
+                {
+                    type: 'attendance',
+                    student: 'John Smith',
+                    message: 'John Smith was marked absent on 2025-10-29',
+                    time: '2 hours ago',
+                    status: 'sent'
+                },
+                {
+                    type: 'assignment', 
+                    student: 'All Grade-1A',
+                    message: 'New assignment: Math Homework Ch. 5',
+                    time: '1 day ago',
+                    status: 'delivered'
+                }
+            ];
+
+            recentList.innerHTML = recentComms.map(comm => `
+                <div class="communication-item">
+                    <div class="communication-meta">
+                        <strong>${comm.student}</strong> • ${comm.time} • ${comm.type}
+                    </div>
+                    <div>${comm.message}</div>
+                </div>
+            `).join('');
+        }
+
+        // Setup form handlers
+        function setupFormHandlers() {
+            // Attendance Form
+            document.getElementById('attendanceForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const studentId = document.getElementById('studentSelect').value;
+                const notes = document.getElementById('attendanceNotes').value;
+                
+                if (!studentId) {
+                    showAlert('Please select a student', 'error');
+                    return;
+                }
+
+                // In real app, send to API: POST /api/communication/attendance-alert
+                showAlert('✅ Absence alert sent to parent!', 'success');
+                e.target.reset();
+            });
+
+            // Assignment Form
+            document.getElementById('assignmentForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const title = document.getElementById('assignmentTitle').value;
+                const dueDate = document.getElementById('assignmentDue').value;
+                const classId = document.getElementById('assignmentClass').value;
+                
+                if (!title || !dueDate || !classId) {
+                    showAlert('Please fill in all required fields', 'error');
+                    return;
+                }
+
+                // In real app, send to API: POST /api/communication/assignment-update
+                showAlert(`✅ Assignment "${title}" sent to all ${classId} parents!`, 'success');
+                e.target.reset();
+            });
+
+            // Meeting Form
+            document.getElementById('meetingForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const studentId = document.getElementById('meetingStudent').value;
+                const purpose = document.getElementById('meetingPurpose').value;
+                
+                if (!studentId || !purpose) {
+                    showAlert('Please select student and purpose', 'error');
+                    return;
+                }
+
+                // In real app, send to API: POST /api/communication/meeting-request
+                showAlert('✅ Meeting request sent to parent!', 'success');
+                e.target.reset();
+            });
+
+            // Announcement Form
+            document.getElementById('announcementForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const classId = document.getElementById('announcementClass').value;
+                const message = document.getElementById('announcementMessage').value;
+                
+                if (!classId || !message) {
+                    showAlert('Please select class and enter message', 'error');
+                    return;
+                }
+
+                // In real app, send to API: POST /api/communication/bulk/class-announcement
+                showAlert(`✅ Announcement sent to all ${classId} parents!`, 'success');
+                e.target.reset();
+            });
+        }
+
+        // Show alert message
+        function showAlert(message, type) {
+            const container = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert ${type}`;
+            alertDiv.textContent = message;
+            alertDiv.style.display = 'block';
+            
+            container.appendChild(alertDiv);
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                alertDiv.style.display = 'none';
+                container.removeChild(alertDiv);
+            }, 5000);
+        }
+
+        // Set today's date as default for assignment due date
+        document.addEventListener('DOMContentLoaded', function() {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('assignmentDue').value = tomorrow.toISOString().split('T')[0];
+        });
+    </script>
+</body>
+</html>
