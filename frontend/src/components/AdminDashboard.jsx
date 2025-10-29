@@ -4,6 +4,11 @@ import studentService from '../services/studentService';
 import StudentRegistration from './StudentRegistration';
 import StudentList from './StudentList';
 import StudentProfile from './StudentProfile';
+import GradeEntry from './GradeEntry';
+import ReportCard from './ReportCard';
+import ProgressAnalytics from './ProgressAnalytics';
+import ParentManagement from './ParentManagement';
+import ParentChat from './ParentChat';
 
 const AdminDashboard = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -23,6 +28,12 @@ const AdminDashboard = ({ onLogout }) => {
   const [studentView, setStudentView] = useState('list'); // 'list', 'register', 'profile'
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [studentStats, setStudentStats] = useState({});
+
+  // Academic management states
+  const [academicView, setAcademicView] = useState('grades'); // 'grades', 'reports', 'analytics'
+  const [selectedReportStudent, setSelectedReportStudent] = useState('');
+  const [selectedReportTerm, setSelectedReportTerm] = useState('');
+  const [showReportCard, setShowReportCard] = useState(false);
 
   // Load admin data on component mount
   useEffect(() => {
@@ -458,12 +469,263 @@ const AdminDashboard = ({ onLogout }) => {
     </div>
   );
 
+  const renderAcademics = () => {
+    const handleReportGeneration = (studentId, term) => {
+      setSelectedReportStudent(studentId);
+      setSelectedReportTerm(term);
+      setShowReportCard(true);
+    };
+
+    const handleReportClose = () => {
+      setShowReportCard(false);
+      setSelectedReportStudent('');
+      setSelectedReportTerm('');
+    };
+
+    if (showReportCard && selectedReportStudent && selectedReportTerm) {
+      return (
+        <ReportCard
+          studentId={selectedReportStudent}
+          term={selectedReportTerm}
+          onClose={handleReportClose}
+          onSendToParent={(result) => {
+            console.log('Report card sent:', result);
+            // Could show success notification here
+          }}
+        />
+      );
+    }
+
+    return (
+      <div>
+        {/* Academic Management Header */}
+        <div style={{
+          background: 'white',
+          borderRadius: '15px',
+          padding: '25px',
+          marginBottom: '30px',
+          boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+          border: '1px solid #F1F5F9'
+        }}>
+          <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1A202C', marginBottom: '10px' }}>
+            📚 Academic Management
+          </h2>
+          <p style={{ color: '#718096', fontSize: '16px', margin: 0 }}>
+            Manage grades, generate report cards, and track student academic progress
+          </p>
+        </div>
+
+        {/* Academic Navigation */}
+        <div style={{
+          display: 'flex',
+          gap: '10px',
+          marginBottom: '30px',
+          padding: '20px',
+          background: 'white',
+          borderRadius: '15px',
+          boxShadow: '0 4px 15px rgba(0,0,0,0.05)'
+        }}>
+          <button
+            onClick={() => setAcademicView('grades')}
+            style={{
+              padding: '12px 20px',
+              background: academicView === 'grades' ? '#4F46E5' : 'transparent',
+              color: academicView === 'grades' ? 'white' : '#718096',
+              border: 'none',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            ✏️ Grade Entry
+          </button>
+          <button
+            onClick={() => setAcademicView('reports')}
+            style={{
+              padding: '12px 20px',
+              background: academicView === 'reports' ? '#4F46E5' : 'transparent',
+              color: academicView === 'reports' ? 'white' : '#718096',
+              border: 'none',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            📋 Report Cards
+          </button>
+          <button
+            onClick={() => setAcademicView('analytics')}
+            style={{
+              padding: '12px 20px',
+              background: academicView === 'analytics' ? '#4F46E5' : 'transparent',
+              color: academicView === 'analytics' ? 'white' : '#718096',
+              border: 'none',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            📈 Analytics
+          </button>
+        </div>
+
+        {/* Academic Content */}
+        {academicView === 'grades' && <GradeEntry />}
+        
+        {academicView === 'reports' && (
+          <div style={{
+            background: 'white',
+            borderRadius: '15px',
+            padding: '25px',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+            border: '1px solid #F1F5F9'
+          }}>
+            <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#1A202C', marginBottom: '20px' }}>
+              📋 Report Card Generator
+            </h3>
+            <p style={{ color: '#718096', fontSize: '14px', marginBottom: '20px' }}>
+              Generate and send digital report cards to students and parents.
+            </p>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '20px' }}>
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: '8px'
+                }}>
+                  Select Student
+                </label>
+                <select
+                  value={selectedReportStudent}
+                  onChange={(e) => setSelectedReportStudent(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '2px solid #E5E7EB',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    background: 'white'
+                  }}
+                >
+                  <option value="">Choose a student...</option>
+                  {studentService.getAllStudents().success && 
+                    studentService.getAllStudents().students.map(student => (
+                      <option key={student.id} value={student.id}>
+                        {student.name} ({student.studentId})
+                      </option>
+                    ))
+                  }
+                </select>
+              </div>
+
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: '8px'
+                }}>
+                  Select Term
+                </label>
+                <select
+                  value={selectedReportTerm}
+                  onChange={(e) => setSelectedReportTerm(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '2px solid #E5E7EB',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    background: 'white'
+                  }}
+                >
+                  <option value="">Choose a term...</option>
+                  <option value="First Term">First Term</option>
+                  <option value="Second Term">Second Term</option>
+                  <option value="Third Term">Third Term</option>
+                </select>
+              </div>
+            </div>
+
+            <button
+              onClick={() => handleReportGeneration(selectedReportStudent, selectedReportTerm)}
+              disabled={!selectedReportStudent || !selectedReportTerm}
+              style={{
+                padding: '14px 28px',
+                background: (!selectedReportStudent || !selectedReportTerm) ? '#9CA3AF' : '#10B981',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: (!selectedReportStudent || !selectedReportTerm) ? 'not-allowed' : 'pointer',
+                fontSize: '16px',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              📋 Generate Report Card
+            </button>
+          </div>
+        )}
+        
+        {academicView === 'analytics' && <ProgressAnalytics />}
+      </div>
+    );
+  };
+
+  const renderCommunication = () => {
+    return (
+      <div>
+        {/* Communication Header */}
+        <div style={{
+          background: 'white',
+          borderRadius: '15px',
+          padding: '25px',
+          marginBottom: '30px',
+          boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+          border: '1px solid #F1F5F9'
+        }}>
+          <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1A202C', marginBottom: '10px' }}>
+            💬 Parent Communication
+          </h2>
+          <p style={{ color: '#718096', fontSize: '16px', margin: 0 }}>
+            Chat directly with parents, send broadcast messages, and maintain real-time communication with the school community
+          </p>
+        </div>
+
+        {/* Parent Chat Interface */}
+        <ParentChat />
+      </div>
+    );
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'overview':
         return renderOverview();
       case 'students':
         return renderStudents();
+      case 'academics':
+        return renderAcademics();
+      case 'communication':
+        return renderCommunication();
       case 'users':
         return renderUsers();
       case 'settings':
@@ -528,6 +790,20 @@ const AdminDashboard = ({ onLogout }) => {
             label="Students"
             icon="🎓"
             isActive={activeTab === 'students'}
+            onClick={setActiveTab}
+          />
+          <TabButton
+            id="academics"
+            label="Academics"
+            icon="📚"
+            isActive={activeTab === 'academics'}
+            onClick={setActiveTab}
+          />
+          <TabButton
+            id="communication"
+            label="Communication"
+            icon="💬"
+            isActive={activeTab === 'communication'}
             onClick={setActiveTab}
           />
           <TabButton
