@@ -22,19 +22,20 @@ const Homepage = () => (
         </div>
         <div style={{ display: 'flex', gap: '15px' }}>
           <button style={{
-            padding: '8px 20px',
+            padding: '10px 25px',
             background: 'transparent',
             border: '2px solid #4F46E5',
             borderRadius: '25px',
             color: '#4F46E5',
             fontWeight: '600',
             cursor: 'pointer',
-            fontSize: '14px'
+            fontSize: '14px',
+            marginRight: '10px'
           }}>
-            Teacher Login
+            👨‍🏫 Teacher Login
           </button>
           <button style={{
-            padding: '8px 20px',
+            padding: '10px 25px',
             background: '#4F46E5',
             border: '2px solid #4F46E5',
             borderRadius: '25px',
@@ -43,7 +44,7 @@ const Homepage = () => (
             cursor: 'pointer',
             fontSize: '14px'
           }}>
-            Student Login
+            👨‍👩‍👧‍👦 Parent Access
           </button>
         </div>
       </div>
@@ -717,10 +718,67 @@ const AdminDashboard = () => (
   </div>
 )
 
-const StudentDashboard = () => (
-  <div style={{ padding: '20px' }}>
-    <h2>👨‍🎓 Student Dashboard</h2>
-    <p>View assignments and grades</p>
+const ParentDashboard = () => (
+  <div style={{ padding: '40px', background: '#F7FAFC', minHeight: '100vh' }}>
+    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#1A202C', marginBottom: '30px' }}>
+        👨‍👩‍👧‍👦 Parent Dashboard
+      </h2>
+      
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+        {/* Messages */}
+        <div style={{
+          background: 'white',
+          padding: '30px',
+          borderRadius: '15px',
+          boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+        }}>
+          <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#4F46E5', marginBottom: '15px' }}>
+            💬 Messages from Teachers
+          </h3>
+          <p style={{ color: '#718096' }}>View and respond to messages from your child's teachers</p>
+        </div>
+
+        {/* Attendance */}
+        <div style={{
+          background: 'white',
+          padding: '30px',
+          borderRadius: '15px',
+          boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+        }}>
+          <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#10B981', marginBottom: '15px' }}>
+            📋 Attendance Updates
+          </h3>
+          <p style={{ color: '#718096' }}>Real-time attendance notifications and alerts</p>
+        </div>
+
+        {/* Report Cards */}
+        <div style={{
+          background: 'white',
+          padding: '30px',
+          borderRadius: '15px',
+          boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+        }}>
+          <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#F59E0B', marginBottom: '15px' }}>
+            📊 Report Cards
+          </h3>
+          <p style={{ color: '#718096' }}>Access your child's academic progress reports</p>
+        </div>
+
+        {/* Fee Notifications */}
+        <div style={{
+          background: 'white',
+          padding: '30px',
+          borderRadius: '15px',
+          boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+        }}>
+          <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#EF4444', marginBottom: '15px' }}>
+            💰 Fee Information
+          </h3>
+          <p style={{ color: '#718096' }}>Fee reminders and payment confirmations</p>
+        </div>
+      </div>
+    </div>
   </div>
 )
 
@@ -730,7 +788,7 @@ const App = () => {
       <Routes>
         <Route path="/" element={<Homepage />} />
         <Route path="/teacher" element={<TeacherDashboard />} />
-        <Route path="/student" element={<StudentDashboard />} />
+        <Route path="/parent" element={<ParentDashboard />} />
       </Routes>
     </Router>
   )

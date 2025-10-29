@@ -1,59 +1,66 @@
 const express = require('express');
 const router = express.Router();
 const {
+    // Attendance
     sendAttendanceAlert,
+    bulkAttendanceAlert,
+    
+    // Assignments & Progress
     sendAssignmentUpdate,
     sendProgressReport,
+    
+    // Report Cards
+    deliverReportCard,
+    
+    // Fee Management
+    sendFeeNotification,
+    
+    // Direct Communication
+    sendChatMessage,
+    getChatHistory,
+    
+    // Meetings
     requestMeeting,
+    
+    // Events
+    broadcastEvent,
+    
+    // Parent Interface
     getParentCommunications,
-    markAsRead
+    markAsRead,
+    
+    // Statistics
+    getTeacherStats
 } = require('../controllers/communication-controller');
 
-// Teacher sends communications to parents
+// ATTENDANCE MANAGEMENT
 router.post('/attendance-alert', sendAttendanceAlert);
+router.post('/attendance-alert/bulk', bulkAttendanceAlert);
+
+// ACADEMIC COMMUNICATION
 router.post('/assignment-update', sendAssignmentUpdate);
 router.post('/progress-report', sendProgressReport);
+router.post('/report-card/deliver', deliverReportCard);
+
+// FEE MANAGEMENT
+router.post('/fee-notification', sendFeeNotification);
+
+// TEACHER-PARENT CHAT
+router.post('/chat/message', sendChatMessage);
+router.get('/chat/:teacherId/:parentId/:studentId?', getChatHistory);
+
+// MEETINGS
 router.post('/meeting-request', requestMeeting);
 
-// Parent receives and manages communications
+// EVENT BROADCASTS
+router.post('/event/broadcast', broadcastEvent);
+
+// PARENT INTERFACE
 router.get('/parent/:parentId', getParentCommunications);
 router.put('/:communicationId/read', markAsRead);
 
-// Dashboard endpoints - for teacher interface
-router.get('/dashboard/stats/:teacherId', async (req, res) => {
-    try {
-        const { teacherId } = req.params;
-        
-        const Communication = require('../models/communicationSchema');
-        
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        const stats = {
-            todayMessages: await Communication.countDocuments({
-                teacherId,
-                createdAt: { $gte: today }
-            }),
-            unreadResponses: await Communication.countDocuments({
-                teacherId,
-                'parentResponse.message': { $exists: true },
-                'parentResponse.acknowledged': false
-            }),
-            totalCommunications: await Communication.countDocuments({ teacherId }),
-            urgentMessages: await Communication.countDocuments({
-                teacherId,
-                priority: { $in: ['high', 'urgent'] },
-                read: false
-            })
-        };
-        
-        res.json({ success: true, stats });
-        
-    } catch (error) {
-        console.error('Error fetching dashboard stats:', error);
-        res.status(500).json({ message: 'Failed to fetch stats' });
-    }
-});
+// DASHBOARD & STATISTICS
+router.get('/dashboard/stats/:teacherId', getTeacherStats);
 
 // Quick send endpoints for common teacher tasks
 router.post('/quick/absent-alert', async (req, res) => {
