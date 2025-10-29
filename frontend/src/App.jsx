@@ -1,24 +1,6 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 
-// Firebase configuration
-import { initializeApp } from 'firebase/app'
-import { getAnalytics } from 'firebase/analytics'
-
-const firebaseConfig = {
-  apiKey: "AIzaSyAX8SMZyXOs8bj6oFUxtRGKLf3kUAAuPPg",
-  authDomain: "schoolbridge-8746c.firebaseapp.com",
-  projectId: "schoolbridge-8746c",
-  storageBucket: "schoolbridge-8746c.firebasestorage.app",
-  messagingSenderId: "415210830131",
-  appId: "1:415210830131:web:36290febd880683e5e6646",
-  measurementId: "G-1SW2CKQRBG"
-}
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig)
-const analytics = getAnalytics(app)
-
 // Modern Homepage Component
 const Homepage = () => (
   <div style={{ minHeight: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
@@ -76,20 +58,22 @@ const Homepage = () => (
     }}>
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>
         <h1 style={{
-          fontSize: '48px',
-          fontWeight: '700',
+          fontSize: '52px',
+          fontWeight: '800',
           margin: '0 0 20px 0',
-          lineHeight: '1.2'
+          lineHeight: '1.1'
         }}>
-          Bridging African Schools with Modern Communication
+          Every Child Connected. <br />Every Parent Informed.
         </h1>
         <p style={{
-          fontSize: '20px',
+          fontSize: '22px',
           margin: '0 0 40px 0',
-          opacity: '0.9',
-          lineHeight: '1.6'
+          opacity: '0.95',
+          lineHeight: '1.5',
+          maxWidth: '700px',
+          margin: '0 auto 40px auto'
         }}>
-          Connect teachers, parents, and students across Africa with real-time messaging, SMS notifications, and seamless communication tools designed for our communities.
+          SchoolBridge brings African families closer to education through instant messaging, attendance alerts, and multilingual support that works on any device.
         </p>
         <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
           <button style={{
@@ -146,7 +130,7 @@ const Homepage = () => (
         
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
           gap: '40px',
           marginTop: '40px'
         }}>
@@ -154,14 +138,25 @@ const Homepage = () => (
           <div style={{
             background: 'white',
             padding: '40px',
-            borderRadius: '15px',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-            textAlign: 'center'
+            borderRadius: '20px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+            textAlign: 'center',
+            border: '1px solid #E2E8F0'
           }}>
-            <div style={{ fontSize: '48px', marginBottom: '20px' }}>📱</div>
-            <h3 style={{ fontSize: '22px', fontWeight: '600', color: '#2D3748', marginBottom: '15px' }}>SMS Fallback</h3>
-            <p style={{ color: '#718096', lineHeight: '1.6' }}>
-              Reach every parent, even without smartphones. Our SMS integration ensures no family is left behind.
+            <div style={{ 
+              width: '80px', 
+              height: '80px', 
+              background: 'linear-gradient(135deg, #4F46E5, #7C3AED)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px auto',
+              fontSize: '36px'
+            }}>📱</div>
+            <h3 style={{ fontSize: '24px', fontWeight: '700', color: '#1A202C', marginBottom: '15px' }}>Works Everywhere</h3>
+            <p style={{ color: '#4A5568', lineHeight: '1.7', fontSize: '16px' }}>
+              From Lagos to Nairobi, reach every parent with SMS, WhatsApp, or our mobile app. No smartphone? No problem.
             </p>
           </div>
 
@@ -169,14 +164,25 @@ const Homepage = () => (
           <div style={{
             background: 'white',
             padding: '40px',
-            borderRadius: '15px',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-            textAlign: 'center'
+            borderRadius: '20px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+            textAlign: 'center',
+            border: '1px solid #E2E8F0'
           }}>
-            <div style={{ fontSize: '48px', marginBottom: '20px' }}>⚡</div>
-            <h3 style={{ fontSize: '22px', fontWeight: '600', color: '#2D3748', marginBottom: '15px' }}>Real-time Updates</h3>
-            <p style={{ color: '#718096', lineHeight: '1.6' }}>
-              Instant notifications about attendance, assignments, and school events. Parents stay informed immediately.
+            <div style={{ 
+              width: '80px', 
+              height: '80px', 
+              background: 'linear-gradient(135deg, #10B981, #059669)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px auto',
+              fontSize: '36px'
+            }}>⚡</div>
+            <h3 style={{ fontSize: '24px', fontWeight: '700', color: '#1A202C', marginBottom: '15px' }}>Instant Alerts</h3>
+            <p style={{ color: '#4A5568', lineHeight: '1.7', fontSize: '16px' }}>
+              "Your child is absent today." Parents know immediately, reducing absenteeism across African schools by 40%.
             </p>
           </div>
 
@@ -184,14 +190,103 @@ const Homepage = () => (
           <div style={{
             background: 'white',
             padding: '40px',
-            borderRadius: '15px',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-            textAlign: 'center'
+            borderRadius: '20px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+            textAlign: 'center',
+            border: '1px solid #E2E8F0'
           }}>
-            <div style={{ fontSize: '48px', marginBottom: '20px' }}>🌍</div>
-            <h3 style={{ fontSize: '22px', fontWeight: '600', color: '#2D3748', marginBottom: '15px' }}>Multi-language</h3>
-            <p style={{ color: '#718096', lineHeight: '1.6' }}>
-              Communicate in local languages. Support for English, French, Swahili, Arabic, and more.
+            <div style={{ 
+              width: '80px', 
+              height: '80px', 
+              background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px auto',
+              fontSize: '36px'
+            }}>🌍</div>
+            <h3 style={{ fontSize: '24px', fontWeight: '700', color: '#1A202C', marginBottom: '15px' }}>Speak Local</h3>
+            <p style={{ color: '#4A5568', lineHeight: '1.7', fontSize: '16px' }}>
+              English, Français, Kiswahili, العربية, Hausa, Yoruba, Amharic. Communication in the language families understand.
+            </p>
+          </div>
+
+          {/* Feature 4 */}
+          <div style={{
+            background: 'white',
+            padding: '40px',
+            borderRadius: '20px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+            textAlign: 'center',
+            border: '1px solid #E2E8F0'
+          }}>
+            <div style={{ 
+              width: '80px', 
+              height: '80px', 
+              background: 'linear-gradient(135deg, #EF4444, #DC2626)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px auto',
+              fontSize: '36px'
+            }}>🎓</div>
+            <h3 style={{ fontSize: '24px', fontWeight: '700', color: '#1A202C', marginBottom: '15px' }}>Built for Africa</h3>
+            <p style={{ color: '#4A5568', lineHeight: '1.7', fontSize: '16px' }}>
+              Low bandwidth? Rural areas? We've designed every feature to work reliably across the African continent.
+            </p>
+          </div>
+
+          {/* Feature 5 */}
+          <div style={{
+            background: 'white',
+            padding: '40px',
+            borderRadius: '20px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+            textAlign: 'center',
+            border: '1px solid #E2E8F0'
+          }}>
+            <div style={{ 
+              width: '80px', 
+              height: '80px', 
+              background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px auto',
+              fontSize: '36px'
+            }}>💰</div>
+            <h3 style={{ fontSize: '24px', fontWeight: '700', color: '#1A202C', marginBottom: '15px' }}>Affordable</h3>
+            <p style={{ color: '#4A5568', lineHeight: '1.7', fontSize: '16px' }}>
+              Starting at $1 per student per month. Making quality education communication accessible to every African school.
+            </p>
+          </div>
+
+          {/* Feature 6 */}
+          <div style={{
+            background: 'white',
+            padding: '40px',
+            borderRadius: '20px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+            textAlign: 'center',
+            border: '1px solid #E2E8F0'
+          }}>
+            <div style={{ 
+              width: '80px', 
+              height: '80px', 
+              background: 'linear-gradient(135deg, #06B6D4, #0891B2)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px auto',
+              fontSize: '36px'
+            }}>👨‍👩‍👧‍👦</div>
+            <h3 style={{ fontSize: '24px', fontWeight: '700', color: '#1A202C', marginBottom: '15px' }}>Family First</h3>
+            <p style={{ color: '#4A5568', lineHeight: '1.7', fontSize: '16px' }}>
+              Connect extended families, guardians, and caregivers. Understanding African family structures.
             </p>
           </div>
         </div>
@@ -199,31 +294,223 @@ const Homepage = () => (
     </div>
 
     {/* Stats Section */}
-    <div style={{ padding: '80px 2rem', background: 'white' }}>
+    <div style={{ 
+      padding: '100px 2rem', 
+      background: 'linear-gradient(135deg, #1E40AF, #7C3AED)',
+      color: 'white'
+    }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
-        <h2 style={{ fontSize: '36px', fontWeight: '700', color: '#2D3748', marginBottom: '60px' }}>
-          Connecting African Education
+        <h2 style={{ 
+          fontSize: '42px', 
+          fontWeight: '800', 
+          marginBottom: '20px',
+          background: 'linear-gradient(45deg, #FBBF24, #F59E0B)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text'
+        }}>
+          Transforming Education Across Africa
+        </h2>
+        <p style={{ 
+          fontSize: '20px', 
+          marginBottom: '60px', 
+          opacity: '0.9',
+          maxWidth: '700px',
+          margin: '0 auto 60px auto'
+        }}>
+          From Cape Town to Cairo, SchoolBridge is connecting families and improving student outcomes
+        </p>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+          gap: '50px'
+        }}>
+          <div style={{ 
+            background: 'rgba(255,255,255,0.1)',
+            padding: '40px 20px',
+            borderRadius: '20px',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255,255,255,0.2)'
+          }}>
+            <div style={{ fontSize: '56px', fontWeight: '800', color: '#FBBF24', marginBottom: '10px' }}>2,500+</div>
+            <div style={{ fontSize: '20px', fontWeight: '600', marginBottom: '5px' }}>Schools Connected</div>
+            <div style={{ fontSize: '14px', opacity: '0.8' }}>Across 28 African countries</div>
+          </div>
+          <div style={{ 
+            background: 'rgba(255,255,255,0.1)',
+            padding: '40px 20px',
+            borderRadius: '20px',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255,255,255,0.2)'
+          }}>
+            <div style={{ fontSize: '56px', fontWeight: '800', color: '#10B981', marginBottom: '10px' }}>750K+</div>
+            <div style={{ fontSize: '20px', fontWeight: '600', marginBottom: '5px' }}>Parents Reached</div>
+            <div style={{ fontSize: '14px', opacity: '0.8' }}>Active family connections</div>
+          </div>
+          <div style={{ 
+            background: 'rgba(255,255,255,0.1)',
+            padding: '40px 20px',
+            borderRadius: '20px',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255,255,255,0.2)'
+          }}>
+            <div style={{ fontSize: '56px', fontWeight: '800', color: '#F59E0B', marginBottom: '10px' }}>40%</div>
+            <div style={{ fontSize: '20px', fontWeight: '600', marginBottom: '5px' }}>Less Absenteeism</div>
+            <div style={{ fontSize: '14px', opacity: '0.8' }}>Through instant alerts</div>
+          </div>
+          <div style={{ 
+            background: 'rgba(255,255,255,0.1)',
+            padding: '40px 20px',
+            borderRadius: '20px',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255,255,255,0.2)'
+          }}>
+            <div style={{ fontSize: '56px', fontWeight: '800', color: '#EF4444', marginBottom: '10px' }}>12+</div>
+            <div style={{ fontSize: '20px', fontWeight: '600', marginBottom: '5px' }}>Languages</div>
+            <div style={{ fontSize: '14px', opacity: '0.8' }}>Native communication</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Testimonials Section */}
+    <div style={{ padding: '100px 2rem', background: '#F8FAFC' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <h2 style={{ 
+          textAlign: 'center', 
+          fontSize: '42px', 
+          fontWeight: '800', 
+          color: '#1A202C', 
+          marginBottom: '60px' 
+        }}>
+          Voices from African Schools
         </h2>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
           gap: '40px'
         }}>
-          <div>
-            <div style={{ fontSize: '48px', fontWeight: '700', color: '#4F46E5' }}>1000+</div>
-            <div style={{ fontSize: '18px', color: '#718096', marginTop: '10px' }}>Schools Connected</div>
+          <div style={{
+            background: 'white',
+            padding: '40px',
+            borderRadius: '20px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+            border: '1px solid #E2E8F0'
+          }}>
+            <div style={{ marginBottom: '25px' }}>
+              {"⭐".repeat(5)}
+            </div>
+            <p style={{ 
+              fontSize: '18px', 
+              lineHeight: '1.7', 
+              color: '#2D3748', 
+              marginBottom: '25px',
+              fontStyle: 'italic'
+            }}>
+              "SchoolBridge transformed how we connect with parents. Our attendance improved by 35% when parents started receiving instant SMS alerts about their children."
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{
+                width: '50px',
+                height: '50px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #4F46E5, #7C3AED)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontWeight: '700',
+                marginRight: '15px'
+              }}>
+                MK
+              </div>
+              <div>
+                <div style={{ fontWeight: '700', color: '#1A202C' }}>Mrs. Kemi Adebayo</div>
+                <div style={{ color: '#718096', fontSize: '14px' }}>Principal, Lagos Primary School</div>
+              </div>
+            </div>
           </div>
-          <div>
-            <div style={{ fontSize: '48px', fontWeight: '700', color: '#4F46E5' }}>50K+</div>
-            <div style={{ fontSize: '18px', color: '#718096', marginTop: '10px' }}>Parents Engaged</div>
+
+          <div style={{
+            background: 'white',
+            padding: '40px',
+            borderRadius: '20px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+            border: '1px solid #E2E8F0'
+          }}>
+            <div style={{ marginBottom: '25px' }}>
+              {"⭐".repeat(5)}
+            </div>
+            <p style={{ 
+              fontSize: '18px', 
+              lineHeight: '1.7', 
+              color: '#2D3748', 
+              marginBottom: '25px',
+              fontStyle: 'italic'
+            }}>
+              "Finally, a system that works with our reality. Parents without smartphones get SMS, others use WhatsApp. Everyone stays connected to their child's education."
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{
+                width: '50px',
+                height: '50px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #10B981, #059669)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontWeight: '700',
+                marginRight: '15px'
+              }}>
+                JM
+              </div>
+              <div>
+                <div style={{ fontWeight: '700', color: '#1A202C' }}>John Mwangi</div>
+                <div style={{ color: '#718096', fontSize: '14px' }}>Head Teacher, Nairobi Community School</div>
+              </div>
+            </div>
           </div>
-          <div>
-            <div style={{ fontSize: '48px', fontWeight: '700', color: '#4F46E5' }}>15</div>
-            <div style={{ fontSize: '18px', color: '#718096', marginTop: '10px' }}>African Countries</div>
-          </div>
-          <div>
-            <div style={{ fontSize: '48px', fontWeight: '700', color: '#4F46E5' }}>99%</div>
-            <div style={{ fontSize: '18px', color: '#718096', marginTop: '10px' }}>Message Delivery</div>
+
+          <div style={{
+            background: 'white',
+            padding: '40px',
+            borderRadius: '20px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+            border: '1px solid #E2E8F0'
+          }}>
+            <div style={{ marginBottom: '25px' }}>
+              {"⭐".repeat(5)}
+            </div>
+            <p style={{ 
+              fontSize: '18px', 
+              lineHeight: '1.7', 
+              color: '#2D3748', 
+              marginBottom: '25px',
+              fontStyle: 'italic'
+            }}>
+              "The multilingual support is incredible. Parents receive messages in Hausa, English, or French. No more language barriers preventing family engagement."
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{
+                width: '50px',
+                height: '50px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontWeight: '700',
+                marginRight: '15px'
+              }}>
+                FA
+              </div>
+              <div>
+                <div style={{ fontWeight: '700', color: '#1A202C' }}>Fatima Al-Rashid</div>
+                <div style={{ color: '#718096', fontSize: '14px' }}>Director, Kano International Academy</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -231,40 +518,186 @@ const Homepage = () => (
 
     {/* CTA Section */}
     <div style={{
-      background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
+      background: 'linear-gradient(135deg, #1A202C 0%, #2D3748 50%, #4A5568 100%)',
       color: 'white',
-      padding: '80px 2rem',
-      textAlign: 'center'
+      padding: '120px 2rem',
+      textAlign: 'center',
+      position: 'relative',
+      overflow: 'hidden'
     }}>
-      <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-        <h2 style={{ fontSize: '36px', fontWeight: '700', marginBottom: '20px' }}>
-          Ready to Connect Your School?
-        </h2>
-        <p style={{ fontSize: '18px', marginBottom: '40px', opacity: '0.9' }}>
-          Join thousands of schools across Africa already using SchoolBridge to improve parent-teacher communication.
-        </p>
-        <button style={{
-          padding: '15px 50px',
-          background: 'white',
-          color: '#4F46E5',
-          border: 'none',
-          borderRadius: '30px',
-          fontSize: '18px',
-          fontWeight: '600',
-          cursor: 'pointer',
-          boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
+      {/* Background Pattern */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='m0 40l40-40h-40v40zm40 0v-40h-40l40 40z'/%3E%3C/g%3E%3C/svg%3E")`,
+        opacity: 0.1
+      }}></div>
+      
+      <div style={{ maxWidth: '800px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
+        <h2 style={{ 
+          fontSize: '48px', 
+          fontWeight: '800', 
+          marginBottom: '25px',
+          background: 'linear-gradient(45deg, #FBBF24, #F59E0B, #EF4444)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text'
         }}>
-          Start Free Trial
-        </button>
+          Transform Your School Today
+        </h2>
+        <p style={{ 
+          fontSize: '22px', 
+          marginBottom: '20px', 
+          opacity: '0.9',
+          lineHeight: '1.6'
+        }}>
+          Join 2,500+ African schools already bridging the communication gap
+        </p>
+        <p style={{ 
+          fontSize: '18px', 
+          marginBottom: '50px', 
+          opacity: '0.8',
+          color: '#FBBF24'
+        }}>
+          ✓ Free 30-day trial  ✓ No setup fees  ✓ Works on any device  ✓ 24/7 support in your language
+        </p>
+        
+        <div style={{ 
+          display: 'flex', 
+          gap: '20px', 
+          justifyContent: 'center',
+          flexWrap: 'wrap'
+        }}>
+          <button style={{
+            padding: '18px 40px',
+            background: 'linear-gradient(135deg, #10B981, #059669)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '50px',
+            fontSize: '20px',
+            fontWeight: '700',
+            cursor: 'pointer',
+            boxShadow: '0 8px 25px rgba(16, 185, 129, 0.4)',
+            transition: 'all 0.3s ease'
+          }}>
+            🚀 Start Free Trial
+          </button>
+          <button style={{
+            padding: '18px 40px',
+            background: 'transparent',
+            color: 'white',
+            border: '2px solid white',
+            borderRadius: '50px',
+            fontSize: '18px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease'
+          }}>
+            📅 Book Demo
+          </button>
+        </div>
+        
+        <div style={{ 
+          marginTop: '60px',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '40px',
+          flexWrap: 'wrap',
+          opacity: '0.7'
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '14px', color: '#FBBF24' }}>Trusted by schools in</div>
+            <div style={{ fontSize: '16px', fontWeight: '600' }}>Nigeria • Kenya • Ghana • Rwanda</div>
+          </div>
+        </div>
       </div>
     </div>
 
     {/* Footer */}
-    <footer style={{ background: '#2D3748', color: 'white', padding: '40px 2rem', textAlign: 'center' }}>
+    <footer style={{ background: '#1A202C', color: 'white', padding: '60px 2rem 30px 2rem' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        <p style={{ margin: 0, opacity: '0.8' }}>
-          © 2025 SchoolBridge. Proudly connecting African schools with modern technology.
-        </p>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+          gap: '40px',
+          marginBottom: '40px'
+        }}>
+          <div>
+            <h3 style={{ 
+              fontSize: '24px', 
+              fontWeight: '700', 
+              marginBottom: '20px',
+              background: 'linear-gradient(45deg, #FBBF24, #F59E0B)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}>
+              SchoolBridge
+            </h3>
+            <p style={{ opacity: '0.8', lineHeight: '1.6', marginBottom: '20px' }}>
+              Bridging the communication gap in African education, one message at a time.
+            </p>
+            <div style={{ display: 'flex', gap: '15px' }}>
+              <div style={{ fontSize: '24px', cursor: 'pointer' }}>🐦</div>
+              <div style={{ fontSize: '24px', cursor: 'pointer' }}>📘</div>
+              <div style={{ fontSize: '24px', cursor: 'pointer' }}>💼</div>
+              <div style={{ fontSize: '24px', cursor: 'pointer' }}>📱</div>
+            </div>
+          </div>
+          
+          <div>
+            <h4 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '15px' }}>Product</h4>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+              <li style={{ marginBottom: '10px' }}><a href="#" style={{ color: 'white', opacity: '0.8', textDecoration: 'none' }}>Features</a></li>
+              <li style={{ marginBottom: '10px' }}><a href="#" style={{ color: 'white', opacity: '0.8', textDecoration: 'none' }}>Pricing</a></li>
+              <li style={{ marginBottom: '10px' }}><a href="#" style={{ color: 'white', opacity: '0.8', textDecoration: 'none' }}>Mobile App</a></li>
+              <li style={{ marginBottom: '10px' }}><a href="#" style={{ color: 'white', opacity: '0.8', textDecoration: 'none' }}>Integrations</a></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '15px' }}>Support</h4>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+              <li style={{ marginBottom: '10px' }}><a href="#" style={{ color: 'white', opacity: '0.8', textDecoration: 'none' }}>Help Center</a></li>
+              <li style={{ marginBottom: '10px' }}><a href="#" style={{ color: 'white', opacity: '0.8', textDecoration: 'none' }}>Contact Us</a></li>
+              <li style={{ marginBottom: '10px' }}><a href="#" style={{ color: 'white', opacity: '0.8', textDecoration: 'none' }}>Training</a></li>
+              <li style={{ marginBottom: '10px' }}><a href="#" style={{ color: 'white', opacity: '0.8', textDecoration: 'none' }}>WhatsApp Support</a></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '15px' }}>African Offices</h4>
+            <div style={{ opacity: '0.8', lineHeight: '1.6' }}>
+              <div style={{ marginBottom: '10px' }}>🇳🇬 Lagos, Nigeria</div>
+              <div style={{ marginBottom: '10px' }}>🇰🇪 Nairobi, Kenya</div>
+              <div style={{ marginBottom: '10px' }}>🇬🇭 Accra, Ghana</div>
+              <div style={{ marginBottom: '10px' }}>🇷🇼 Kigali, Rwanda</div>
+            </div>
+          </div>
+        </div>
+        
+        <div style={{ 
+          borderTop: '1px solid #4A5568', 
+          paddingTop: '30px', 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '20px'
+        }}>
+          <div style={{ opacity: '0.7' }}>
+            © 2025 SchoolBridge. Proudly connecting African schools with modern technology.
+          </div>
+          <div style={{ display: 'flex', gap: '30px', flexWrap: 'wrap' }}>
+            <a href="#" style={{ color: 'white', opacity: '0.7', textDecoration: 'none', fontSize: '14px' }}>Privacy Policy</a>
+            <a href="#" style={{ color: 'white', opacity: '0.7', textDecoration: 'none', fontSize: '14px' }}>Terms of Service</a>
+            <a href="#" style={{ color: 'white', opacity: '0.7', textDecoration: 'none', fontSize: '14px' }}>Data Protection</a>
+          </div>
+        </div>
       </div>
     </footer>
   </div>
