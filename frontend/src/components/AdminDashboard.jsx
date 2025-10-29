@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import adminAuthService from '../services/adminAuthService';
+import studentService from '../services/studentService';
+import StudentRegistration from './StudentRegistration';
+import StudentList from './StudentList';
+import StudentProfile from './StudentProfile';
 
 const AdminDashboard = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -14,6 +18,11 @@ const AdminDashboard = ({ onLogout }) => {
     recentActivity: [],
     systemHealth: 'Operational'
   });
+  
+  // Student management states
+  const [studentView, setStudentView] = useState('list'); // 'list', 'register', 'profile'
+  const [selectedStudentId, setSelectedStudentId] = useState(null);
+  const [studentStats, setStudentStats] = useState({});
 
   // Load admin data on component mount
   useEffect(() => {
@@ -27,7 +36,19 @@ const AdminDashboard = ({ onLogout }) => {
   const loadDashboardData = () => {
     try {
       const data = adminAuthService.getAdminDashboardData();
-      setDashboardData(data);
+      const stats = studentService.getStudentStatistics();
+      
+      // Update dashboard data with student statistics
+      setDashboardData(prev => ({
+        ...data,
+        systemStats: {
+          ...prev.systemStats,
+          totalStudents: stats.totalStudents || 0,
+          activeStudents: stats.activeStudents || 0
+        }
+      }));
+      
+      setStudentStats(stats);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
     }
@@ -101,6 +122,154 @@ const AdminDashboard = ({ onLogout }) => {
       </div>
     </div>
   );
+
+  // Student management functions
+  const handleStudentRegistered = (newStudent) => {
+    loadDashboardData(); // Refresh statistics
+    setStudentView('list'); // Return to student list
+  };
+
+  const handleViewStudent = (student) => {
+    setSelectedStudentId(student.id);
+    setStudentView('profile');
+  };
+
+  const handleEditStudent = (student) => {
+    setSelectedStudentId(student.id);
+    setStudentView('profile');
+  };
+
+  const handleDeleteStudent = (studentId) => {
+    const result = studentService.deleteStudent(studentId);
+    if (result.success) {
+      loadDashboardData(); // Refresh statistics
+      setStudentView('list'); // Return to list
+    }
+  };
+
+  const handleStudentUpdated = (updatedStudent) => {
+    loadDashboardData(); // Refresh statistics
+  };
+
+  const renderStudents = () => {
+    switch (studentView) {
+      case 'register':
+        return (
+          <StudentRegistration
+            onRegistrationComplete={handleStudentRegistered}
+            onCancel={() => setStudentView('list')}
+          />
+        );
+      
+      case 'profile':
+        return selectedStudentId ? (
+          <StudentProfile
+            studentId={selectedStudentId}
+            onSave={handleStudentUpdated}
+            onCancel={() => setStudentView('list')}
+            onDelete={handleDeleteStudent}
+          />
+        ) : null;
+      
+      case 'list':
+      default:
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* Student Management Header */}
+            <div style={{
+              background: 'white',
+              borderRadius: '15px',
+              padding: '25px',
+              boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+              border: '1px solid #F1F5F9'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <div>
+                  <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1A202C', margin: '0 0 8px 0' }}>
+                    🎓 Student Management
+                  </h2>
+                  <p style={{ color: '#718096', fontSize: '16px', margin: 0 }}>
+                    Manage student registration, profiles, and class assignments
+                  </p>
+                </div>
+                <button
+                  onClick={() => setStudentView('register')}
+                  style={{
+                    padding: '12px 25px',
+                    background: 'linear-gradient(135deg, #4F46E5, #7C3AED)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  ➕ Register New Student
+                </button>
+              </div>
+
+              {/* Quick Stats */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+                <div style={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  color: 'white'
+                }}>
+                  <div style={{ fontSize: '28px', fontWeight: '700', marginBottom: '5px' }}>
+                    {studentStats.totalStudents || 0}
+                  </div>
+                  <div style={{ fontSize: '14px', opacity: '0.9' }}>Total Students</div>
+                </div>
+                <div style={{
+                  background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  color: 'white'
+                }}>
+                  <div style={{ fontSize: '28px', fontWeight: '700', marginBottom: '5px' }}>
+                    {studentStats.activeStudents || 0}
+                  </div>
+                  <div style={{ fontSize: '14px', opacity: '0.9' }}>Active Students</div>
+                </div>
+                <div style={{
+                  background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  color: 'white'
+                }}>
+                  <div style={{ fontSize: '28px', fontWeight: '700', marginBottom: '5px' }}>
+                    {studentStats.totalClasses || 0}
+                  </div>
+                  <div style={{ fontSize: '14px', opacity: '0.9' }}>Classes</div>
+                </div>
+                <div style={{
+                  background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  color: 'white'
+                }}>
+                  <div style={{ fontSize: '28px', fontWeight: '700', marginBottom: '5px' }}>
+                    {studentStats.recentRegistrations || 0}
+                  </div>
+                  <div style={{ fontSize: '14px', opacity: '0.9' }}>New This Week</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Student List Component */}
+            <StudentList
+              onEditStudent={handleEditStudent}
+              onViewStudent={handleViewStudent}
+            />
+          </div>
+        );
+    }
+  };
 
   const renderOverview = () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
@@ -293,6 +462,8 @@ const AdminDashboard = ({ onLogout }) => {
     switch (activeTab) {
       case 'overview':
         return renderOverview();
+      case 'students':
+        return renderStudents();
       case 'users':
         return renderUsers();
       case 'settings':
@@ -350,6 +521,13 @@ const AdminDashboard = ({ onLogout }) => {
             label="Overview"
             icon="📊"
             isActive={activeTab === 'overview'}
+            onClick={setActiveTab}
+          />
+          <TabButton
+            id="students"
+            label="Students"
+            icon="🎓"
+            isActive={activeTab === 'students'}
             onClick={setActiveTab}
           />
           <TabButton
