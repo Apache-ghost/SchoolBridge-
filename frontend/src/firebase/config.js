@@ -24,6 +24,9 @@ export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const analytics = getAnalytics(app);
 
+// Parent Access Configuration
+export const PARENT_ACCESS_CODE = "ICTU2032!";
+
 // Export the Firebase app instance
 export default app;
 

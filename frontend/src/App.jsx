@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 
 // Modern Homepage Component
@@ -704,12 +704,362 @@ const Homepage = () => (
   </div>
 )
 
-const TeacherDashboard = () => (
-  <div style={{ padding: '20px' }}>
-    <h2>👨‍🏫 Teacher Dashboard</h2>
-    <p>Send communications to parents</p>
-  </div>
-)
+const TeacherDashboard = () => {
+  const [activeTab, setActiveTab] = useState('overview');
+
+  const TabButton = ({ id, label, icon, isActive, onClick }) => (
+    <button
+      onClick={onClick}
+      style={{
+        padding: '12px 20px',
+        background: isActive ? '#4F46E5' : 'transparent',
+        color: isActive ? 'white' : '#4F46E5',
+        border: '2px solid #4F46E5',
+        borderRadius: '8px',
+        fontWeight: '600',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        fontSize: '14px'
+      }}
+    >
+      {icon} {label}
+    </button>
+  );
+
+  return (
+    <div style={{ padding: '40px', background: '#F7FAFC', minHeight: '100vh' }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        {/* Header */}
+        <div style={{ marginBottom: '30px' }}>
+          <h1 style={{ fontSize: '32px', fontWeight: '700', color: '#1A202C', marginBottom: '10px' }}>
+            👨‍🏫 Teacher Communication Hub
+          </h1>
+          <p style={{ color: '#718096', fontSize: '16px' }}>
+            Manage all parent-teacher communications from one place
+          </p>
+        </div>
+
+        {/* Navigation Tabs */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '15px', 
+          marginBottom: '30px', 
+          flexWrap: 'wrap',
+          borderBottom: '1px solid #E2E8F0',
+          paddingBottom: '20px'
+        }}>
+          <TabButton
+            id="overview"
+            label="Overview"
+            icon="📊"
+            isActive={activeTab === 'overview'}
+            onClick={() => setActiveTab('overview')}
+          />
+          <TabButton
+            id="attendance"
+            label="Attendance Alerts"
+            icon="📋"
+            isActive={activeTab === 'attendance'}
+            onClick={() => setActiveTab('attendance')}
+          />
+          <TabButton
+            id="reports"
+            label="Report Cards"
+            icon="📄"
+            isActive={activeTab === 'reports'}
+            onClick={() => setActiveTab('reports')}
+          />
+          <TabButton
+            id="fees"
+            label="Fee Notifications"
+            icon="💰"
+            isActive={activeTab === 'fees'}
+            onClick={() => setActiveTab('fees')}
+          />
+          <TabButton
+            id="chat"
+            label="Parent Chat"
+            icon="💬"
+            isActive={activeTab === 'chat'}
+            onClick={() => setActiveTab('chat')}
+          />
+          <TabButton
+            id="events"
+            label="Event Broadcast"
+            icon="📅"
+            isActive={activeTab === 'events'}
+            onClick={() => setActiveTab('events')}
+          />
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'overview' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+            {/* Quick Stats */}
+            <div style={{
+              background: 'white',
+              padding: '30px',
+              borderRadius: '15px',
+              boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+            }}>
+              <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#1A202C', marginBottom: '20px' }}>
+                Today's Activity
+              </h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                <span style={{ color: '#718096' }}>Messages Sent</span>
+                <span style={{ fontSize: '24px', fontWeight: '700', color: '#4F46E5' }}>12</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                <span style={{ color: '#718096' }}>Attendance Alerts</span>
+                <span style={{ fontSize: '24px', fontWeight: '700', color: '#10B981' }}>8</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#718096' }}>Unread Replies</span>
+                <span style={{ fontSize: '24px', fontWeight: '700', color: '#EF4444' }}>3</span>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div style={{
+              background: 'white',
+              padding: '30px',
+              borderRadius: '15px',
+              boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+            }}>
+              <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#1A202C', marginBottom: '20px' }}>
+                Quick Actions
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <button style={{
+                  padding: '15px 20px',
+                  background: 'linear-gradient(135deg, #4F46E5, #7C3AED)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '10px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}>
+                  📋 Mark Class Attendance
+                </button>
+                <button style={{
+                  padding: '15px 20px',
+                  background: 'linear-gradient(135deg, #10B981, #059669)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '10px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}>
+                  💬 Send Bulk Message
+                </button>
+                <button style={{
+                  padding: '15px 20px',
+                  background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '10px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}>
+                  📅 Create Event
+                </button>
+              </div>
+            </div>
+
+            {/* Recent Messages */}
+            <div style={{
+              background: 'white',
+              padding: '30px',
+              borderRadius: '15px',
+              boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
+              gridColumn: 'span 2'
+            }}>
+              <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#1A202C', marginBottom: '20px' }}>
+                Recent Parent Messages
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                {[
+                  { parent: 'Mrs. Johnson', message: 'Thank you for the attendance alert!', time: '10 min ago', status: 'unread' },
+                  { parent: 'Mr. Adebayo', message: 'Can we schedule a meeting about Emma?', time: '1 hour ago', status: 'unread' },
+                  { parent: 'Ms. Okafor', message: 'Received the report card. Great progress!', time: '2 hours ago', status: 'read' }
+                ].map((msg, index) => (
+                  <div key={index} style={{
+                    padding: '15px',
+                    background: msg.status === 'unread' ? '#F0F9FF' : '#F9FAFB',
+                    borderRadius: '8px',
+                    borderLeft: `4px solid ${msg.status === 'unread' ? '#4F46E5' : '#E5E7EB'}`
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ fontWeight: '600', color: '#1A202C' }}>{msg.parent}</span>
+                      <span style={{ fontSize: '12px', color: '#718096' }}>{msg.time}</span>
+                    </div>
+                    <p style={{ color: '#4A5568', margin: 0 }}>{msg.message}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'attendance' && (
+          <div style={{
+            background: 'white',
+            padding: '40px',
+            borderRadius: '15px',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+          }}>
+            <h3 style={{ fontSize: '24px', fontWeight: '700', color: '#1A202C', marginBottom: '20px' }}>
+              📋 Attendance Management
+            </h3>
+            <p style={{ color: '#718096', marginBottom: '30px' }}>
+              Mark attendance and automatically notify parents via SMS and app notifications.
+            </p>
+            <button style={{
+              padding: '15px 30px',
+              background: '#10B981',
+              color: 'white',
+              border: 'none',
+              borderRadius: '10px',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: 'pointer'
+            }}>
+              Start Attendance for Today
+            </button>
+          </div>
+        )}
+
+        {activeTab === 'reports' && (
+          <div style={{
+            background: 'white',
+            padding: '40px',
+            borderRadius: '15px',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+          }}>
+            <h3 style={{ fontSize: '24px', fontWeight: '700', color: '#1A202C', marginBottom: '20px' }}>
+              📄 Report Card Distribution
+            </h3>
+            <p style={{ color: '#718096', marginBottom: '30px' }}>
+              Upload and automatically deliver report cards to parents with instant notifications.
+            </p>
+            <button style={{
+              padding: '15px 30px',
+              background: '#F59E0B',
+              color: 'white',
+              border: 'none',
+              borderRadius: '10px',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: 'pointer'
+            }}>
+              Upload Report Cards
+            </button>
+          </div>
+        )}
+
+        {activeTab === 'fees' && (
+          <div style={{
+            background: 'white',
+            padding: '40px',
+            borderRadius: '15px',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+          }}>
+            <h3 style={{ fontSize: '24px', fontWeight: '700', color: '#1A202C', marginBottom: '20px' }}>
+              💰 Fee Notification Center
+            </h3>
+            <p style={{ color: '#718096', marginBottom: '30px' }}>
+              Send fee reminders, overdue notices, and payment confirmations to parents.
+            </p>
+            <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+              <button style={{
+                padding: '15px 25px',
+                background: '#EF4444',
+                color: 'white',
+                border: 'none',
+                borderRadius: '10px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer'
+              }}>
+                Send Fee Reminders
+              </button>
+              <button style={{
+                padding: '15px 25px',
+                background: '#10B981',
+                color: 'white',
+                border: 'none',
+                borderRadius: '10px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer'
+              }}>
+                Confirm Payments
+              </button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'chat' && (
+          <div style={{
+            background: 'white',
+            padding: '40px',
+            borderRadius: '15px',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+          }}>
+            <h3 style={{ fontSize: '24px', fontWeight: '700', color: '#1A202C', marginBottom: '20px' }}>
+              💬 Parent Communication Center
+            </h3>
+            <p style={{ color: '#718096', marginBottom: '30px' }}>
+              Direct messaging with parents. All conversations are logged and accessible via SMS for parents without smartphones.
+            </p>
+            <button style={{
+              padding: '15px 30px',
+              background: '#4F46E5',
+              color: 'white',
+              border: 'none',
+              borderRadius: '10px',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: 'pointer'
+            }}>
+              Open Chat Interface
+            </button>
+          </div>
+        )}
+
+        {activeTab === 'events' && (
+          <div style={{
+            background: 'white',
+            padding: '40px',
+            borderRadius: '15px',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+          }}>
+            <h3 style={{ fontSize: '24px', fontWeight: '700', color: '#1A202C', marginBottom: '20px' }}>
+              📅 Event Broadcasting
+            </h3>
+            <p style={{ color: '#718096', marginBottom: '30px' }}>
+              Create and broadcast school events, meetings, and announcements to all parents or specific classes.
+            </p>
+            <button style={{
+              padding: '15px 30px',
+              background: 'linear-gradient(135deg, #7C3AED, #4F46E5)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '10px',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: 'pointer'
+            }}>
+              Create New Event
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const AdminDashboard = () => (
   <div style={{ padding: '20px' }}>
