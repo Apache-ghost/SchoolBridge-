@@ -722,6 +722,8 @@ const AdminDashboard = ({ onLogout }) => {
         return renderOverview();
       case 'students':
         return renderStudents();
+      case 'parents':
+        return <ParentManagement />;
       case 'academics':
         return renderAcademics();
       case 'communication':
@@ -790,6 +792,13 @@ const AdminDashboard = ({ onLogout }) => {
             label="Students"
             icon="🎓"
             isActive={activeTab === 'students'}
+            onClick={setActiveTab}
+          />
+          <TabButton
+            id="parents"
+            label="Parents"
+            icon="👨‍👩‍👧‍👦"
+            isActive={activeTab === 'parents'}
             onClick={setActiveTab}
           />
           <TabButton

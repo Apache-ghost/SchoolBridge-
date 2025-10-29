@@ -197,26 +197,40 @@ class ParentService {
   // Get parent's children
   getParentChildren(parentId) {
     try {
-      const relationships = JSON.parse(localStorage.getItem(this.relationshipKey));
-      const studentService = require('./studentService').default;
+      const relationships = JSON.parse(localStorage.getItem(this.relationshipKey) || '[]');
       
       const parentRelationships = relationships.filter(rel => 
         rel.parentId === parentId && rel.isActive
       );
 
       const children = [];
-      parentRelationships.forEach(rel => {
-        const studentResult = studentService.getStudentById(rel.studentId);
-        if (studentResult.success) {
-          children.push({
-            ...studentResult.student,
-            relationshipType: rel.relationshipType,
-            isPrimary: rel.isPrimary,
-            permissions: rel.permissions,
-            linkedAt: rel.linkedAt
-          });
-        }
-      });
+      
+      // Import studentService dynamically
+      import('./studentService').then(({ default: studentService }) => {
+        parentRelationships.forEach(rel => {
+          const studentResult = studentService.getStudentById(rel.studentId);
+          if (studentResult.success) {
+            children.push({
+              ...studentResult.student,
+              relationshipType: rel.relationshipType,
+              isPrimary: rel.isPrimary,
+              permissions: rel.permissions,
+              linkedAt: rel.linkedAt
+            });
+          }
+        });
+      }).catch(console.error);
+
+      // For now, let's also check if we can get children from parent's data directly
+      const parents = JSON.parse(localStorage.getItem(this.storageKey) || '[]');
+      const parent = parents.find(p => p.id === parentId);
+      
+      if (parent && parent.children) {
+        return {
+          success: true,
+          children: parent.children
+        };
+      }
 
       return {
         success: true,
