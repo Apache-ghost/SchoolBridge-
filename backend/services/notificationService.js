@@ -1,4 +1,4 @@
-const SMSService = require('./smsService');
+const smsService = require('./smsService');
 const Parent = require('../models/parentSchema');
 const Student = require('../models/studentSchema');
 const AttendanceNotification = require('../models/attendanceNotificationSchema');
@@ -18,7 +18,7 @@ try {
 
 class NotificationService {
     constructor() {
-        this.smsService = new SMSService();
+        this.smsService = smsService;
     }
 
     // Send push notification via Firebase (optional)
