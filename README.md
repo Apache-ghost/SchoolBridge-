@@ -1,7 +1,10 @@
-#  SchoolBridge – A Digital Platform for Parent-Teacher Communication and Student Monitoring
+# SchoolBridge - Distributed Parent-Teacher Communication Platform
 
-##  Project Overview
-**SchoolBridge** is a digital communication platform that connects **schools, teachers, and parents** to promote effective collaboration and real-time student monitoring — even in areas with limited internet access.  
+**A comprehensive distributed system simulation for digital parent-teacher communication and student monitoring**
+
+## 🌟 Project Overview
+
+SchoolBridge is a sophisticated distributed communication platform designed to bridge the gap between parents and teachers through modern technology. The system provides real-time, reliable, and inclusive communication channels that work even in low-connectivity environments.  
 
 It ensures that no parent misses vital updates about their child’s education by providing **online and offline communication channels** (via web, SMS, and USSD).
 
