@@ -1,21 +1,33 @@
 """
-__init__.py for storage service package
-Makes the src directory a Python package
+Storage Service Package
+Modular storage system with organized class structure
 """
 
-from .storage_virtual_node import StorageVirtualNode, FileTransfer, FileChunk, TransferStatus
-from .storage_virtual_network import StorageVirtualNetwork, NetworkConnection, TransferRoute
+# Import all the main classes for easy access
+from .storage_node import StorageNode
+from .file_transfer import FileTransfer, TransferResult, TransferStatus
+from .network import StorageNetwork, NetworkConnection, NetworkStats
+from .storage_service_manager import StorageServiceManager
 
-__version__ = "1.0.0"
+# Legacy imports for backward compatibility
+from .storage_virtual_node import StorageVirtualNode
+from .storage_virtual_network import StorageVirtualNetwork
+
+__version__ = "2.0.0"
 __author__ = "SOP"
-__email__ = "student@university.edu"
 
 __all__ = [
-    "StorageVirtualNode",
-    "StorageVirtualNetwork", 
-    "FileTransfer",
-    "FileChunk",
-    "TransferStatus",
-    "NetworkConnection",
-    "TransferRoute"
+    # New modular classes
+    'StorageNode',
+    'FileTransfer',
+    'TransferResult', 
+    'TransferStatus',
+    'StorageNetwork',
+    'NetworkConnection',
+    'NetworkStats',
+    'StorageServiceManager',
+    
+    # Legacy classes
+    'StorageVirtualNode',
+    'StorageVirtualNetwork'
 ]

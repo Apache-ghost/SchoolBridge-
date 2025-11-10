@@ -1,502 +1,578 @@
 """
-Enhanced Virtual Network with TCP/IP simulation, dynamic bandwidth control, and advanced routing
-Supports SSH connections, distributed file management, and real-time network behavior simulation
-Author: SOP
-Date: November 2025
+Enhanced Virtual Network
+Advanced network with SSH, routing, bandwidth management, and dynamic behavior
 """
 
 import time
 import random
+import uuid
 import threading
-import ipaddress
 from typing import Dict, List, Optional, Tuple, Set
-from dataclasses import dataclass, field
-from collections import defaultdict, deque
-from enum import Enum, auto
-import heapq
-import json
+from enum import Enum
+from dataclasses import dataclass
+from datetime import datetime
+
+from .enhanced_storage_node import EnhancedStorageVirtualNode, NetworkProtocol, LinkQuality
 
 class NetworkTopology(Enum):
     """Network topology types"""
-    STAR = auto()
-    MESH = auto()
-    RING = auto()
-    TREE = auto()
-    HYBRID = auto()
-
-class LinkQuality(Enum):
-    """Network link quality indicators"""
-    EXCELLENT = auto()
-    GOOD = auto()
-    FAIR = auto()
-    POOR = auto()
-    UNSTABLE = auto()
+    MESH = "mesh"
+    STAR = "star"
+    RING = "ring"
+    BUS = "bus"
+    TREE = "tree"
 
 @dataclass
 class NetworkLink:
-    """Enhanced network link with dynamic properties"""
-    source_ip: str
-    dest_ip: str
+    """Represents a network link between two nodes"""
+    node1_id: str
+    node2_id: str
     bandwidth_mbps: int
     latency_ms: float
-    packet_loss_percent: float = 0.0
-    jitter_ms: float = 0.0
-    link_quality: LinkQuality = LinkQuality.GOOD
+    packet_loss_percent: float
+    quality: LinkQuality
     is_active: bool = True
-    utilization_percent: float = 0.0
-    created_at: float = field(default_factory=time.time)
     bytes_transferred: int = 0
-    packets_sent: int = 0
-    packets_lost: int = 0
-    
-    def calculate_effective_bandwidth(self) -> float:
-        """Calculate effective bandwidth considering link quality and utilization"""
-        base_bandwidth = self.bandwidth_mbps
-        
-        # Reduce bandwidth based on link quality
-        quality_factors = {
-            LinkQuality.EXCELLENT: 1.0,
-            LinkQuality.GOOD: 0.9,
-            LinkQuality.FAIR: 0.75,
-            LinkQuality.POOR: 0.5,
-            LinkQuality.UNSTABLE: 0.25
-        }
-        
-        quality_factor = quality_factors.get(self.link_quality, 0.5)
-        
-        # Reduce based on utilization
-        utilization_factor = max(0.1, 1.0 - (self.utilization_percent / 100))
-        
-        # Add some random variation for realistic behavior
-        variation_factor = random.uniform(0.8, 1.0)
-        
-        return base_bandwidth * quality_factor * utilization_factor * variation_factor
 
 @dataclass
-class RoutingTableEntry:
-    """Routing table entry for network paths"""
-    destination_ip: str
-    next_hop_ip: str
+class RoutingEntry:
+    """Routing table entry"""
+    destination: str
+    next_hop: str
     metric: int
     interface: str
-    is_active: bool = True
 
 @dataclass
-class NetworkPacket:
-    """Network packet simulation"""
-    packet_id: str
-    source_ip: str
-    dest_ip: str
-    size_bytes: int
-    protocol: str
-    ttl: int = 64
-    timestamp: float = field(default_factory=time.time)
-    path_taken: List[str] = field(default_factory=list)
+class SSHSession:
+    """SSH session details"""
+    session_id: str
+    source_node: str
+    target_node: str
+    username: str = "admin"
+    start_time: float = None
+    is_active: bool = True
 
 class AdvancedVirtualNetwork:
-    """Advanced virtual network with TCP/IP simulation and dynamic behavior"""
+    """
+    Advanced virtual network with comprehensive networking features
+    """
     
-    def __init__(self, network_name: str, topology: NetworkTopology = NetworkTopology.MESH):
+    def __init__(self, network_name: str = "AdvancedNet", 
+                 topology: NetworkTopology = NetworkTopology.MESH,
+                 silent: bool = False):
+        """Initialize advanced virtual network"""
         self.network_name = network_name
         self.topology = topology
+        self.silent = silent
         
-        # Network infrastructure
-        self.nodes: Dict[str, 'EnhancedStorageVirtualNode'] = {}
-        self.ip_to_node: Dict[str, str] = {}  # IP -> node_id mapping
-        self.network_links: Dict[str, NetworkLink] = {}  # link_id -> NetworkLink
+        # Core network components
+        self.nodes: Dict[str, EnhancedStorageVirtualNode] = {}
+        self.links: Dict[str, NetworkLink] = {}
+        self.routing_tables: Dict[str, Dict[str, RoutingEntry]] = {}
         
-        # Routing and traffic management
-        self.routing_tables: Dict[str, List[RoutingTableEntry]] = defaultdict(list)
-        self.bandwidth_allocation: Dict[str, int] = {}
-        self.traffic_patterns: Dict[str, deque] = defaultdict(lambda: deque(maxlen=100))
+        # Advanced features
+        self.ssh_sessions: Dict[str, SSHSession] = {}
+        self.active_transfers: Dict[str, Dict] = {}
+        self.bandwidth_monitor: Dict[str, float] = {}
         
-        # Network monitoring
-        self.packet_history: deque = deque(maxlen=1000)
-        self.performance_metrics: Dict[str, Dict] = defaultdict(dict)
-        self.congestion_points: Set[str] = set()
+        # Network statistics
+        self.total_packets_sent = 0
+        self.total_packets_received = 0
+        self.total_bytes_transferred = 0
+        self.network_uptime_start = time.time()
         
-        # SSH and remote access
-        self.ssh_connections: Dict[str, Dict] = {}
-        self.active_sessions: Dict[str, Dict] = {}
+        # Quality of Service
+        self.qos_policies: Dict[str, Dict] = {}
         
-        print(f"🌐 Advanced Virtual Network '{network_name}' created with {topology.name} topology")
+        print(f"🌐 Advanced network '{self.network_name}' initialized")
+        print(f"   📐 Topology: {self.topology.value}")
     
-    def add_enhanced_node(self, node: 'EnhancedStorageVirtualNode') -> bool:
-        """Add an enhanced storage node to the network"""
-        try:
-            # Validate IP address uniqueness
-            if node.ip_config.address in self.ip_to_node:
-                print(f"❌ IP address {node.ip_config.address} already exists in network")
-                return False
-            
-            # Add node to network
-            self.nodes[node.node_id] = node
-            self.ip_to_node[node.ip_config.address] = node.node_id
-            
-            # Initialize routing table for the node
-            self.routing_tables[node.node_id] = []
-            
-            # Create network links based on topology
-            self._create_topology_links(node)
-            
-            # Initialize bandwidth allocation
-            self.bandwidth_allocation[node.node_id] = node.bandwidth_mbps
-            
-            print(f"✅ Added enhanced node {node.node_id} ({node.ip_config.address}) to network")
-            print(f"   🔗 Created {len(self.network_links)} total links")
-            
-            return True
-            
-        except Exception as e:
-            print(f"❌ Error adding node to network: {e}")
+    def add_node(self, node: EnhancedStorageVirtualNode) -> bool:
+        """Add an enhanced node to the network"""
+        if node.node_id in self.nodes:
             return False
-    
-    def _create_topology_links(self, new_node: 'EnhancedStorageVirtualNode'):
-        """Create network links based on topology"""
-        existing_nodes = [node for node in self.nodes.values() if node.node_id != new_node.node_id]
         
-        if self.topology == NetworkTopology.MESH:
-            # Connect to all existing nodes (full mesh)
-            for existing_node in existing_nodes:
-                self._create_bidirectional_link(new_node, existing_node)
+        self.nodes[node.node_id] = node
+        self.routing_tables[node.node_id] = {}
         
+        # Auto-connect based on topology
+        if self.topology == NetworkTopology.MESH and len(self.nodes) > 1:
+            self._auto_connect_mesh(node.node_id)
         elif self.topology == NetworkTopology.STAR:
-            # Connect to first node as hub (if exists)
-            if existing_nodes:
-                hub_node = existing_nodes[0]
-                self._create_bidirectional_link(new_node, hub_node)
+            self._auto_connect_star(node.node_id)
         
-        elif self.topology == NetworkTopology.RING:
-            # Connect to previous node in ring
-            if existing_nodes:
-                last_node = existing_nodes[-1]
-                self._create_bidirectional_link(new_node, last_node)
-                
-                # Close ring if we have 3+ nodes
-                if len(existing_nodes) >= 2:
-                    first_node = existing_nodes[0]
-                    self._create_bidirectional_link(new_node, first_node)
-        
-        # Update routing tables after creating links
-        self._update_routing_tables()
+        if not self.silent:
+            print(f"✅ Added enhanced node {node.node_id} to network")
+        return True
     
-    def _create_bidirectional_link(self, node1: 'EnhancedStorageVirtualNode', node2: 'EnhancedStorageVirtualNode'):
-        """Create bidirectional network link between two nodes"""
-        # Determine link properties based on network conditions
-        base_bandwidth = min(node1.bandwidth_mbps, node2.bandwidth_mbps)
-        bandwidth_variation = random.uniform(0.8, 1.0)  # Add some variation
-        effective_bandwidth = int(base_bandwidth * bandwidth_variation)
+    def add_node_silent(self, node: EnhancedStorageVirtualNode) -> bool:
+        """Add node silently without output"""
+        if node.node_id in self.nodes:
+            return False
         
-        # Simulate network conditions
-        base_latency = random.uniform(1.0, 10.0)
-        packet_loss = random.uniform(0.0, 1.0)
-        jitter = random.uniform(0.1, 2.0)
+        self.nodes[node.node_id] = node
+        self.routing_tables[node.node_id] = {}
         
-        # Determine link quality based on conditions
-        if packet_loss < 0.1 and base_latency < 3.0:
+        # Auto-connect based on topology
+        if self.topology == NetworkTopology.MESH and len(self.nodes) > 1:
+            self._auto_connect_mesh_silent(node.node_id)
+        elif self.topology == NetworkTopology.STAR:
+            self._auto_connect_star_silent(node.node_id)
+        
+        return True
+    
+    def remove_node(self, node_id: str) -> bool:
+        """Remove a node from the network"""
+        if node_id not in self.nodes:
+            return False
+        
+        # Remove all links involving this node
+        links_to_remove = []
+        for link_id, link in self.links.items():
+            if link.node1_id == node_id or link.node2_id == node_id:
+                links_to_remove.append(link_id)
+        
+        for link_id in links_to_remove:
+            del self.links[link_id]
+        
+        # Close SSH sessions
+        sessions_to_close = []
+        for session_id, session in self.ssh_sessions.items():
+            if session.source_node == node_id or session.target_node == node_id:
+                sessions_to_close.append(session_id)
+        
+        for session_id in sessions_to_close:
+            self.close_ssh_session(session_id)
+        
+        del self.nodes[node_id]
+        if node_id in self.routing_tables:
+            del self.routing_tables[node_id]
+        
+        self._update_routing_tables()
+        print(f"✅ Removed node {node_id} from network")
+        return True
+    
+    def create_link(self, node1_id: str, node2_id: str, bandwidth_mbps: int = 1000,
+                   latency_ms: float = 5.0, packet_loss: float = 0.1) -> bool:
+        """Create a network link between two nodes"""
+        if node1_id not in self.nodes or node2_id not in self.nodes:
+            return False
+        
+        if node1_id == node2_id:
+            return False
+        
+        link_id = f"{min(node1_id, node2_id)}-{max(node1_id, node2_id)}"
+        
+        if link_id in self.links:
+            return False
+        
+        # Determine link quality based on parameters
+        if bandwidth_mbps >= 1000 and latency_ms < 10 and packet_loss < 0.5:
             quality = LinkQuality.EXCELLENT
-        elif packet_loss < 0.5 and base_latency < 6.0:
+        elif bandwidth_mbps >= 500 and latency_ms < 20 and packet_loss < 1.0:
             quality = LinkQuality.GOOD
-        elif packet_loss < 1.0 and base_latency < 10.0:
+        elif bandwidth_mbps >= 100 and latency_ms < 50 and packet_loss < 2.0:
             quality = LinkQuality.FAIR
         else:
             quality = LinkQuality.POOR
         
-        # Create link from node1 to node2
-        link_id_1_2 = f"{node1.ip_config.address}->{node2.ip_config.address}"
-        self.network_links[link_id_1_2] = NetworkLink(
-            source_ip=node1.ip_config.address,
-            dest_ip=node2.ip_config.address,
-            bandwidth_mbps=effective_bandwidth,
-            latency_ms=base_latency,
+        link = NetworkLink(
+            node1_id=node1_id,
+            node2_id=node2_id,
+            bandwidth_mbps=bandwidth_mbps,
+            latency_ms=latency_ms,
             packet_loss_percent=packet_loss,
-            jitter_ms=jitter,
-            link_quality=quality
+            quality=quality
         )
         
-        # Create link from node2 to node1
-        link_id_2_1 = f"{node2.ip_config.address}->{node1.ip_config.address}"
-        self.network_links[link_id_2_1] = NetworkLink(
-            source_ip=node2.ip_config.address,
-            dest_ip=node1.ip_config.address,
-            bandwidth_mbps=effective_bandwidth,
-            latency_ms=base_latency,
-            packet_loss_percent=packet_loss,
-            jitter_ms=jitter,
-            link_quality=quality
-        )
-        
-        print(f"🔗 Created bidirectional link between {node1.ip_config.address} and {node2.ip_config.address}")
-        print(f"   📡 Bandwidth: {effective_bandwidth} Mbps, Latency: {base_latency:.1f}ms, Quality: {quality.name}")
-    
-    def _update_routing_tables(self):
-        """Update routing tables for all nodes using shortest path algorithm"""
-        for source_node_id in self.nodes:
-            source_ip = self.nodes[source_node_id].ip_config.address
-            
-            # Clear existing routing table
-            self.routing_tables[source_node_id].clear()
-            
-            # Calculate shortest paths to all other nodes
-            distances, previous = self._dijkstra_shortest_path(source_ip)
-            
-            for dest_ip, distance in distances.items():
-                if dest_ip != source_ip and distance != float('inf'):
-                    # Find next hop in the path
-                    next_hop = self._get_next_hop(source_ip, dest_ip, previous)
-                    
-                    if next_hop:
-                        entry = RoutingTableEntry(
-                            destination_ip=dest_ip,
-                            next_hop_ip=next_hop,
-                            metric=int(distance),
-                            interface="eth0"
-                        )
-                        self.routing_tables[source_node_id].append(entry)
-    
-    def _dijkstra_shortest_path(self, source_ip: str) -> Tuple[Dict[str, float], Dict[str, Optional[str]]]:
-        """Implement Dijkstra's algorithm for shortest path routing"""
-        # Initialize distances and previous nodes
-        distances = {ip: float('inf') for ip in self.ip_to_node.keys()}
-        previous = {ip: None for ip in self.ip_to_node.keys()}
-        distances[source_ip] = 0
-        
-        # Priority queue for processing nodes
-        pq = [(0, source_ip)]
-        visited = set()
-        
-        while pq:
-            current_distance, current_ip = heapq.heappop(pq)
-            
-            if current_ip in visited:
-                continue
-            
-            visited.add(current_ip)
-            
-            # Check all neighbors
-            for link_id, link in self.network_links.items():
-                if link.source_ip == current_ip and link.is_active:
-                    neighbor_ip = link.dest_ip
-                    
-                    # Calculate edge weight (based on latency and bandwidth)
-                    edge_weight = link.latency_ms + (1000 / link.bandwidth_mbps)  # Favor high bandwidth, low latency
-                    
-                    new_distance = current_distance + edge_weight
-                    
-                    if new_distance < distances[neighbor_ip]:
-                        distances[neighbor_ip] = new_distance
-                        previous[neighbor_ip] = current_ip
-                        heapq.heappush(pq, (new_distance, neighbor_ip))
-        
-        return distances, previous
-    
-    def _get_next_hop(self, source_ip: str, dest_ip: str, previous: Dict[str, Optional[str]]) -> Optional[str]:
-        """Get the next hop IP address for routing from source to destination"""
-        if dest_ip not in previous or previous[dest_ip] is None:
-            return None
-        
-        # Trace back the path to find the next hop
-        current = dest_ip
-        path = []
-        
-        while current is not None:
-            path.append(current)
-            current = previous[current]
-        
-        path.reverse()  # Now path goes from source to dest
-        
-        if len(path) >= 2 and path[0] == source_ip:
-            return path[1]  # Return the next hop
-        
-        return None
-    
-    def simulate_dynamic_bandwidth_change(self, percentage_change: float = 0.1):
-        """Simulate dynamic bandwidth changes in the network"""
-        affected_links = random.sample(list(self.network_links.values()), 
-                                     k=min(3, len(self.network_links)))
-        
-        for link in affected_links:
-            old_bandwidth = link.bandwidth_mbps
-            
-            # Random bandwidth change
-            change_factor = random.uniform(1 - percentage_change, 1 + percentage_change)
-            new_bandwidth = max(1, int(old_bandwidth * change_factor))
-            
-            link.bandwidth_mbps = new_bandwidth
-            
-            # Adjust link quality based on new bandwidth
-            if new_bandwidth < old_bandwidth * 0.7:
-                if link.link_quality == LinkQuality.EXCELLENT:
-                    link.link_quality = LinkQuality.GOOD
-                elif link.link_quality == LinkQuality.GOOD:
-                    link.link_quality = LinkQuality.FAIR
-            elif new_bandwidth > old_bandwidth * 1.3:
-                if link.link_quality == LinkQuality.FAIR:
-                    link.link_quality = LinkQuality.GOOD
-                elif link.link_quality == LinkQuality.GOOD:
-                    link.link_quality = LinkQuality.EXCELLENT
-            
-            print(f"📊 Link {link.source_ip}->{link.dest_ip}: Bandwidth changed from {old_bandwidth} to {new_bandwidth} Mbps (Quality: {link.link_quality.name})")
-        
-        # Update routing tables after bandwidth changes
+        self.links[link_id] = link
         self._update_routing_tables()
+        
+        if not self.silent:
+            print(f"🔗 Created link {node1_id} ↔ {node2_id} ({bandwidth_mbps} Mbps, {quality.value})")
+        return True
     
-    def establish_ssh_connection(self, source_ip: str, dest_ip: str, username: str = "admin") -> Optional[str]:
+    def create_link_silent(self, node1_id: str, node2_id: str, bandwidth_mbps: int = 1000,
+                          latency_ms: float = 5.0, packet_loss: float = 0.1) -> bool:
+        """Create a network link silently without output"""
+        if node1_id not in self.nodes or node2_id not in self.nodes:
+            return False
+        
+        if node1_id == node2_id:
+            return False
+        
+        link_id = f"{min(node1_id, node2_id)}-{max(node1_id, node2_id)}"
+        
+        if link_id in self.links:
+            return False
+        
+        # Determine link quality based on parameters
+        if bandwidth_mbps >= 1000 and latency_ms < 10 and packet_loss < 0.5:
+            quality = LinkQuality.EXCELLENT
+        elif bandwidth_mbps >= 500 and latency_ms < 20 and packet_loss < 1.0:
+            quality = LinkQuality.GOOD
+        elif bandwidth_mbps >= 100 and latency_ms < 50 and packet_loss < 2.0:
+            quality = LinkQuality.FAIR
+        else:
+            quality = LinkQuality.POOR
+        
+        link = NetworkLink(
+            node1_id=node1_id,
+            node2_id=node2_id,
+            bandwidth_mbps=bandwidth_mbps,
+            latency_ms=latency_ms,
+            packet_loss_percent=packet_loss,
+            quality=quality
+        )
+        
+        self.links[link_id] = link
+        self._update_routing_tables()
+        return True
+    
+    def remove_link(self, node1_id: str, node2_id: str) -> bool:
+        """Remove a network link"""
+        link_id = f"{min(node1_id, node2_id)}-{max(node1_id, node2_id)}"
+        
+        if link_id not in self.links:
+            return False
+        
+        del self.links[link_id]
+        self._update_routing_tables()
+        
+        print(f"🔌 Removed link {node1_id} ↔ {node2_id}")
+        return True
+    
+    def establish_ssh_connection(self, source_node: str, target_node: str, 
+                               username: str = "admin") -> Optional[str]:
         """Establish SSH connection between nodes"""
-        if source_ip not in self.ip_to_node or dest_ip not in self.ip_to_node:
+        if source_node not in self.nodes or target_node not in self.nodes:
             return None
         
-        # Check if route exists
-        source_node_id = self.ip_to_node[source_ip]
-        route_exists = any(entry.destination_ip == dest_ip for entry in self.routing_tables[source_node_id])
-        
-        if not route_exists:
-            print(f"❌ No route from {source_ip} to {dest_ip}")
+        # Check if nodes are reachable
+        if not self._are_nodes_connected(source_node, target_node):
+            print(f"❌ SSH: No route from {source_node} to {target_node}")
             return None
         
-        # Create SSH session
-        session_id = f"ssh-{source_ip}-{dest_ip}-{int(time.time())}"
+        session_id = str(uuid.uuid4())[:8]
+        session = SSHSession(
+            session_id=session_id,
+            source_node=source_node,
+            target_node=target_node,
+            username=username,
+            start_time=time.time()
+        )
         
-        self.ssh_connections[session_id] = {
-            "source_ip": source_ip,
-            "dest_ip": dest_ip,
-            "username": username,
-            "established_at": time.time(),
-            "is_active": True,
-            "commands_executed": []
-        }
+        self.ssh_sessions[session_id] = session
         
-        print(f"🔐 SSH connection established: {username}@{dest_ip} from {source_ip} (session: {session_id})")
+        print(f"🔐 SSH session established: {source_node} -> {target_node} (session: {session_id})")
         return session_id
+    
+    def close_ssh_session(self, session_id: str) -> bool:
+        """Close SSH session"""
+        if session_id not in self.ssh_sessions:
+            return False
+        
+        session = self.ssh_sessions[session_id]
+        session.is_active = False
+        del self.ssh_sessions[session_id]
+        
+        print(f"🔐 SSH session closed: {session_id}")
+        return True
     
     def execute_remote_command(self, session_id: str, command: str) -> Optional[str]:
         """Execute command on remote node via SSH"""
-        if session_id not in self.ssh_connections:
+        if session_id not in self.ssh_sessions:
             return None
         
-        session = self.ssh_connections[session_id]
-        if not session["is_active"]:
+        session = self.ssh_sessions[session_id]
+        if not session.is_active:
             return None
         
-        dest_ip = session["dest_ip"]
-        dest_node_id = self.ip_to_node[dest_ip]
-        dest_node = self.nodes[dest_node_id]
+        target_node = self.nodes[session.target_node]
+        result = target_node.terminal.execute_command(command)
         
-        # Execute command on destination node
-        result = dest_node.execute_terminal_command(command)
-        
-        # Log command execution
-        session["commands_executed"].append({
-            "command": command,
-            "executed_at": time.time(),
-            "result_length": len(result)
-        })
-        
-        print(f"🖥️ Remote command executed on {dest_ip}: {command}")
+        print(f"🔐 Remote command executed on {session.target_node}: {command}")
         return result
     
-    def get_network_topology_info(self) -> Dict:
-        """Get comprehensive network topology information"""
+    def transfer_file_with_monitoring(self, source_node_id: str, target_node_id: str,
+                                    filename: str, file_size: int, 
+                                    protocol: NetworkProtocol = NetworkProtocol.TCP) -> Optional[str]:
+        """Transfer file with comprehensive monitoring"""
+        if source_node_id not in self.nodes or target_node_id not in self.nodes:
+            return None
+        
+        source_node = self.nodes[source_node_id]
+        target_node = self.nodes[target_node_id]
+        
+        # Check if source has the file (or create it for demo)
+        if not source_node.has_file(filename):
+            source_node.store_file(filename, file_size, f"data_for_{filename}")
+        
+        # Check target capacity
+        if target_node.storage_usage + file_size > target_node.storage_capacity:
+            print(f"❌ {target_node_id}: Insufficient storage space")
+            return None
+        
+        # Get route and calculate transfer parameters
+        route = self._find_route(source_node_id, target_node_id)
+        if not route:
+            print(f"❌ No route from {source_node_id} to {target_node_id}")
+            return None
+        
+        # Calculate effective bandwidth and latency
+        effective_bandwidth, total_latency = self._calculate_route_performance(route)
+        
+        # Create transfer record
+        transfer_id = str(uuid.uuid4())[:8]
+        transfer_info = {
+            'transfer_id': transfer_id,
+            'source': source_node_id,
+            'target': target_node_id,
+            'filename': filename,
+            'file_size': file_size,
+            'protocol': protocol,
+            'route': route,
+            'effective_bandwidth': effective_bandwidth,
+            'total_latency': total_latency,
+            'start_time': time.time(),
+            'status': 'in_progress',
+            'bytes_transferred': 0
+        }
+        
+        self.active_transfers[transfer_id] = transfer_info
+        
+        # Simulate the transfer
+        self._simulate_file_transfer(transfer_info)
+        
+        return transfer_id
+    
+    def _simulate_file_transfer(self, transfer_info: Dict) -> None:
+        """Simulate file transfer with realistic timing"""
+        def transfer_worker():
+            file_size = transfer_info['file_size']
+            bandwidth = transfer_info['effective_bandwidth']
+            latency = transfer_info['total_latency']
+            
+            # Calculate transfer time (MB/s conversion)
+            transfer_time = (file_size / (bandwidth / 8)) + (latency / 1000)
+            
+            # Simulate progressive transfer
+            steps = 20
+            for step in range(steps + 1):
+                if transfer_info['status'] == 'cancelled':
+                    return
+                
+                progress = step / steps
+                transfer_info['bytes_transferred'] = int(file_size * progress)
+                
+                if step < steps:
+                    time.sleep(transfer_time / steps)
+            
+            # Complete the transfer
+            source_node = self.nodes[transfer_info['source']]
+            target_node = self.nodes[transfer_info['target']]
+            
+            file_data = source_node.files[transfer_info['filename']]['data']
+            target_node.store_file(transfer_info['filename'], file_size, file_data)
+            
+            # Update statistics
+            source_node.transfer_count += 1
+            target_node.transfer_count += 1
+            source_node.bytes_transferred += file_size
+            target_node.bytes_transferred += file_size
+            
+            self.total_bytes_transferred += file_size
+            
+            transfer_info['status'] = 'completed'
+            transfer_info['end_time'] = time.time()
+            transfer_info['actual_duration'] = transfer_info['end_time'] - transfer_info['start_time']
+            transfer_info['actual_speed'] = file_size / transfer_info['actual_duration']
+            
+            print(f"✅ Transfer completed: {transfer_info['filename']} "
+                  f"({file_size}MB in {transfer_info['actual_duration']:.2f}s "
+                  f"at {transfer_info['actual_speed']:.2f} MB/s)")
+            
+            # Remove from active transfers after a delay
+            time.sleep(2)
+            if transfer_info['transfer_id'] in self.active_transfers:
+                del self.active_transfers[transfer_info['transfer_id']]
+        
+        threading.Thread(target=transfer_worker, daemon=True).start()
+    
+    def _find_route(self, source: str, target: str) -> Optional[List[str]]:
+        """Find route between two nodes using Dijkstra's algorithm"""
+        if source == target:
+            return [source]
+        
+        # Simple shortest path - in real implementation would use proper Dijkstra
+        if self._direct_link_exists(source, target):
+            return [source, target]
+        
+        # Try one-hop routes through other nodes
+        for intermediate in self.nodes:
+            if (intermediate != source and intermediate != target and
+                self._direct_link_exists(source, intermediate) and
+                self._direct_link_exists(intermediate, target)):
+                return [source, intermediate, target]
+        
+        return None
+    
+    def _direct_link_exists(self, node1: str, node2: str) -> bool:
+        """Check if direct link exists between two nodes"""
+        link_id = f"{min(node1, node2)}-{max(node1, node2)}"
+        return link_id in self.links and self.links[link_id].is_active
+    
+    def _calculate_route_performance(self, route: List[str]) -> Tuple[float, float]:
+        """Calculate effective bandwidth and total latency for a route"""
+        if len(route) < 2:
+            return 1000.0, 0.0  # Default values
+        
+        min_bandwidth = float('inf')
+        total_latency = 0.0
+        
+        for i in range(len(route) - 1):
+            node1, node2 = route[i], route[i + 1]
+            link_id = f"{min(node1, node2)}-{max(node1, node2)}"
+            
+            if link_id in self.links:
+                link = self.links[link_id]
+                min_bandwidth = min(min_bandwidth, link.bandwidth_mbps)
+                total_latency += link.latency_ms
+            else:
+                # Fallback if link not found
+                min_bandwidth = min(min_bandwidth, 100)
+                total_latency += 10
+        
+        # Apply efficiency factor
+        efficiency = random.uniform(0.7, 0.95)
+        effective_bandwidth = min_bandwidth * efficiency
+        
+        return effective_bandwidth, total_latency
+    
+    def _are_nodes_connected(self, node1: str, node2: str) -> bool:
+        """Check if two nodes are connected (directly or indirectly)"""
+        return self._find_route(node1, node2) is not None
+    
+    def _update_routing_tables(self) -> None:
+        """Update routing tables for all nodes"""
+        # Simple routing table update - in reality would implement proper routing protocol
+        for node_id in self.nodes:
+            self.routing_tables[node_id] = {}
+            
+            # Add direct connections
+            for link_id, link in self.links.items():
+                if link.node1_id == node_id:
+                    self.routing_tables[node_id][link.node2_id] = RoutingEntry(
+                        destination=link.node2_id,
+                        next_hop=link.node2_id,
+                        metric=1,
+                        interface=f"eth0"
+                    )
+                elif link.node2_id == node_id:
+                    self.routing_tables[node_id][link.node1_id] = RoutingEntry(
+                        destination=link.node1_id,
+                        next_hop=link.node1_id,
+                        metric=1,
+                        interface=f"eth0"
+                    )
+    
+    def _auto_connect_mesh(self, new_node_id: str) -> None:
+        """Auto-connect new node in mesh topology"""
+        for existing_node_id in self.nodes:
+            if existing_node_id != new_node_id:
+                # Random bandwidth between 100-1000 Mbps
+                bandwidth = random.choice([100, 500, 1000, 1500])
+                self.create_link(new_node_id, existing_node_id, bandwidth)
+    
+    def _auto_connect_star(self, new_node_id: str) -> None:
+        """Auto-connect new node in star topology"""
+        # First node becomes the hub
+        if len(self.nodes) == 1:
+            return
+        
+        hub_node = list(self.nodes.keys())[0]
+        if new_node_id != hub_node:
+            self.create_link(hub_node, new_node_id)
+    
+    def _auto_connect_mesh_silent(self, new_node_id: str) -> None:
+        """Auto-connect new node in mesh topology silently"""
+        for existing_node_id in self.nodes:
+            if existing_node_id != new_node_id:
+                # Random bandwidth between 100-1000 Mbps
+                bandwidth = random.choice([100, 500, 1000, 1500])
+                self.create_link_silent(new_node_id, existing_node_id, bandwidth)
+    
+    def _auto_connect_star_silent(self, new_node_id: str) -> None:
+        """Auto-connect new node in star topology silently"""
+        # First node becomes the hub
+        if len(self.nodes) == 1:
+            return
+        
+        hub_node = list(self.nodes.keys())[0]
+        if new_node_id != hub_node:
+            self.create_link_silent(hub_node, new_node_id)
+    
+    def get_network_stats(self) -> Dict:
+        """Get comprehensive network statistics"""
+        uptime = time.time() - self.network_uptime_start
+        active_links = sum(1 for link in self.links.values() if link.is_active)
+        online_nodes = sum(1 for node in self.nodes.values() if node.is_online)
+        
         return {
-            "network_name": self.network_name,
-            "topology": self.topology.name,
-            "total_nodes": len(self.nodes),
-            "total_links": len(self.network_links),
-            "active_links": sum(1 for link in self.network_links.values() if link.is_active),
-            "ssh_connections": len([s for s in self.ssh_connections.values() if s["is_active"]]),
-            "nodes": [
-                {
-                    "node_id": node.node_id,
-                    "ip_address": node.ip_config.address,
-                    "bandwidth_mbps": node.bandwidth_mbps,
-                    "storage_usage_percent": (node.used_storage / node.total_storage) * 100,
-                    "active_transfers": len(node.active_transfers)
-                }
-                for node in self.nodes.values()
-            ],
-            "links": [
-                {
-                    "source_ip": link.source_ip,
-                    "dest_ip": link.dest_ip,
-                    "bandwidth_mbps": link.bandwidth_mbps,
-                    "latency_ms": link.latency_ms,
-                    "quality": link.link_quality.name,
-                    "utilization_percent": link.utilization_percent,
-                    "is_active": link.is_active
-                }
-                for link in self.network_links.values()
-            ]
+            'network_name': self.network_name,
+            'topology': self.topology.value,
+            'uptime': uptime,
+            'total_nodes': len(self.nodes),
+            'online_nodes': online_nodes,
+            'total_links': len(self.links),
+            'active_links': active_links,
+            'active_transfers': len(self.active_transfers),
+            'ssh_sessions': len(self.ssh_sessions),
+            'total_bytes_transferred': self.total_bytes_transferred,
+            'packets_sent': self.total_packets_sent,
+            'packets_received': self.total_packets_received
         }
     
-    def detect_online_files(self) -> Dict[str, List[Dict]]:
-        """Detect files that are online and accessible across the network"""
-        online_files = defaultdict(list)
+    def monitor_bandwidth_usage(self) -> Dict[str, float]:
+        """Monitor current bandwidth usage per link"""
+        usage = {}
+        for link_id, link in self.links.items():
+            # Calculate current usage based on active transfers
+            current_usage = 0
+            for transfer in self.active_transfers.values():
+                if (link.node1_id in transfer['route'] and 
+                    link.node2_id in transfer['route']):
+                    current_usage += transfer['effective_bandwidth']
+            
+            usage_percent = (current_usage / link.bandwidth_mbps) * 100
+            usage[link_id] = min(usage_percent, 100)
         
+        return usage
+    
+    def print_network_topology(self) -> None:
+        """Print visual representation of network topology"""
+        print(f"\n🌐 Network Topology: {self.network_name} ({self.topology.value})")
+        print("="*60)
+        
+        print("📦 NODES:")
         for node_id, node in self.nodes.items():
-            for file_id, transfer in node.stored_files.items():
-                file_info = {
-                    "file_id": file_id,
-                    "file_name": transfer.file_name,
-                    "size_mb": transfer.total_size / (1024 * 1024),
-                    "node_ip": node.ip_config.address,
-                    "chunks": len(transfer.chunks),
-                    "status": transfer.status.name,
-                    "stored_at": getattr(transfer, 'completed_at', time.time())
-                }
-                online_files[file_id].append(file_info)
+            print(f"  {node}")
         
-        return dict(online_files)
-    
-    def start_network_monitoring(self, interval: float = 5.0):
-        """Start continuous network monitoring"""
-        def monitor():
-            while True:
-                # Update link utilizations
-                for link in self.network_links.values():
-                    # Simulate varying network utilization
-                    link.utilization_percent = random.uniform(10, 80)
-                    
-                    # Check for congestion
-                    if link.utilization_percent > 70:
-                        self.congestion_points.add(f"{link.source_ip}->{link.dest_ip}")
-                    else:
-                        self.congestion_points.discard(f"{link.source_ip}->{link.dest_ip}")
-                
-                # Occasionally change network conditions
-                if random.random() < 0.3:  # 30% chance
-                    self.simulate_dynamic_bandwidth_change(0.1)
-                
-                time.sleep(interval)
+        print(f"\n🔗 LINKS ({len(self.links)} total):")
+        for link_id, link in self.links.items():
+            status = "🟢" if link.is_active else "🔴"
+            print(f"  {status} {link.node1_id} ↔ {link.node2_id}: "
+                  f"{link.bandwidth_mbps}Mbps, {link.latency_ms}ms, {link.quality.value}")
         
-        monitor_thread = threading.Thread(target=monitor, daemon=True)
-        monitor_thread.start()
-        print(f"📊 Network monitoring started (interval: {interval}s)")
-    
-    def get_network_performance_report(self) -> Dict:
-        """Generate comprehensive network performance report"""
-        total_bandwidth = sum(link.bandwidth_mbps for link in self.network_links.values() if link.is_active)
-        average_latency = sum(link.latency_ms for link in self.network_links.values() if link.is_active) / max(1, len(self.network_links))
+        if self.ssh_sessions:
+            print(f"\n🔐 SSH SESSIONS ({len(self.ssh_sessions)} active):")
+            for session_id, session in self.ssh_sessions.items():
+                print(f"  {session_id}: {session.source_node} -> {session.target_node}")
         
-        congestion_percentage = len(self.congestion_points) / max(1, len(self.network_links)) * 100
+        if self.active_transfers:
+            print(f"\n🚀 ACTIVE TRANSFERS ({len(self.active_transfers)}):")
+            for transfer_id, transfer in self.active_transfers.items():
+                progress = (transfer['bytes_transferred'] / transfer['file_size']) * 100
+                print(f"  {transfer_id}: {transfer['filename']} ({progress:.1f}%)")
         
-        link_quality_distribution = {}
-        for quality in LinkQuality:
-            count = sum(1 for link in self.network_links.values() if link.link_quality == quality)
-            link_quality_distribution[quality.name] = count
-        
-        return {
-            "network_summary": {
-                "total_nodes": len(self.nodes),
-                "total_links": len(self.network_links),
-                "total_bandwidth_mbps": total_bandwidth,
-                "average_latency_ms": round(average_latency, 2),
-                "congestion_percentage": round(congestion_percentage, 2),
-                "active_ssh_sessions": len([s for s in self.ssh_connections.values() if s["is_active"]])
-            },
-            "link_quality_distribution": link_quality_distribution,
-            "congestion_points": list(self.congestion_points),
-            "topology": self.topology.name
-        }
-    
-    def __str__(self) -> str:
-        return f"AdvancedVirtualNetwork({self.network_name}: {len(self.nodes)} nodes, {len(self.network_links)} links, {self.topology.name} topology)"
+        print("="*60)

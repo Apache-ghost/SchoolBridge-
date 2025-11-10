@@ -66,9 +66,7 @@ class StorageServiceOrchestrator:
         print("🌐 FEATURE 1: IP ADDRESSING SYSTEM")
         print("="*60)
         
-        # Create network silently
-        network = AdvancedVirtualNetwork("IP_Demo_Net", NetworkTopology.MESH, silent=True)
-        self.networks["IP_Demo_Net"] = network
+        network = self.create_advanced_network("IP_Demo_Net", NetworkTopology.MESH)
         
         # Create nodes with IP addresses
         node_configs = [
@@ -77,22 +75,21 @@ class StorageServiceOrchestrator:
             {"node_id": "server03", "ip_address": "192.168.1.30"}
         ]
         
-        print("🖥️ Creating enhanced storage nodes...")
         for config in node_configs:
             node = self.create_enhanced_node(config)
-            network.add_node_silent(node)
+            network.add_node(node)
             self.nodes[node.node_id] = node
-            print(f"   ✅ {config['node_id']} → {config['ip_address']}")
         
         # Create network links
-        print("🔗 Establishing network connections...")
-        network.create_link_silent("server01", "server02", bandwidth_mbps=1000, latency_ms=2.5)
-        network.create_link_silent("server02", "server03", bandwidth_mbps=1500, latency_ms=1.8)
-        network.create_link_silent("server01", "server03", bandwidth_mbps=800, latency_ms=3.2)
-        print("   ✅ All nodes connected in mesh topology")
+        network.create_link("server01", "server02", bandwidth_mbps=1000, latency_ms=2.5)
+        network.create_link("server02", "server03", bandwidth_mbps=1500, latency_ms=1.8)
+        network.create_link("server01", "server03", bandwidth_mbps=800, latency_ms=3.2)
         
         print("✅ IP addressing system configured successfully!")
-        print(f"📊 Network: {len(network.nodes)} nodes ready")
+        print(f"📊 Network: {len(network.nodes)} nodes with unique IPs")
+        
+        for node_id, node in network.nodes.items():
+            print(f"   🖥️ {node_id}: {node.ip_config.ip_address}")
     
     def demonstrate_fast_operations(self):
         """Demonstrate fast file operations"""
@@ -109,9 +106,9 @@ class StorageServiceOrchestrator:
         print("🚀 Performing concurrent file operations...")
         
         operations = [
-            ("server01", "config.dat", 50),
-            ("server02", "database.sql", 75), 
-            ("server03", "backup.zip", 100)
+            ("server01", "test_file_1.txt", 50),
+            ("server02", "test_file_2.txt", 75), 
+            ("server03", "test_file_3.txt", 100)
         ]
         
         start_time = time.time()
@@ -119,13 +116,13 @@ class StorageServiceOrchestrator:
         for node_id, filename, size in operations:
             if node_id in network.nodes:
                 node = network.nodes[node_id]
-                node.store_file_silent(filename, size, f"data_{filename}")
-                print(f"   📁 {filename} → {node_id} ({size}MB)")
+                node.store_file(filename, size, f"fast_data_{filename}")
+                node.simulate_cpu_load(0.5)  # Simulate processing
         
         end_time = time.time()
         
         print(f"✅ Completed {len(operations)} operations in {end_time - start_time:.2f} seconds")
-        print(f"📈 Average operation speed: {(end_time - start_time)/len(operations):.3f}s per operation")
+        print(f"📈 Average operation time: {(end_time - start_time)/len(operations):.3f}s per operation")
     
     def demonstrate_transfer_statistics(self):
         """Demonstrate comprehensive transfer statistics"""
@@ -140,34 +137,27 @@ class StorageServiceOrchestrator:
         
         # Perform transfers with monitoring
         transfers = [
-            ("server01", "server02", "data.log", 150),
-            ("server02", "server03", "backup.sql", 200),
-            ("server03", "server01", "report.pdf", 125)
+            ("server01", "server02", "stats_test_1.dat", 150),
+            ("server02", "server03", "stats_test_2.dat", 200),
+            ("server03", "server01", "stats_test_3.dat", 125)
         ]
         
-        print("🔄 Starting monitored file transfers...")
+        print("🔄 Initiating monitored file transfers...")
         
-        completed_transfers = []
         for source, target, filename, size in transfers:
-            print(f"   📤 {filename} ({size}MB): {source} → {target}")
-            # Simulate transfer with realistic timing
-            duration = size / 85  # ~85 MB/s average speed
-            speed = size / duration
-            completed_transfers.append((filename, size, duration, speed))
-            time.sleep(0.3)  # Brief delay between transfers
+            transfer_id = network.transfer_file_with_monitoring(source, target, filename, size)
+            if transfer_id:
+                print(f"📋 Transfer {transfer_id}: {filename} ({size}MB)")
         
-        time.sleep(1)
+        # Show real-time statistics
+        time.sleep(2)
+        stats = network.get_network_stats()
         
-        print(f"\n📈 TRANSFER STATISTICS:")
-        total_data = sum(transfer[1] for transfer in completed_transfers)
-        avg_speed = sum(transfer[3] for transfer in completed_transfers) / len(completed_transfers)
-        
-        for filename, size, duration, speed in completed_transfers:
-            print(f"   ✅ {filename}: {speed:.1f} MB/s ({duration:.2f}s)")
-        
-        print(f"   � Total data transferred: {total_data} MB")
-        print(f"   ⚡ Average transfer speed: {avg_speed:.1f} MB/s")
-        print(f"   🌐 Network efficiency: 95.2%")
+        print(f"\n📈 NETWORK STATISTICS:")
+        print(f"   📦 Total bytes transferred: {stats['total_bytes_transferred']} MB")
+        print(f"   🔄 Active transfers: {stats['active_transfers']}")
+        print(f"   ⏱️ Network uptime: {stats['uptime']:.1f} seconds")
+        print(f"   📡 Total nodes: {stats['total_nodes']}")
     
     def demonstrate_tcpip_network(self):
         """Demonstrate TCP/IP network design"""
@@ -175,9 +165,7 @@ class StorageServiceOrchestrator:
         print("🌐 FEATURE 4: TCP/IP NETWORK DESIGN")
         print("="*60)
         
-        # Create TCP/IP network silently
-        network = AdvancedVirtualNetwork("TCP_Demo_Net", NetworkTopology.STAR, silent=True)
-        self.networks["TCP_Demo_Net"] = network
+        network = self.create_advanced_network("TCP_Demo_Net", NetworkTopology.STAR)
         
         # Create network with TCP/IP stack
         tcp_nodes = [
@@ -187,26 +175,26 @@ class StorageServiceOrchestrator:
             {"node_id": "client03", "ip_address": "10.0.0.30"}
         ]
         
-        print("🌐 Creating TCP/IP star network...")
         for config in tcp_nodes:
             node = self.create_enhanced_node(config)
-            network.add_node_silent(node)
+            network.add_node(node)
             self.nodes[node.node_id] = node
-            print(f"   ✅ {config['node_id']} → {config['ip_address']}")
         
-        print("� Establishing TCP connections...")
+        print("✅ TCP/IP network established with star topology")
+        print("📊 Network configuration:")
+        
         for node_id, node in network.nodes.items():
+            print(f"   🖥️ {node_id}: {node.ip_config.ip_address}")
+            
+            # Create TCP connections
             if node_id != "gateway":
-                conn_id = node.create_tcp_connection_silent("10.0.0.1", 80)
-                print(f"   🔗 {node_id} → gateway:80")
-        
-        print("✅ TCP/IP network operational with star topology")
-        print(f"� {len(network.nodes)} nodes connected via TCP/IP")
+                conn_id = node.create_tcp_connection("10.0.0.1", 80)
+                print(f"   🔗 TCP connection: {conn_id}")
     
     def demonstrate_virtual_network(self):
         """Demonstrate virtual network for IP addresses"""
         print("\n" + "="*60)
-        print("🌐 FEATURE 4: VIRTUAL NETWORK FOR IP ADDRESSES")
+        print("🌐 FEATURE 5: VIRTUAL NETWORK FOR IP ADDRESSES")
         print("="*60)
         
         # Create multiple virtual networks
@@ -216,19 +204,17 @@ class StorageServiceOrchestrator:
             ("Testing_Net", NetworkTopology.STAR, "192.168.3.0/24")
         ]
         
-        print("🌐 Creating multiple virtual networks...")
         for net_name, topology, subnet in networks:
-            network = AdvancedVirtualNetwork(net_name, topology, silent=True)
-            self.networks[net_name] = network
-            print(f"   ✅ {net_name} ({topology.value}) → {subnet}")
+            network = self.create_advanced_network(net_name, topology)
+            print(f"🌐 Created {net_name} ({topology.value}) - {subnet}")
         
-        print("✅ Virtual network infrastructure established!")
-        print(f"📊 Total networks available: {len(self.networks)}")
+        print("✅ Multiple virtual networks created successfully!")
+        print(f"📊 Total networks: {len(self.networks)}")
     
     def demonstrate_file_exchange_simulation(self):
         """Demonstrate file exchange simulation"""
         print("\n" + "="*60)
-        print("📁 FEATURE 5: FILE EXCHANGE SIMULATION")
+        print("📁 FEATURE 6: FILE EXCHANGE SIMULATION")
         print("="*60)
         
         if "TCP_Demo_Net" not in self.networks:
@@ -238,23 +224,21 @@ class StorageServiceOrchestrator:
         
         # Simulate realistic file exchange scenarios
         exchanges = [
-            ("client01", "gateway", "report.pdf", 25, "HTTP"),
-            ("gateway", "client02", "update.zip", 150, "FTP"),
-            ("client02", "client03", "data.xlsx", 10, "TCP"),
-            ("client03", "client01", "backup.tar", 200, "TCP")
+            ("client01", "gateway", "upload_document.pdf", 25, NetworkProtocol.HTTP),
+            ("gateway", "client02", "software_update.zip", 150, NetworkProtocol.FTP),
+            ("client02", "client03", "shared_data.xlsx", 10, NetworkProtocol.TCP),
+            ("client03", "client01", "backup_file.tar", 200, NetworkProtocol.TCP)
         ]
         
-        print("🔄 Simulating file exchange protocols...")
+        print("🔄 Simulating realistic file exchange scenarios...")
         
         for source, target, filename, size, protocol in exchanges:
-            # Simulate transfer
-            duration = size / 92  # ~92 MB/s average
-            print(f"   � {protocol}: {filename} ({size}MB) {source} → {target}")
-            print(f"   ✅ Completed in {duration:.2f}s at {size/duration:.1f} MB/s")
-            time.sleep(0.3)
+            transfer_id = network.transfer_file_with_monitoring(source, target, filename, size, protocol)
+            if transfer_id:
+                print(f"📋 {protocol.value.upper()} transfer: {filename} ({source} → {target})")
+            time.sleep(0.5)
         
-        print("✅ Multi-protocol file exchange operational!")
-        print("🌐 HTTP, FTP, and TCP protocols fully supported")
+        print("✅ File exchange simulation completed!")
     
     def demonstrate_transfer_time_counting(self):
         """Demonstrate system transfer time counting"""
@@ -296,140 +280,34 @@ class StorageServiceOrchestrator:
     def demonstrate_interactive_terminals(self):
         """Demonstrate interactive terminals for each node"""
         print("\n" + "="*60)
-        print("💻 FEATURE 5: INTERACTIVE NODE TERMINALS")
+        print("💻 FEATURE 9: INTERACTIVE NODE TERMINALS")
         print("="*60)
         
         if not self.nodes:
             print("❌ No nodes available for terminal demonstration")
             return
         
-        print("🖥️ Available nodes for terminal access:")
+        print("🖥️ Interactive terminals available for all nodes:")
+        
         for node_id, node in self.nodes.items():
-            print(f"   🖥️ {node_id} → {node.ip_config.ip_address}")
-        
-        print("\n🎮 You can now connect to any node terminal...")
-        
-        while True:
-            print("\n" + "-"*50)
-            print("📋 NODE TERMINAL ACCESS MENU")
-            print("-"*50)
+            print(f"\n💻 Terminal for {node_id} ({node.ip_config.ip_address}):")
             
-            # List available nodes
-            node_list = list(self.nodes.keys())
-            for i, node_id in enumerate(node_list, 1):
-                node = self.nodes[node_id]
-                print(f"{i}. Connect to {node_id} ({node.ip_config.ip_address})")
+            # Demonstrate various terminal commands
+            test_commands = ["ls", "pwd", "df", "ps", "ifconfig", "stats"]
             
-            print(f"{len(node_list) + 1}. Back to main menu")
-            print("-"*50)
-            
-            try:
-                choice = input("👉 Select node to connect (or 'back'): ").strip().lower()
-                
-                if choice == 'back' or choice == str(len(node_list) + 1):
-                    break
-                
-                # Handle numeric choice
-                try:
-                    node_index = int(choice) - 1
-                    if 0 <= node_index < len(node_list):
-                        selected_node_id = node_list[node_index]
-                        self.open_node_terminal(selected_node_id)
-                    else:
-                        print("❌ Invalid node number")
-                except ValueError:
-                    # Handle node name choice
-                    if choice in self.nodes:
-                        self.open_node_terminal(choice)
-                    else:
-                        print("❌ Node not found")
-                        
-            except KeyboardInterrupt:
-                print("\n👋 Returning to main menu...")
-                break
+            for cmd in test_commands:
+                result = node.terminal.execute_command(cmd)
+                print(f"   $ {cmd}")
+                # Show first few lines of output
+                output_lines = result.split('\n')[:3]
+                for line in output_lines:
+                    if line.strip():
+                        print(f"   {line}")
+                if len(result.split('\n')) > 3:
+                    print("   ...")
+                print()
         
-        print("✅ Terminal access session completed")
-    
-    def open_node_terminal(self, node_id: str):
-        """Open interactive terminal for a specific node"""
-        if node_id not in self.nodes:
-            print(f"❌ Node {node_id} not found")
-            return
-        
-        node = self.nodes[node_id]
-        
-        print(f"\n🔗 Connecting to {node_id} terminal...")
-        print("⏳ Establishing secure connection...")
-        time.sleep(1)  # Simulate connection time
-        print("✅ Connected successfully!")
-        
-        print(f"\n" + "="*60)
-        print(f"💻 {node_id.upper()} TERMINAL SESSION")
-        print(f"🌐 IP: {node.ip_config.ip_address}")
-        print(f"💾 Storage: {node.storage_usage}GB / {node.storage_capacity}GB")
-        print(f"🔋 Status: {'Online' if node.is_online else 'Offline'}")
-        print("="*60)
-        print("Type 'help' for available commands, 'exit' to disconnect")
-        print("="*60)
-        
-        while True:
-            try:
-                # Show prompt like a real terminal
-                prompt = f"{node_id}@{node.ip_config.ip_address}:~$ "
-                command = input(prompt).strip()
-                
-                if command.lower() == 'exit':
-                    print(f"🔌 Disconnecting from {node_id}...")
-                    print("👋 Terminal session ended")
-                    break
-                elif command.lower() == 'help':
-                    self.show_terminal_help()
-                elif command == '':
-                    continue
-                else:
-                    # Execute command on the node
-                    result = node.terminal.execute_command(command)
-                    print(result)
-                    
-            except KeyboardInterrupt:
-                print(f"\n🔌 Disconnecting from {node_id}...")
-                print("👋 Terminal session ended")
-                break
-            except Exception as e:
-                print(f"❌ Terminal error: {e}")
-    
-    def show_terminal_help(self):
-        """Show available terminal commands"""
-        print("\n📋 Available Terminal Commands:")
-        print("="*40)
-        print("📁 File Operations:")
-        print("   ls [path]     - List directory contents")
-        print("   pwd          - Show current directory")
-        print("   cat <file>   - Display file contents")
-        print("   touch <file> - Create empty file")
-        print("   rm <file>    - Remove file")
-        print("")
-        print("💻 System Information:")
-        print("   ps           - Show running processes")
-        print("   top          - Show system resources")
-        print("   df           - Show disk usage")
-        print("   free         - Show memory usage")
-        print("   uptime       - Show system uptime")
-        print("")
-        print("🌐 Network Commands:")
-        print("   ifconfig     - Show network interfaces")
-        print("   ping <ip>    - Ping remote host")
-        print("   netstat      - Show network connections")
-        print("")
-        print("🔧 Node Specific:")
-        print("   stats        - Show node statistics")
-        print("   files        - List stored files")
-        print("   connections  - Show TCP connections")
-        print("")
-        print("📖 Other:")
-        print("   help         - Show this help")
-        print("   exit         - Disconnect from terminal")
-        print("="*40)
+        print("✅ Interactive terminal demonstration completed!")
     
     def demonstrate_distributed_file_storage(self):
         """Demonstrate files distributed across multiple nodes"""
@@ -597,43 +475,38 @@ class StorageServiceOrchestrator:
         print("🎉 All 13 enhanced features successfully demonstrated!")
 
 def run_comprehensive_demo():
-    """Run comprehensive demonstration of all enhanced features"""
+    """Run comprehensive demonstration of all 13 enhanced features"""
     print("🎬 ENHANCED STORAGE AS A SERVICE - COMPREHENSIVE DEMO")
     print("="*80)
     
     orchestrator = StorageServiceOrchestrator()
     
-    # Demonstrate core features
-    orchestrator.demonstrate_ip_addressing()
-    orchestrator.demonstrate_fast_operations()
-    orchestrator.demonstrate_transfer_statistics()
-    orchestrator.demonstrate_virtual_network()
-    orchestrator.demonstrate_file_exchange_simulation()
-    orchestrator.demonstrate_interactive_terminals()
+    # Demonstrate all 13 features in sequence
+    features = [
+        ("IP Addressing", orchestrator.demonstrate_ip_addressing),
+        ("Fast Operations", orchestrator.demonstrate_fast_operations),
+        ("Transfer Statistics", orchestrator.demonstrate_transfer_statistics),
+        ("TCP/IP Network Design", orchestrator.demonstrate_tcpip_network),
+        ("Virtual Network for IPs", orchestrator.demonstrate_virtual_network),
+        ("File Exchange Simulation", orchestrator.demonstrate_file_exchange_simulation),
+        ("Transfer Time Counting", orchestrator.demonstrate_transfer_time_counting),
+        ("Interactive Terminals", orchestrator.demonstrate_interactive_terminals),
+        ("Distributed File Storage", orchestrator.demonstrate_distributed_file_storage),
+        ("SSH Remote Connections", orchestrator.demonstrate_ssh_connections),
+        ("Online File Detection", orchestrator.demonstrate_online_file_detection),
+        ("Main Linkage System", orchestrator.demonstrate_main_linkage_system)
+    ]
     
-    # Final system summary
-    print("\n" + "="*60)
-    print("🎉 SYSTEM STATUS SUMMARY")
-    print("="*60)
-    print(f"🌐 Networks created: {len(orchestrator.networks)}")
-    print(f"🖥️ Virtual nodes active: {len(orchestrator.nodes)}")
+    for i, (feature_name, demo_func) in enumerate(features, 1):
+        print(f"\n🎯 DEMONSTRATING FEATURE {i}: {feature_name.upper()}")
+        try:
+            demo_func()
+            time.sleep(1)  # Brief pause between demonstrations
+        except Exception as e:
+            print(f"❌ Error in {feature_name}: {e}")
     
-    total_storage = sum(node.storage_capacity for node in orchestrator.nodes.values())
-    used_storage = sum(node.storage_usage for node in orchestrator.nodes.values())
-    print(f"💾 Storage managed: {total_storage}GB total, {used_storage}GB used")
-    
-    online_nodes = sum(1 for node in orchestrator.nodes.values() if node.is_online)
-    health = (online_nodes / len(orchestrator.nodes)) * 100 if orchestrator.nodes else 0
-    print(f"🏥 System health: {health:.1f}% ({online_nodes}/{len(orchestrator.nodes)} nodes online)")
-    
-    print("\n✅ Enhanced storage system fully operational!")
-    print("🔧 Each node behaves like a real virtual computer")
-    print("🌐 SSH connections enable remote access between nodes")
-    print("📊 Real-time statistics show transfer speeds and performance")
-    print("⚡ Dynamic bandwidth control from 4 Mbps to 16 Mbps available")
-    print("🎮 Interactive terminals provide full command-line access")
-    
-    print(f"\n🎊 ALL ENHANCED FEATURES DEMONSTRATED SUCCESSFULLY!")
+    print(f"\n🎊 COMPREHENSIVE DEMO COMPLETED!")
+    print(f"✅ All {len(features)} enhanced features demonstrated successfully!")
 
 def run_basic_demo():
     """Run a basic demo with essential features"""
@@ -645,8 +518,6 @@ def run_basic_demo():
     # Quick demo of core features
     orchestrator.demonstrate_ip_addressing()
     orchestrator.demonstrate_fast_operations()
-    
-    print("\n🎮 Interactive terminal access is now available!")
     orchestrator.demonstrate_interactive_terminals()
     
     print("\n✅ Basic demo completed!")
@@ -662,19 +533,20 @@ def run_interactive_mode():
         print("\n" + "="*60)
         print("📋 ENHANCED STORAGE SERVICE MENU")
         print("="*60)
-        print("1. IP Addressing & Network Setup")
-        print("2. Fast File Operations") 
-        print("3. Transfer Statistics & Monitoring")
-        print("4. Virtual Networks & Topologies")
-        print("5. Interactive Node Terminals")
-        print("6. File Exchange Protocols")
-        print("7. Complete System Demo")
-        print("8. Create Custom Network")
+        print("1. IP Addressing Demo")
+        print("2. Fast Operations Demo") 
+        print("3. Transfer Statistics Demo")
+        print("4. TCP/IP Network Demo")
+        print("5. Interactive Terminals Demo")
+        print("6. SSH Connections Demo")
+        print("7. File Detection Demo")
+        print("8. Run All Features Demo")
+        print("9. Create Custom Network")
         print("0. Exit")
         print("="*60)
         
         try:
-            choice = input("👉 Enter your choice (0-8): ").strip()
+            choice = input("👉 Enter your choice (0-9): ").strip()
             
             if choice == '1':
                 orchestrator.demonstrate_ip_addressing()
@@ -683,15 +555,17 @@ def run_interactive_mode():
             elif choice == '3':
                 orchestrator.demonstrate_transfer_statistics()
             elif choice == '4':
-                orchestrator.demonstrate_virtual_network()
+                orchestrator.demonstrate_tcpip_network()
             elif choice == '5':
                 orchestrator.demonstrate_interactive_terminals()
             elif choice == '6':
-                orchestrator.demonstrate_file_exchange_simulation()
+                orchestrator.demonstrate_ssh_connections()
             elif choice == '7':
+                orchestrator.demonstrate_online_file_detection()
+            elif choice == '8':
                 run_comprehensive_demo()
                 break
-            elif choice == '8':
+            elif choice == '9':
                 # Custom network creation
                 net_name = input("Enter network name: ").strip()
                 if net_name:
@@ -711,7 +585,7 @@ def run_interactive_mode():
                 print("👋 Goodbye!")
                 break
             else:
-                print("❌ Invalid choice. Please select 0-8.")
+                print("❌ Invalid choice. Please select 0-9.")
                 
         except KeyboardInterrupt:
             print("\n👋 Goodbye!")

@@ -1,631 +1,510 @@
 """
-Enhanced Storage Virtual Node with IP addressing, TCP/IP simulation, and terminal interface
-Supports distributed file storage, SSH connections, and real-time statistics
-Author: SOP
-Date: November 2025
+Enhanced Storage Virtual Node
+Advanced storage node with IP addressing, TCP/IP simulation, SSH capabilities, and interactive terminals
 """
 
 import time
-import math
-import hashlib
-import threading
-import socket
 import random
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Union, Set, Tuple
-from enum import Enum, auto
-import ipaddress
-from collections import defaultdict, deque
+import uuid
+import threading
+from typing import Dict, List, Optional, Tuple, Union, Any
+from enum import Enum
+from dataclasses import dataclass
+from datetime import datetime
 
 class TransferStatus(Enum):
-    """Status enumeration for file transfers"""
-    PENDING = auto()
-    IN_PROGRESS = auto()
-    COMPLETED = auto()
-    FAILED = auto()
-    PAUSED = auto()
-    DISTRIBUTED = auto()
+    """Status of a file transfer"""
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
 
 class NetworkProtocol(Enum):
-    """Network protocol types"""
-    TCP = auto()
-    UDP = auto()
-    SSH = auto()
-    FTP = auto()
+    """Network protocols"""
+    TCP = "tcp"
+    UDP = "udp"
+    HTTP = "http"
+    SSH = "ssh"
+    FTP = "ftp"
+
+class LinkQuality(Enum):
+    """Network link quality levels"""
+    EXCELLENT = "excellent"
+    GOOD = "good"
+    FAIR = "fair"
+    POOR = "poor"
 
 @dataclass
-class IPAddress:
-    """IP address configuration for nodes"""
-    address: str
+class IPConfiguration:
+    """IP configuration for a node"""
+    ip_address: str
     subnet_mask: str = "255.255.255.0"
     gateway: str = "192.168.1.1"
+    dns_servers: List[str] = None
     
     def __post_init__(self):
-        # Validate IP address
-        try:
-            ipaddress.IPv4Address(self.address)
-            ipaddress.IPv4Address(self.subnet_mask)
-            ipaddress.IPv4Address(self.gateway)
-        except ipaddress.AddressValueError:
-            raise ValueError(f"Invalid IP address configuration")
+        if self.dns_servers is None:
+            self.dns_servers = ["8.8.8.8", "8.8.4.4"]
 
 @dataclass
 class TCPConnection:
-    """TCP connection simulation"""
-    source_ip: str
-    dest_ip: str
-    source_port: int
-    dest_port: int
-    protocol: NetworkProtocol
-    bandwidth_mbps: int
-    latency_ms: float
-    established_at: float = field(default_factory=time.time)
+    """TCP connection details"""
+    connection_id: str
+    local_port: int
+    remote_ip: str
+    remote_port: int
+    state: str = "ESTABLISHED"
     bytes_sent: int = 0
     bytes_received: int = 0
-    is_active: bool = True
-
-@dataclass
-class FileChunk:
-    """Enhanced file chunk with distribution information"""
-    chunk_id: int
-    size: int
-    checksum: str
-    status: TransferStatus = TransferStatus.PENDING
-    stored_nodes: List[str] = field(default_factory=list)  # Multiple nodes can store same chunk
-    transfer_time: Optional[float] = None
-    retry_count: int = 0
-    replication_factor: int = 2  # How many nodes should store this chunk
-
-@dataclass
-class TransferStatistics:
-    """Real-time transfer statistics"""
-    file_id: str
-    total_size: int
-    transferred_bytes: int = 0
-    start_time: float = field(default_factory=time.time)
-    end_time: Optional[float] = None
-    current_speed_mbps: float = 0.0
-    average_speed_mbps: float = 0.0
-    estimated_time_remaining: float = 0.0
-    chunks_completed: int = 0
-    chunks_total: int = 0
-    active_connections: int = 0
-    nodes_involved: Set[str] = field(default_factory=set)
-
-@dataclass
-class SSHSession:
-    """SSH session simulation"""
-    session_id: str
-    source_ip: str
-    dest_ip: str
-    username: str
-    established_at: float = field(default_factory=time.time)
-    is_authenticated: bool = False
-    commands_executed: List[str] = field(default_factory=list)
-    current_directory: str = "/"
 
 class NodeTerminal:
-    """Interactive terminal interface for each node"""
+    """Interactive terminal interface for a storage node"""
     
-    def __init__(self, node_id: str, ip_address: str, node_ref):
-        self.node_id = node_id
-        self.ip_address = ip_address
-        self.node_ref = node_ref
+    def __init__(self, node):
+        self.node = node
         self.current_directory = "/"
-        self.ssh_sessions: Dict[str, SSHSession] = {}
-        self.command_history: List[str] = []
-        
-    def execute_command(self, command: str, ssh_session_id: Optional[str] = None) -> str:
-        """Execute a command on this node's terminal"""
+        self.command_history = []
+        self.is_active = False
+        self.session_id = str(uuid.uuid4())[:8]
+    
+    def execute_command(self, command: str) -> str:
+        """Execute a terminal command and return output"""
         self.command_history.append(command)
         
-        # Parse command
-        parts = command.strip().split()
-        if not parts:
+        if not command.strip():
             return ""
         
-        cmd = parts[0].lower()
-        args = parts[1:] if len(parts) > 1 else []
+        cmd_parts = command.strip().split()
+        cmd = cmd_parts[0].lower()
         
-        # Handle different commands
-        if cmd == "help":
-            return self._cmd_help()
-        elif cmd == "ls":
-            return self._cmd_ls(args)
+        if cmd == "ls":
+            return self._cmd_ls()
+        elif cmd == "pwd":
+            return self.current_directory
+        elif cmd == "cd":
+            if len(cmd_parts) > 1:
+                return self._cmd_cd(cmd_parts[1])
+            return self.current_directory
         elif cmd == "df":
             return self._cmd_df()
         elif cmd == "ps":
             return self._cmd_ps()
-        elif cmd == "netstat":
-            return self._cmd_netstat()
         elif cmd == "top":
             return self._cmd_top()
-        elif cmd == "ssh":
-            return self._cmd_ssh(args)
-        elif cmd == "scp":
-            return self._cmd_scp(args)
-        elif cmd == "find":
-            return self._cmd_find(args)
-        elif cmd == "cat":
-            return self._cmd_cat(args)
-        elif cmd == "ping":
-            return self._cmd_ping(args)
         elif cmd == "ifconfig":
             return self._cmd_ifconfig()
-        elif cmd == "transfer":
-            return self._cmd_transfer(args)
+        elif cmd == "netstat":
+            return self._cmd_netstat()
+        elif cmd == "ping":
+            if len(cmd_parts) > 1:
+                return self._cmd_ping(cmd_parts[1])
+            return "Usage: ping <ip_address>"
+        elif cmd == "ssh":
+            if len(cmd_parts) > 1:
+                return self._cmd_ssh(cmd_parts[1])
+            return "Usage: ssh <ip_address>"
         elif cmd == "stats":
             return self._cmd_stats()
+        elif cmd == "files":
+            return self._cmd_files()
+        elif cmd == "connections":
+            return self._cmd_connections()
+        elif cmd == "cat":
+            if len(cmd_parts) > 1:
+                return self._cmd_cat(cmd_parts[1])
+            return "Usage: cat <filename>"
+        elif cmd == "touch":
+            if len(cmd_parts) > 1:
+                return self._cmd_touch(cmd_parts[1])
+            return "Usage: touch <filename>"
+        elif cmd == "rm":
+            if len(cmd_parts) > 1:
+                return self._cmd_rm(cmd_parts[1])
+            return "Usage: rm <filename>"
+        elif cmd == "free":
+            return self._cmd_free()
+        elif cmd == "uptime":
+            return self._cmd_uptime()
+        elif cmd == "help":
+            return self._cmd_help()
+        elif cmd == "history":
+            return "\n".join(f"{i}: {cmd}" for i, cmd in enumerate(self.command_history[-10:], 1))
+        elif cmd == "clear":
+            return "CLEAR_SCREEN"
+        elif cmd == "exit":
+            self.is_active = False
+            return "Terminal session ended"
         else:
             return f"Command not found: {cmd}. Type 'help' for available commands."
     
-    def _cmd_help(self) -> str:
-        """Show available commands"""
-        return """Available Commands:
-        
-System Information:
-  df          - Show disk space usage
-  ps          - Show running processes  
-  top         - Show system performance
-  ifconfig    - Show network configuration
-  netstat     - Show network connections
-  
-File Operations:
-  ls [path]   - List directory contents
-  cat <file>  - Display file contents
-  find <name> - Search for files
-  
-Network Operations:
-  ping <ip>   - Test network connectivity
-  ssh <ip>    - Connect to remote node
-  scp <file> <dest> - Secure copy file
-  
-Storage Operations:
-  transfer <file> <dest> - Transfer file to destination
-  stats       - Show transfer statistics
-  
-General:
-  help        - Show this help message
-"""
+    def _cmd_ls(self) -> str:
+        """List files in current directory"""
+        if self.current_directory == "/":
+            return "bin  etc  home  usr  var  tmp  files"
+        elif self.current_directory == "/files":
+            files = list(self.node.files.keys())
+            return "\n".join(files) if files else "Directory empty"
+        else:
+            return "Permission denied"
     
-    def _cmd_ls(self, args: List[str]) -> str:
-        """List files on this node"""
-        files = list(self.node_ref.stored_files.keys())
-        if not files:
-            return "No files stored on this node"
-        
-        result = "Files stored on this node:\n"
-        for file_id in files:
-            transfer = self.node_ref.stored_files[file_id]
-            size_mb = transfer.total_size / (1024 * 1024)
-            result += f"  {transfer.file_name} ({size_mb:.1f}MB) - {file_id[:8]}...\n"
-        
-        return result
+    def _cmd_cd(self, path: str) -> str:
+        """Change directory"""
+        if path == "/":
+            self.current_directory = "/"
+            return "/"
+        elif path == "files" or path == "/files":
+            self.current_directory = "/files"
+            return "/files"
+        elif path == "..":
+            if self.current_directory == "/files":
+                self.current_directory = "/"
+            return self.current_directory
+        else:
+            return f"Directory not found: {path}"
     
     def _cmd_df(self) -> str:
-        """Show disk space usage"""
-        total_gb = self.node_ref.total_storage / (1024**3)
-        used_gb = self.node_ref.used_storage / (1024**3)
-        available_gb = (self.node_ref.total_storage - self.node_ref.used_storage) / (1024**3)
-        usage_percent = (self.node_ref.used_storage / self.node_ref.total_storage) * 100
-        
-        return f"""Filesystem     Size   Used  Avail  Use%
-/dev/storage  {total_gb:.1f}G  {used_gb:.1f}G  {available_gb:.1f}G  {usage_percent:.1f}%"""
+        """Show disk usage"""
+        used_percent = (self.node.storage_usage / self.node.storage_capacity) * 100
+        return (f"Filesystem      Size  Used Avail Use% Mounted on\n"
+                f"/dev/sda1      {self.node.storage_capacity}G  {self.node.storage_usage}G  "
+                f"{self.node.storage_capacity - self.node.storage_usage}G  {used_percent:.1f}%  /")
     
     def _cmd_ps(self) -> str:
         """Show running processes"""
-        return f"""  PID COMMAND
-    1 init
-   42 storage-daemon
-   {len(self.node_ref.active_transfers) + 100} transfer-manager
-  {len(self.node_ref.tcp_connections) + 200} network-daemon
-  999 terminal-shell"""
+        return ("PID   COMMAND\n"
+                "1     init\n"
+                "123   storage_daemon\n"
+                "456   network_manager\n"
+                f"789   terminal_{self.session_id}")
+    
+    def _cmd_top(self) -> str:
+        """Show system resource usage"""
+        return (f"Load average: {random.uniform(0.1, 2.0):.2f}\n"
+                f"CPU usage: {self.node.cpu_usage}/{self.node.cpu_capacity} cores\n"
+                f"Memory: {self.node.memory_usage}/{self.node.memory_capacity} GB\n"
+                f"Storage: {self.node.storage_usage}/{self.node.storage_capacity} GB\n"
+                f"Network: {len(self.node.tcp_connections)} active connections")
+    
+    def _cmd_ifconfig(self) -> str:
+        """Show network interface configuration"""
+        return (f"eth0: {self.node.ip_config.ip_address}\n"
+                f"      netmask {self.node.ip_config.subnet_mask}\n"
+                f"      gateway {self.node.ip_config.gateway}\n"
+                f"      RX bytes: {random.randint(1000000, 10000000)}\n"
+                f"      TX bytes: {random.randint(1000000, 10000000)}")
     
     def _cmd_netstat(self) -> str:
         """Show network connections"""
-        result = "Active connections:\n"
-        result += "Proto Local Address    Foreign Address    State\n"
-        
-        for conn_id, conn in self.node_ref.tcp_connections.items():
-            state = "ESTABLISHED" if conn.is_active else "CLOSED"
-            result += f"TCP   {conn.source_ip}:{conn.source_port}  {conn.dest_ip}:{conn.dest_port}  {state}\n"
-        
-        return result
+        output = "Proto Local Address      Foreign Address     State\n"
+        for conn_id, conn in self.node.tcp_connections.items():
+            output += f"tcp   {self.node.ip_config.ip_address}:{conn.local_port}    "
+            output += f"{conn.remote_ip}:{conn.remote_port}     {conn.state}\n"
+        return output
     
-    def _cmd_top(self) -> str:
-        """Show system performance"""
-        cpu_usage = min(100, len(self.node_ref.active_transfers) * 10 + random.randint(5, 15))
-        memory_usage = (self.node_ref.used_storage / self.node_ref.total_storage) * 100
-        
-        return f"""System Performance:
-CPU Usage: {cpu_usage}%
-Memory Usage: {memory_usage:.1f}%
-Active Transfers: {len(self.node_ref.active_transfers)}
-Network Connections: {len(self.node_ref.tcp_connections)}
-Uptime: {time.time() - self.node_ref.startup_time:.0f} seconds"""
+    def _cmd_ping(self, target_ip: str) -> str:
+        """Simulate ping command"""
+        latency = random.uniform(1, 50)
+        return (f"PING {target_ip}\n"
+                f"64 bytes from {target_ip}: time={latency:.1f}ms\n"
+                f"--- {target_ip} ping statistics ---\n"
+                f"1 packets transmitted, 1 received, 0% packet loss")
     
-    def _cmd_ifconfig(self) -> str:
-        """Show network configuration"""
-        return f"""eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
-        inet {self.node_ref.ip_config.address}  netmask {self.node_ref.ip_config.subnet_mask}  broadcast 192.168.1.255
-        ether 02:42:ac:11:00:02  txqueuelen 0  (Ethernet)
-        RX packets 1234  bytes 567890 (554.5 KiB)
-        TX packets 5678  bytes 901234 (880.1 KiB)"""
-    
-    def _cmd_ping(self, args: List[str]) -> str:
-        """Ping another node"""
-        if not args:
-            return "Usage: ping <ip_address>"
-        
-        target_ip = args[0]
-        # Simulate ping
-        latency = random.uniform(1.0, 10.0)
-        return f"PING {target_ip}: 64 bytes from {target_ip}: icmp_seq=1 ttl=64 time={latency:.1f} ms"
-    
-    def _cmd_ssh(self, args: List[str]) -> str:
-        """SSH to another node"""
-        if not args:
-            return "Usage: ssh <ip_address>"
-        
-        target_ip = args[0]
-        session_id = hashlib.md5(f"{self.ip_address}-{target_ip}-{time.time()}".encode()).hexdigest()[:8]
-        
-        session = SSHSession(
-            session_id=session_id,
-            source_ip=self.ip_address,
-            dest_ip=target_ip,
-            username="admin"
-        )
-        
-        self.ssh_sessions[session_id] = session
-        return f"SSH connection established to {target_ip} (session: {session_id})"
-    
-    def _cmd_transfer(self, args: List[str]) -> str:
-        """Initiate file transfer"""
-        if len(args) < 2:
-            return "Usage: transfer <file_name> <dest_ip>"
-        
-        file_name = args[0]
-        dest_ip = args[1]
-        return f"Initiating transfer of {file_name} to {dest_ip}..."
+    def _cmd_ssh(self, target_ip: str) -> str:
+        """Simulate SSH connection"""
+        return f"Connecting to {target_ip}...\nConnection established (simulated)"
     
     def _cmd_stats(self) -> str:
-        """Show transfer statistics"""
-        stats = self.node_ref.get_enhanced_metrics()
-        return f"""Node Statistics:
-Total Active Transfers: {stats['transfers']['active_transfers']}
-Stored Files: {stats['transfers']['stored_files']}
-Storage Usage: {stats['storage']['usage_percentage']:.1f}%
-Network Connections: {stats['network']['active_connections']}
-Uptime: {stats['performance']['uptime_seconds']:.0f} seconds
-Average Speed: {stats['performance']['average_transfer_speed_mbps']:.1f} Mbps"""
+        """Show node statistics"""
+        uptime = time.time() - self.node.start_time
+        return (f"Node Statistics for {self.node.node_id}:\n"
+                f"Uptime: {uptime:.1f} seconds\n"
+                f"Files stored: {len(self.node.files)}\n"
+                f"Total transfers: {self.node.transfer_count}\n"
+                f"CPU load: {(self.node.cpu_usage/self.node.cpu_capacity)*100:.1f}%\n"
+                f"Memory usage: {(self.node.memory_usage/self.node.memory_capacity)*100:.1f}%\n"
+                f"Storage usage: {(self.node.storage_usage/self.node.storage_capacity)*100:.1f}%")
     
-    def _cmd_find(self, args: List[str]) -> str:
-        """Find files"""
-        if not args:
-            return "Usage: find <filename_pattern>"
+    def _cmd_files(self) -> str:
+        """List all files stored on this node"""
+        if not self.node.files:
+            return "No files stored on this node"
         
-        pattern = args[0].lower()
-        matches = []
+        output = "Files stored on this node:\n"
+        output += "Name                Size      Stored At\n"
+        output += "-" * 40 + "\n"
         
-        for file_id, transfer in self.node_ref.stored_files.items():
-            if pattern in transfer.file_name.lower():
-                matches.append(f"{transfer.file_name} ({file_id[:8]}...)")
+        for filename, file_info in self.node.files.items():
+            stored_time = time.strftime("%Y-%m-%d %H:%M", time.localtime(file_info['stored_at']))
+            output += f"{filename:<15} {file_info['size']:<8}MB {stored_time}\n"
         
-        if matches:
-            return "Found files:\n" + "\n".join(matches)
+        return output
+    
+    def _cmd_connections(self) -> str:
+        """Show TCP connections"""
+        if not self.node.tcp_connections:
+            return "No active TCP connections"
+        
+        output = "Active TCP Connections:\n"
+        output += "Local               Remote              State\n"
+        output += "-" * 50 + "\n"
+        
+        for conn_id, conn in self.node.tcp_connections.items():
+            local = f"{self.node.ip_config.ip_address}:{conn.local_port}"
+            remote = f"{conn.remote_ip}:{conn.remote_port}"
+            output += f"{local:<18} {remote:<18} {conn.state}\n"
+        
+        return output
+    
+    def _cmd_cat(self, filename: str) -> str:
+        """Display file contents"""
+        if filename not in self.node.files:
+            return f"cat: {filename}: No such file"
+        
+        file_info = self.node.files[filename]
+        if file_info['data']:
+            return f"Contents of {filename}:\n{file_info['data']}"
         else:
-            return f"No files matching '{pattern}' found"
+            return f"File {filename} ({file_info['size']}MB) - Binary data"
     
-    def _cmd_cat(self, args: List[str]) -> str:
-        """Display file contents (simulated)"""
-        if not args:
-            return "Usage: cat <filename>"
+    def _cmd_touch(self, filename: str) -> str:
+        """Create an empty file"""
+        if filename in self.node.files:
+            # Update timestamp
+            self.node.files[filename]['stored_at'] = time.time()
+            return f"Updated timestamp for {filename}"
+        else:
+            # Create new empty file
+            self.node.files[filename] = {
+                'size': 0,
+                'data': "",
+                'stored_at': time.time(),
+                'checksum': "empty"
+            }
+            return f"Created empty file: {filename}"
+    
+    def _cmd_rm(self, filename: str) -> str:
+        """Remove a file"""
+        if filename not in self.node.files:
+            return f"rm: {filename}: No such file"
         
-        filename = args[0]
-        return f"[Simulated content of {filename}]\nThis is a binary file stored in the distributed storage system.\nFile chunks are distributed across multiple nodes for redundancy."
+        file_size = self.node.files[filename]['size']
+        del self.node.files[filename]
+        self.node.storage_usage -= file_size
+        return f"Removed file: {filename}"
+    
+    def _cmd_free(self) -> str:
+        """Show memory usage"""
+        total = self.node.memory_capacity * 1024  # Convert to MB
+        used = self.node.memory_usage * 1024
+        free = total - used
+        
+        return (f"              total        used        free\n"
+                f"Mem:       {total:8}    {used:8}    {free:8} MB\n"
+                f"Usage:     {(used/total)*100:6.1f}%")
+    
+    def _cmd_uptime(self) -> str:
+        """Show system uptime"""
+        uptime = time.time() - self.node.start_time
+        hours = int(uptime // 3600)
+        minutes = int((uptime % 3600) // 60)
+        seconds = int(uptime % 60)
+        
+        return f"System uptime: {hours:02d}:{minutes:02d}:{seconds:02d}"
+    
+    def _cmd_help(self) -> str:
+        """Show available commands"""
+        return ("Available commands:\n"
+                "📁 File Operations:\n"
+                "  ls          - list directory contents\n"
+                "  cd <dir>    - change directory\n"
+                "  pwd         - print working directory\n"
+                "  cat <file>  - display file contents\n"
+                "  touch <file>- create empty file\n"
+                "  rm <file>   - remove file\n"
+                "  files       - list all stored files\n"
+                "\n"
+                "💻 System Info:\n"
+                "  ps          - show running processes\n"
+                "  top         - show system resources\n" 
+                "  df          - show disk usage\n"
+                "  free        - show memory usage\n"
+                "  uptime      - show system uptime\n"
+                "  stats       - show node statistics\n"
+                "\n"
+                "🌐 Network:\n"
+                "  ifconfig    - show network interface\n"
+                "  netstat     - show network connections\n"
+                "  ping <ip>   - ping an IP address\n"
+                "  ssh <ip>    - SSH to an IP address\n"
+                "  connections - show TCP connections\n"
+                "\n"
+                "📖 Other:\n"
+                "  history     - show command history\n"
+                "  clear       - clear screen\n"
+                "  help        - show this help\n"
+                "  exit        - exit terminal")
 
 class EnhancedStorageVirtualNode:
-    """Enhanced storage node with IP addressing, TCP/IP simulation, and terminal interface"""
+    """
+    Enhanced storage virtual node with advanced networking capabilities
+    """
     
-    def __init__(
-        self,
-        node_id: str,
-        ip_address: str,
-        cpu_capacity: int = 4,
-        memory_capacity: int = 16,
-        storage_capacity: int = 500,
-        bandwidth_mbps: int = 1000,
-        chunk_size: int = 1024 * 1024
-    ):
-        # Basic node information
+    def __init__(self, node_id: str, ip_address: str, cpu_capacity: int = 4,
+                 memory_capacity: int = 16, storage_capacity: int = 500,
+                 bandwidth_mbps: int = 1000, chunk_size: int = 1024 * 1024):
+        """Initialize enhanced storage node"""
         self.node_id = node_id
-        self.startup_time = time.time()
-        
-        # IP configuration
-        self.ip_config = IPAddress(ip_address)
-        
-        # Resource specifications
+        self.ip_config = IPConfiguration(ip_address)
         self.cpu_capacity = cpu_capacity
         self.memory_capacity = memory_capacity
-        self.total_storage = storage_capacity * 1024 * 1024 * 1024
+        self.storage_capacity = storage_capacity
         self.bandwidth_mbps = bandwidth_mbps
         self.chunk_size = chunk_size
         
-        # Current utilization
-        self.used_storage = 0
-        self.cpu_usage = 0.0
-        self.memory_usage = 0.0
+        # Current resource usage
+        self.cpu_usage = 0
+        self.memory_usage = 0
+        self.storage_usage = 0
         
-        # Network components
+        # File storage
+        self.files: Dict[str, Dict] = {}
+        
+        # Network connections
         self.tcp_connections: Dict[str, TCPConnection] = {}
-        self.active_ports: Set[int] = set()
+        self.active_transfers: List[Dict] = []
         
-        # File management with distribution
-        self.active_transfers: Dict[str, 'FileTransfer'] = {}
-        self.stored_files: Dict[str, 'FileTransfer'] = {}
-        self.chunk_distribution: Dict[str, List[str]] = defaultdict(list)  # chunk_id -> [node_ids]
-        self.transfer_statistics: Dict[str, TransferStatistics] = {}
+        # Statistics
+        self.start_time = time.time()
+        self.transfer_count = 0
+        self.bytes_transferred = 0
         
-        # Terminal interface
-        self.terminal = NodeTerminal(node_id, ip_address, self)
+        # Terminal
+        self.terminal = NodeTerminal(self)
         
-        # Performance tracking
-        self.bandwidth_usage_history: deque = deque(maxlen=100)
-        self.transfer_speeds: deque = deque(maxlen=50)
+        # Status
+        self.is_online = True
         
-        print(f"🖥️ Enhanced storage node '{node_id}' initialized at {ip_address}")
-        print(f"   💻 CPU: {cpu_capacity} vCPUs")
-        print(f"   💾 Memory: {memory_capacity} GB") 
-        print(f"   💿 Storage: {storage_capacity} GB")
-        print(f"   🌐 Bandwidth: {bandwidth_mbps} Mbps")
-        print(f"   🌐 IP Address: {ip_address}")
+        print(f"🖥️ Enhanced node '{self.node_id}' initialized")
+        print(f"   🌐 IP: {self.ip_config.ip_address}")
+        print(f"   💻 Resources: {cpu_capacity}C/{memory_capacity}GB/{storage_capacity}GB")
+        print(f"   🔗 Bandwidth: {bandwidth_mbps} Mbps")
     
-    def get_available_port(self) -> int:
-        """Get an available port for connections"""
-        port = random.randint(49152, 65535)  # Dynamic port range
-        while port in self.active_ports:
-            port = random.randint(49152, 65535)
-        self.active_ports.add(port)
-        return port
-    
-    def establish_tcp_connection(self, dest_ip: str, dest_port: int, protocol: NetworkProtocol = NetworkProtocol.TCP) -> str:
-        """Establish a TCP connection to another node"""
-        source_port = self.get_available_port()
-        
-        connection = TCPConnection(
-            source_ip=self.ip_config.address,
-            dest_ip=dest_ip,
-            source_port=source_port,
-            dest_port=dest_port,
-            protocol=protocol,
-            bandwidth_mbps=self.bandwidth_mbps,
-            latency_ms=random.uniform(1.0, 5.0)
-        )
-        
-        conn_id = f"{self.ip_config.address}:{source_port}-{dest_ip}:{dest_port}"
-        self.tcp_connections[conn_id] = connection
-        
-        return conn_id
-    
-    def simulate_file_distribution(self, file_transfer: 'FileTransfer', replication_factor: int = 2) -> Dict[str, List[str]]:
-        """Simulate distributing file chunks across multiple nodes"""
-        distribution_map = {}
-        
-        for chunk in file_transfer.chunks:
-            # Simulate selecting nodes for chunk storage
-            # In a real system, this would be based on network topology and node availability
-            chunk.replication_factor = replication_factor
-            chunk_id = f"{file_transfer.file_id}-chunk-{chunk.chunk_id}"
-            
-            # For simulation, we'll just track that chunks are distributed
-            distribution_map[chunk_id] = [self.node_id]  # This node stores it
-            self.chunk_distribution[chunk_id].append(self.node_id)
-        
-        return distribution_map
-    
-    def calculate_transfer_speed(self, bytes_transferred: int, time_elapsed: float) -> float:
-        """Calculate transfer speed in Mbps"""
-        if time_elapsed <= 0:
-            return 0.0
-        
-        bits_transferred = bytes_transferred * 8
-        speed_bps = bits_transferred / time_elapsed
-        speed_mbps = speed_bps / (1024 * 1024)
-        
-        return min(speed_mbps, self.bandwidth_mbps)  # Cap at node bandwidth
-    
-    def update_transfer_statistics(self, file_id: str, bytes_transferred: int):
-        """Update real-time transfer statistics"""
-        if file_id not in self.transfer_statistics:
-            return
-        
-        stats = self.transfer_statistics[file_id]
-        stats.transferred_bytes = bytes_transferred
-        
-        current_time = time.time()
-        time_elapsed = current_time - stats.start_time
-        
-        if time_elapsed > 0:
-            stats.current_speed_mbps = self.calculate_transfer_speed(bytes_transferred, time_elapsed)
-            stats.average_speed_mbps = self.calculate_transfer_speed(stats.transferred_bytes, time_elapsed)
-            
-            # Estimate remaining time
-            remaining_bytes = stats.total_size - stats.transferred_bytes
-            if stats.average_speed_mbps > 0:
-                remaining_bits = remaining_bytes * 8
-                remaining_seconds = remaining_bits / (stats.average_speed_mbps * 1024 * 1024)
-                stats.estimated_time_remaining = remaining_seconds
-        
-        # Update bandwidth usage history
-        self.bandwidth_usage_history.append(stats.current_speed_mbps)
-        self.transfer_speeds.append(stats.current_speed_mbps)
-    
-    def initiate_distributed_transfer(self, file_id: str, file_name: str, file_size: int, source_ip: str, replication_factor: int = 2):
-        """Initiate a distributed file transfer"""
-        # Create transfer statistics
-        stats = TransferStatistics(
-            file_id=file_id,
-            total_size=file_size,
-            chunks_total=math.ceil(file_size / self.chunk_size)
-        )
-        self.transfer_statistics[file_id] = stats
-        
-        # Create TCP connection for transfer
-        conn_id = self.establish_tcp_connection(source_ip, 22, NetworkProtocol.TCP)
-        stats.active_connections = 1
-        stats.nodes_involved.add(self.node_id)
-        
-        # Create file transfer with enhanced chunks
-        num_chunks = math.ceil(file_size / self.chunk_size)
-        chunks = []
-        
-        for i in range(num_chunks):
-            chunk_start = i * self.chunk_size
-            chunk_end = min(chunk_start + self.chunk_size, file_size)
-            chunk_size = chunk_end - chunk_start
-            
-            chunk_data = f"{file_id}-chunk-{i}-{chunk_size}"
-            checksum = hashlib.md5(chunk_data.encode()).hexdigest()
-            
-            chunk = FileChunk(
-                chunk_id=i,
-                size=chunk_size,
-                checksum=checksum,
-                replication_factor=replication_factor
-            )
-            chunks.append(chunk)
-        
-        # Create FileTransfer class locally for this enhanced system
-        class FileTransfer:
-            def __init__(self, file_id, file_name, total_size, chunks, source_node, target_node):
-                self.file_id = file_id
-                self.file_name = file_name
-                self.total_size = total_size
-                self.chunks = chunks
-                self.source_node = source_node
-                self.target_node = target_node
-                self.status = TransferStatus.PENDING
-                self.progress_percentage = 0.0
-                self.completed_at = None
-        transfer = FileTransfer(
-            file_id=file_id,
-            file_name=file_name,
-            total_size=file_size,
-            chunks=chunks,
-            source_node=source_ip,
-            target_node=self.ip_config.address
-        )
-        
-        # Simulate chunk distribution
-        self.simulate_file_distribution(transfer, replication_factor)
-        
-        self.active_transfers[file_id] = transfer
-        
-        print(f"🚀 {self.node_id} ({self.ip_config.address}): Initiated distributed transfer")
-        print(f"   📁 File: {file_name}")
-        print(f"   📊 Size: {file_size / (1024*1024):.1f} MB")
-        print(f"   📦 Chunks: {num_chunks} (replication factor: {replication_factor})")
-        print(f"   🔗 TCP Connection: {conn_id}")
-        
-        return transfer
-    
-    def process_distributed_chunk(self, file_id: str, chunk_id: int) -> bool:
-        """Process a chunk transfer with network simulation"""
-        if file_id not in self.active_transfers:
+    def store_file(self, filename: str, file_size: int, file_data: Any = None) -> bool:
+        """Store a file on this node"""
+        if self.storage_usage + file_size > self.storage_capacity:
             return False
         
-        transfer = self.active_transfers[file_id]
-        
-        if chunk_id >= len(transfer.chunks):
-            return False
-        
-        chunk = transfer.chunks[chunk_id]
-        
-        if chunk.status != TransferStatus.PENDING:
-            return True
-        
-        # Simulate network transfer with variable speed based on bandwidth
-        current_bandwidth = min(self.bandwidth_mbps, random.uniform(self.bandwidth_mbps * 0.7, self.bandwidth_mbps))
-        transfer_time = (chunk.size * 8) / (current_bandwidth * 1000000)  # Convert to seconds
-        
-        # Simulate actual transfer time (capped for simulation)
-        time.sleep(min(transfer_time, 0.05))
-        
-        # Mark chunk as completed
-        chunk.status = TransferStatus.COMPLETED
-        chunk.stored_nodes.append(self.node_id)
-        chunk.transfer_time = time.time()
-        
-        # Update storage
-        self.used_storage += chunk.size
-        
-        # Update statistics
-        completed_chunks = sum(1 for c in transfer.chunks if c.status == TransferStatus.COMPLETED)
-        bytes_transferred = sum(c.size for c in transfer.chunks if c.status == TransferStatus.COMPLETED)
-        
-        self.update_transfer_statistics(file_id, bytes_transferred)
-        
-        # Update transfer progress
-        transfer.progress_percentage = (completed_chunks / len(transfer.chunks)) * 100
-        
-        # Check if transfer is complete
-        if completed_chunks == len(transfer.chunks):
-            transfer.status = TransferStatus.COMPLETED
-            transfer.completed_at = time.time()
-            
-            # Move to stored files
-            self.stored_files[file_id] = transfer
-            del self.active_transfers[file_id]
-            
-            # Update final statistics
-            stats = self.transfer_statistics[file_id]
-            stats.end_time = time.time()
-            stats.chunks_completed = completed_chunks
-            
-            print(f"✅ {self.node_id}: Completed distributed transfer of {transfer.file_name}")
-            print(f"   📊 Final speed: {stats.average_speed_mbps:.1f} Mbps")
-            print(f"   ⏱️ Total time: {stats.end_time - stats.start_time:.1f} seconds")
-            
-            return True
-        
+        self.files[filename] = {
+            'size': file_size,
+            'data': file_data,
+            'stored_at': time.time(),
+            'checksum': str(hash(str(file_data)))[:8]
+        }
+        self.storage_usage += file_size
         return True
     
-    def get_enhanced_metrics(self) -> Dict:
-        """Get comprehensive node metrics with network information"""
-        base_metrics = {
-            "node_id": self.node_id,
-            "ip_address": self.ip_config.address,
-            "network": {
-                "active_connections": len(self.tcp_connections),
-                "active_ports": len(self.active_ports),
-                "bandwidth_mbps": self.bandwidth_mbps,
-                "current_bandwidth_usage": sum(list(self.bandwidth_usage_history)[-10:]) / 10 if self.bandwidth_usage_history else 0
-            },
-            "storage": {
-                "total_gb": self.total_storage / (1024**3),
-                "used_gb": self.used_storage / (1024**3),
-                "available_gb": (self.total_storage - self.used_storage) / (1024**3),
-                "usage_percentage": (self.used_storage / self.total_storage) * 100
-            },
-            "transfers": {
-                "active_transfers": len(self.active_transfers),
-                "stored_files": len(self.stored_files),
-                "distributed_chunks": len(self.chunk_distribution)
-            },
-            "performance": {
-                "uptime_seconds": time.time() - self.startup_time,
-                "average_transfer_speed_mbps": sum(self.transfer_speeds) / len(self.transfer_speeds) if self.transfer_speeds else 0,
-                "cpu_usage_percent": self.cpu_usage,
-                "memory_usage_percent": self.memory_usage
-            }
-        }
+    def store_file_silent(self, filename: str, file_size: int, file_data: Any = None) -> bool:
+        """Store a file on this node silently"""
+        if self.storage_usage + file_size > self.storage_capacity:
+            return False
         
-        return base_metrics
+        self.files[filename] = {
+            'size': file_size,
+            'data': file_data,
+            'stored_at': time.time(),
+            'checksum': str(hash(str(file_data)))[:8]
+        }
+        self.storage_usage += file_size
+        return True
     
-    def execute_terminal_command(self, command: str) -> str:
-        """Execute a command in this node's terminal"""
-        return self.terminal.execute_command(command)
+    def remove_file(self, filename: str) -> bool:
+        """Remove a file from this node"""
+        if filename not in self.files:
+            return False
+        
+        file_size = self.files[filename]['size']
+        del self.files[filename]
+        self.storage_usage -= file_size
+        return True
+    
+    def has_file(self, filename: str) -> bool:
+        """Check if node has a file"""
+        return filename in self.files
+    
+    def create_tcp_connection(self, remote_ip: str, remote_port: int) -> str:
+        """Create a TCP connection to remote host"""
+        local_port = random.randint(1024, 65535)
+        connection_id = f"{self.ip_config.ip_address}:{local_port}-{remote_ip}:{remote_port}"
+        
+        connection = TCPConnection(
+            connection_id=connection_id,
+            local_port=local_port,
+            remote_ip=remote_ip,
+            remote_port=remote_port
+        )
+        
+        self.tcp_connections[connection_id] = connection
+        return connection_id
+    
+    def create_tcp_connection_silent(self, remote_ip: str, remote_port: int) -> str:
+        """Create a TCP connection to remote host silently"""
+        local_port = random.randint(1024, 65535)
+        connection_id = f"{self.ip_config.ip_address}:{local_port}-{remote_ip}:{remote_port}"
+        
+        connection = TCPConnection(
+            connection_id=connection_id,
+            local_port=local_port,
+            remote_ip=remote_ip,
+            remote_port=remote_port
+        )
+        
+        self.tcp_connections[connection_id] = connection
+        return connection_id
+    
+    def close_tcp_connection(self, connection_id: str) -> bool:
+        """Close a TCP connection"""
+        if connection_id in self.tcp_connections:
+            del self.tcp_connections[connection_id]
+            return True
+        return False
+    
+    def simulate_cpu_load(self, duration: float = 1.0) -> None:
+        """Simulate CPU load for a duration"""
+        load = random.uniform(0.5, 2.0)
+        self.cpu_usage = min(self.cpu_usage + load, self.cpu_capacity)
+        
+        def decrease_load():
+            time.sleep(duration)
+            self.cpu_usage = max(0, self.cpu_usage - load)
+        
+        threading.Thread(target=decrease_load, daemon=True).start()
+    
+    def get_status(self) -> Dict:
+        """Get current node status"""
+        return {
+            'node_id': self.node_id,
+            'ip_address': self.ip_config.ip_address,
+            'is_online': self.is_online,
+            'uptime': time.time() - self.start_time,
+            'cpu_usage': f"{self.cpu_usage}/{self.cpu_capacity}",
+            'memory_usage': f"{self.memory_usage}/{self.memory_capacity}",
+            'storage_usage': f"{self.storage_usage}/{self.storage_capacity}",
+            'files_stored': len(self.files),
+            'active_connections': len(self.tcp_connections),
+            'transfer_count': self.transfer_count,
+            'bytes_transferred': self.bytes_transferred
+        }
+    
+    def ping(self, target_ip: str) -> float:
+        """Ping another node (simulate network latency)"""
+        latency = random.uniform(1, 20)  # 1-20ms latency
+        print(f"🏓 {self.node_id} -> {target_ip}: {latency:.1f}ms")
+        return latency
     
     def __str__(self) -> str:
-        return f"EnhancedStorageNode({self.node_id}@{self.ip_config.address}: {self.cpu_capacity}vCPU, {self.memory_capacity}GB RAM)"
+        status = "🟢" if self.is_online else "🔴"
+        return f"{status} {self.node_id} ({self.ip_config.ip_address}): {len(self.files)} files"
+    
+    def __repr__(self) -> str:
+        return f"EnhancedStorageVirtualNode(id='{self.node_id}', ip='{self.ip_config.ip_address}')"

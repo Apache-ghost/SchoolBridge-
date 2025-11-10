@@ -1,286 +1,145 @@
-# Storage as a Service System# Enhanced Storage as a Service System
+# Enhanced Storage as a Service System
 
+A comprehensive distributed storage system with advanced networking features including IP addressing, TCP/IP networking, SSH connections, interactive node terminals, and distributed file storage. **Each node behaves like a real virtual computer with its own terminal interface.**
 
-
-A simple distributed storage simulation system that demonstrates file transfer capabilities between virtual nodes.A comprehensive distributed storage system with advanced networking features including IP addressing, TCP/IP networking, SSH connections, interactive node terminals, and distributed file storage. **Each node behaves like a real virtual computer with its own terminal interface.**
-
-
-
-## Features## 🏗️ Project Structure
-
-
-
-- **Storage Nodes**: Virtual nodes with configurable CPU, memory, and storage capacity```
-
-- **Network Connections**: Connect nodes with specified bandwidthEnhanced Storage Service/
-
-- **File Transfer**: Transfer files between nodes with realistic speed calculations├── enhanced_main.py                 # Enhanced comprehensive demonstration
-
-- **Network Status**: Monitor resource usage and file distribution├── interactive_terminal.py          # Interactive node terminal interface
-
-- **Interactive Mode**: Create nodes, connect them, and transfer files manually├── main.py                         # Original demonstration (legacy)
-
-- **Demo Mode**: Automated demonstration of the system capabilities├── src/
-
-│   ├── enhanced_storage_node.py     # Enhanced nodes with IP, TCP/IP, terminals  
-
-## Quick Start│   ├── enhanced_virtual_network.py  # Advanced networking with SSH, routing
-
-│   ├── storage_virtual_node.py      # Original storage node (legacy)
-
-1. **Run the system:**│   └── storage_virtual_network.py   # Original network management (legacy)
-
-   ```bash├── ENHANCED_README.md              # Comprehensive documentation
-
-   python main.py└── README.md                       # This file
-
-   ``````
-
-
-
-2. **Choose a mode:**## 🚀 Enhanced Features
-
-   - **Demo Mode (1)**: Automatic demonstration with predefined transfers
-
-   - **Interactive Mode (2)**: Manual control to create nodes and transfer files### ✅ All Advanced Requirements Implemented:
-
-
-
-## System Architecture1. **🌐 IP Address Assignment**: Each node has unique IP addresses (10.0.0.10, 10.0.0.20, etc.)
-
-2. **⚡ Fast Operations**: Optimized algorithms with real-time performance monitoring  
-
-### Components3. **📊 Transfer Statistics**: Live stats (speed, time, progress, bandwidth utilization)
-
-4. **🔧 TCP/IP Network Design**: Full TCP/IP simulation with connection management
-
-- **StorageService**: Main orchestrator class5. **🌐 Virtual Network for IP**: Advanced networking with MESH, STAR, RING topologies
-
-- **StorageVirtualNode**: Individual storage nodes6. **🎮 File Exchange Simulation**: Realistic network conditions and behavior
-
-- **StorageVirtualNetwork**: Network management and connections7. **⏱️ System Transfer Time Counting**: Precise timing and performance measurement  
-
-8. **📈 Dynamic Bandwidth Control**: Changeable link capacities for different speeds
-
-### File Structure9. **🖥️ Interactive Node Terminals**: **Each node opens like a real terminal/computer**
-
-10. **📁 Distributed File Storage**: Files distributed across multiple nodes (not single storage)
-
-```11. **🔐 SSH Remote Connections**: Full SSH simulation for remote node access
-
-storage-service/12. **🔍 Online File Detection**: Real-time file discovery across entire network
-
-├── main.py                     # Main entry point13. **� Main Linkage System**: Centralized orchestration connecting all components
-
-├── README.md                   # This file
-
-└── src/## 🎯 Quick Start & Usage
-
-    ├── storage_virtual_node.py     # Node implementation
-
-    ├── storage_virtual_network.py  # Network implementation### 1. Full System Demonstration
-
-    └── __init__.py                 # Package initialization```bash
-
-```python enhanced_main.py
+## 🏗️ Project Structure
 
 ```
+Enhanced Storage Service/
+├── enhanced_main.py                 # Enhanced comprehensive demonstration
+├── interactive_terminal.py          # Interactive node terminal interface
+├── main.py                         # Original demonstration (legacy)
+├── src/
+│   ├── enhanced_storage_node.py     # Enhanced nodes with IP, TCP/IP, terminals  
+│   ├── enhanced_virtual_network.py  # Advanced networking with SSH, routing
+│   ├── storage_virtual_node.py      # Original storage node (legacy)
+│   └── storage_virtual_network.py   # Original network management (legacy)
+├── ENHANCED_README.md              # Comprehensive documentation
+└── README.md                       # This file
+```
 
-## Usage Examples
+## 🚀 Enhanced Features
+
+### ✅ All Advanced Requirements Implemented:
+
+1. **🌐 IP Address Assignment**: Each node has unique IP addresses (10.0.0.10, 10.0.0.20, etc.)
+2. **⚡ Fast Operations**: Optimized algorithms with real-time performance monitoring  
+3. **📊 Transfer Statistics**: Live stats (speed, time, progress, bandwidth utilization)
+4. **🔧 TCP/IP Network Design**: Full TCP/IP simulation with connection management
+5. **🌐 Virtual Network for IP**: Advanced networking with MESH, STAR, RING topologies
+6. **🎮 File Exchange Simulation**: Realistic network conditions and behavior
+7. **⏱️ System Transfer Time Counting**: Precise timing and performance measurement  
+8. **📈 Dynamic Bandwidth Control**: Changeable link capacities for different speeds
+9. **🖥️ Interactive Node Terminals**: **Each node opens like a real terminal/computer**
+10. **📁 Distributed File Storage**: Files distributed across multiple nodes (not single storage)
+11. **🔐 SSH Remote Connections**: Full SSH simulation for remote node access
+12. **🔍 Online File Detection**: Real-time file discovery across entire network
+13. **� Main Linkage System**: Centralized orchestration connecting all components
+
+## 🎯 Quick Start & Usage
+
+### 1. Full System Demonstration
+```bash
+python enhanced_main.py
+```
 
 **What it shows:**
-
-### Demo Mode- 4 enhanced nodes with IP addresses (192.168.1.10-40)
-
-```bash- Interactive terminal demonstration for each node
-
-python main.py- SSH connections between nodes
-
-# Choose option 1- Distributed file storage (files spread across multiple nodes)
-
-```- Dynamic network behavior with bandwidth changes
-
+- 4 enhanced nodes with IP addresses (192.168.1.10-40)
+- Interactive terminal demonstration for each node
+- SSH connections between nodes
+- Distributed file storage (files spread across multiple nodes)
+- Dynamic network behavior with bandwidth changes
 - Real-time file detection across entire network
+- Complete TCP/IP simulation with routing
 
-This will:- Complete TCP/IP simulation with routing
-
-1. Create 3 storage nodes with different capacities
-
-2. Connect them in a network topology### 2. Interactive Terminal Interface ⭐ **NEW FEATURE**
-
-3. Perform several file transfers```bash
-
-4. Display network status and file distributionpython interactive_terminal.py
-
-```
-
-### Interactive Mode
-
-```bash**This is where each node behaves like a real computer:**
-
-python main.py
-
-# Choose option 2#### Step 1: See Available Virtual Computers
-
-``````
-
-terminal> nodes
-
-Interactive commands:```
-
-- **Show network status**: View all nodes and their resource usage
-
-- **Create new node**: Add a new storage node to the network#### Step 2: Connect to a Virtual Computer
-
-- **Connect nodes**: Establish connections between nodes```  
-
-- **Transfer file**: Move files between connected nodesterminal> connect node_alpha
-
-- **Run demo transfers**: Execute predefined file transfers🔗 Connected to node_alpha (10.0.0.10)
-
-node_alpha@10.0.0.10:~$ 
-
-## Example Output```
-
-
-
-```#### Step 3: Execute Commands Like Real Terminal
-
-📦 STORAGE AS A SERVICE SYSTEM```bash
-
-==================================================node_alpha@10.0.0.10:~$ help           # Show available commands
-
-Simple distributed storage simulationnode_alpha@10.0.0.10:~$ ls             # List files on this computer
-
-node_alpha@10.0.0.10:~$ df             # Show disk usage
-
-🚀 Starting Storage Service Demonode_alpha@10.0.0.10:~$ ps             # Show running processes
-
-==================================================node_alpha@10.0.0.10:~$ top            # Show system performance
-
-📦 Creating storage nodes...node_alpha@10.0.0.10:~$ ifconfig       # Show network configuration
-
-🔗 Connecting nodes...node_alpha@10.0.0.10:~$ netstat        # Show network connections
-
-node_alpha@10.0.0.10:~$ ping 10.0.0.20 # Test connectivity to another node
-
-============================================================node_alpha@10.0.0.10:~$ stats          # Show transfer statistics
-
-📊 STORAGE NETWORK STATUS```
-
-============================================================
-
-🖥️  Node: node1#### Step 4: SSH to Another Virtual Computer
-
-   CPU: 0/4 cores```bash
-
-   Memory: 0/16 GB  node_alpha@10.0.0.10:~$ ssh 10.0.0.20
-
-   Storage: 0/500 GB🔐 SSH connection established to 10.0.0.20
-
-   Files: 0 storedssh> ls                    # Execute commands on remote computer
-
-ssh> df                    # Check remote disk usage
-
-🖥️  Node: node2ssh> disconnect            # Return to local node
-
-   CPU: 0/8 coresnode_alpha@10.0.0.10:~$
-
-   Memory: 0/32 GB```
-
-   Storage: 0/1000 GB
-
-   Files: 0 stored#### Step 5: Switch Between Virtual Computers
-
+### 2. Interactive Terminal Interface ⭐ **NEW FEATURE**
 ```bash
-
-🔗 Network Connections: 3node_alpha@10.0.0.10:~$ disconnect
-
-============================================================terminal> connect node_beta
-
-🔗 Connected to node_beta (10.0.0.20)  
-
-📁 Starting file transfers...node_beta@10.0.0.20:~$ ls              # Now on different computer
-
+python interactive_terminal.py
 ```
 
-🔄 Transfer 1: 100MB file (node1 → node2)
+**This is where each node behaves like a real computer:**
 
-✅ Transfer initiated: document.pdf## 🖥️ Available Node Terminal Commands
+#### Step 1: See Available Virtual Computers
+```
+terminal> nodes
+```
 
-   Size: 100MB
+#### Step 2: Connect to a Virtual Computer
+```  
+terminal> connect node_alpha
+🔗 Connected to node_alpha (10.0.0.10)
+node_alpha@10.0.0.10:~$ 
+```
 
-   Speed: 95.24 MB/s**Each virtual computer supports these commands:**
+#### Step 3: Execute Commands Like Real Terminal
+```bash
+node_alpha@10.0.0.10:~$ help           # Show available commands
+node_alpha@10.0.0.10:~$ ls             # List files on this computer
+node_alpha@10.0.0.10:~$ df             # Show disk usage
+node_alpha@10.0.0.10:~$ ps             # Show running processes
+node_alpha@10.0.0.10:~$ top            # Show system performance
+node_alpha@10.0.0.10:~$ ifconfig       # Show network configuration
+node_alpha@10.0.0.10:~$ netstat        # Show network connections
+node_alpha@10.0.0.10:~$ ping 10.0.0.20 # Test connectivity to another node
+node_alpha@10.0.0.10:~$ stats          # Show transfer statistics
+```
 
-   Duration: 1.05 seconds
+#### Step 4: SSH to Another Virtual Computer
+```bash
+node_alpha@10.0.0.10:~$ ssh 10.0.0.20
+🔐 SSH connection established to 10.0.0.20
+ssh> ls                    # Execute commands on remote computer
+ssh> df                    # Check remote disk usage
+ssh> disconnect            # Return to local node
+node_alpha@10.0.0.10:~$
+```
 
-```### System Information
+#### Step 5: Switch Between Virtual Computers
+```bash
+node_alpha@10.0.0.10:~$ disconnect
+terminal> connect node_beta
+🔗 Connected to node_beta (10.0.0.20)  
+node_beta@10.0.0.20:~$ ls              # Now on different computer
+```
 
+## 🖥️ Available Node Terminal Commands
+
+**Each virtual computer supports these commands:**
+
+### System Information
 - `help` - Show available commands
-
-## Node Configuration- `df` - Show disk space usage  
-
+- `df` - Show disk space usage  
 - `ps` - Show running processes
+- `top` - Show system performance with CPU/memory usage
+- `ifconfig` - Show network configuration and IP address
+- `netstat` - Show active network connections
 
-When creating nodes, you can specify:- `top` - Show system performance with CPU/memory usage
-
-- **CPU Capacity**: Number of CPU cores- `ifconfig` - Show network configuration and IP address
-
-- **Memory Capacity**: RAM in GB- `netstat` - Show active network connections
-
-- **Storage Capacity**: Disk space in GB
-
-- **Bandwidth**: Network bandwidth in Mbps### File Operations  
-
+### File Operations  
 - `ls` - List files stored on this node
-
-## Transfer Features- `cat <filename>` - Display file contents
-
+- `cat <filename>` - Display file contents
 - `find <pattern>` - Search for files matching pattern
 
-- Realistic transfer speeds based on network bandwidth
+### Network Operations
+- `ping <ip_address>` - Test network connectivity to another node
+- `ssh <ip_address>` - Connect to remote node via SSH
+- `scp <file> <destination>` - Secure copy file (simulated)
 
-- File size tracking### Network Operations
-
-- Duration calculation- `ping <ip_address>` - Test network connectivity to another node
-
-- Resource usage simulation- `ssh <ip_address>` - Connect to remote node via SSH
-
-- Connection quality factors- `scp <file> <destination>` - Secure copy file (simulated)
-
-
-
-## Requirements### Storage Operations
-
+### Storage Operations
 - `stats` - Show detailed transfer statistics and performance
-
-- Python 3.7+- `transfer <file> <destination>` - Initiate file transfer
-
-- No external dependencies required
+- `transfer <file> <destination>` - Initiate file transfer
 
 ### Connection Commands (in main terminal)
-
-## Development- `nodes` - Show all available virtual computers
-
+- `nodes` - Show all available virtual computers
 - `connect <node_id>` - Connect to specific virtual computer  
-
-The system is designed to be simple and extensible. Key classes:- `disconnect` - Disconnect from current node/SSH session
-
+- `disconnect` - Disconnect from current node/SSH session
 - `status` - Show current connection status
-
-- `StorageService`: Main controller- `simulate` - Add sample files for testing
-
-- `StorageVirtualNode`: Node behavior and resource management  - `history` - Show command history
-
-- `StorageVirtualNetwork`: Network topology and file transfer logic- `clear` - Clear screen
-
+- `simulate` - Add sample files for testing
+- `history` - Show command history
+- `clear` - Clear screen
 - `exit` - Exit interactive mode
+- **Fault Tolerance**: Node failure simulation and recovery
 
-## License- **Fault Tolerance**: Node failure simulation and recovery
-
-
-
-Open source - feel free to modify and extend!### File Transfer System
+### File Transfer System
 - **Chunked Transfers**: Large files split into manageable chunks
 - **Progress Tracking**: Real-time transfer progress monitoring
 - **Concurrent Transfers**: Multiple simultaneous file transfers
