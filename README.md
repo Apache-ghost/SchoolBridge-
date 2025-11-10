@@ -4,7 +4,43 @@
 
 ## 🌟 Project Overview
 
-SchoolBridge is a sophisticated distributed communication platform designed to bridge the gap between parents and teachers through modern technology. The system provides real-time, reliable, and inclusive communication channels that work even in low-connectivity environments.  
+# Distributed Systems Project - SOP
+
+A comprehensive distributed computing project implementing both **Storage as a Service** and **SchoolBridge Educational Platform** systems, demonstrating key distributed system principles.
+
+## 📁 Project Organization
+
+```
+SchoolBridge-/
+├── storage-service/               # 🔄 Storage as a Service System
+│   ├── main.py                   # Main entry point
+│   ├── src/
+│   │   ├── storage_virtual_node.py      # Virtual storage nodes
+│   │   ├── storage_virtual_network.py   # Network management
+│   │   └── __init__.py
+│   ├── tests/                    # Unit tests
+│   ├── docs/                     # Documentation
+│   └── README.md                 # Storage system documentation
+│
+├── school-system/                # 🏫 SchoolBridge Educational Platform
+│   ├── src/                      # Core distributed system components
+│   │   ├── communication_service.py     # Communication infrastructure
+│   │   ├── school_node.py              # Autonomous school nodes
+│   │   ├── distributed_database.py     # Distributed data storage
+│   │   ├── p2p_communication.py        # P2P messaging layer
+│   │   ├── load_balancer.py            # Multi-region load balancing
+│   │   ├── fault_tolerance.py          # Reliability and recovery
+│   │   └── real_data_simulation.py     # Main simulation engine
+│   ├── data/
+│   │   └── real_data_config.py         # Real Cameroon school data
+│   ├── interfaces/                     # User interfaces
+│   │   ├── interactive_schoolbridge.py # Terminal interface
+│   │   ├── simple_demo.py             # Simple demonstration
+│   │   └── launcher.py                # User-friendly launcher
+│   └── README.md                       # School system documentation
+│
+└── README.md                     # This master README
+```  
 
 It ensures that no parent misses vital updates about their child’s education by providing **online and offline communication channels** (via web, SMS, and USSD).
 
