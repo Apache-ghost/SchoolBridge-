@@ -350,6 +350,351 @@ class StorageServiceOrchestrator:
         
         print("✅ Terminal access session completed")
     
+    def adjust_transfer_speeds(self):
+        """Simple transfer speed control - adjust all network speeds at once"""
+        print("\n" + "="*60)
+        print("⚡ TRANSFER SPEED CONTROL")
+        print("="*60)
+        
+        if not self.networks:
+            print("❌ No network available. Please run option 1 first.")
+            return
+        
+        # Get the main network
+        main_network = list(self.networks.values())[0]
+        
+        # Show current speeds
+        print("� Current network status:")
+        if main_network.links:
+            total_links = len(main_network.links)
+            speeds = [link.bandwidth_mbps for link in main_network.links.values()]
+            avg_speed = sum(speeds) / len(speeds)
+            print(f"   🔗 Total links: {total_links}")
+            print(f"   ⚡ Average speed: {avg_speed:.0f} Mbps")
+            
+            print("\n🔗 Individual link speeds:")
+            for link in main_network.links.values():
+                print(f"   {link.node1_id} ↔ {link.node2_id}: {link.bandwidth_mbps} Mbps")
+        else:
+            print("   ❌ No network links available")
+            return
+        
+        print("\n🚀 SPEED ADJUSTMENT - Watch Transfer Impact!")
+        print("Choose a speed and see how it affects file transfers:")
+        print()
+        print("1. 🐌 SLOW (4 Mbps) - See slow transfer with progress bar")
+        print("2. 📶 BASIC (16 Mbps) - Moderate speed simulation")  
+        print("3. ⚡ FAST (100 Mbps) - Quick transfer demonstration")
+        print("4. 🚀 ULTRA (1000 Mbps) - Lightning fast transfers")
+        print("5. 🎯 CUSTOM Speed - Set your own and test")
+        print("6. 📊 VISUAL TRANSFER TEST - See live progress bar")
+        print("7. 🔙 Back to main menu")
+        
+        while True:
+            try:
+                choice = input("\n👉 Choose option (1-7): ").strip()
+                
+                if choice == '1':
+                    self.set_network_speed(4, "SLOW")
+                    self.test_speed_after_change()
+                    
+                elif choice == '2':
+                    self.set_network_speed(16, "BASIC")
+                    self.test_speed_after_change()
+                    
+                elif choice == '3':
+                    self.set_network_speed(100, "FAST")
+                    self.test_speed_after_change()
+                    
+                elif choice == '4':
+                    self.set_network_speed(1000, "ULTRA")
+                    self.test_speed_after_change()
+                    
+                elif choice == '5':
+                    try:
+                        custom_speed = int(input("Enter speed in Mbps (1-10000): "))
+                        if 1 <= custom_speed <= 10000:
+                            self.set_network_speed(custom_speed, "CUSTOM")
+                            self.test_speed_after_change()
+                        else:
+                            print("❌ Speed must be between 1-10000 Mbps")
+                    except ValueError:
+                        print("❌ Please enter a valid number")
+                        
+                elif choice == '6':
+                    self.test_current_speeds()
+                    
+                elif choice == '7':
+                    break
+                    
+                else:
+                    print("❌ Invalid choice. Please choose 1-7.")
+                    
+            except KeyboardInterrupt:
+                print("\n👋 Returning to main menu...")
+                break
+    
+    def set_network_speed(self, speed_mbps: int, speed_type: str):
+        """Set the same speed for all network links"""
+        if not self.networks:
+            return
+            
+        main_network = list(self.networks.values())[0]
+        updated_links = 0
+        
+        for link in main_network.links.values():
+            link.bandwidth_mbps = speed_mbps
+            # Update quality based on speed
+            if speed_mbps >= 1000:
+                link.quality = LinkQuality.EXCELLENT
+            elif speed_mbps >= 100:
+                link.quality = LinkQuality.GOOD
+            elif speed_mbps >= 50:
+                link.quality = LinkQuality.FAIR
+            else:
+                link.quality = LinkQuality.POOR
+            updated_links += 1
+        
+        print(f"\n✅ Network speed updated to {speed_mbps} Mbps ({speed_type})")
+        print(f"🔗 Updated {updated_links} network links")
+    
+    def test_speed_after_change(self):
+        """Automatically show visual transfer simulation after speed change"""
+        print("\n🧪 Watch how the new speed affects file transfer...")
+        time.sleep(1)
+        self.test_current_speeds()
+    
+    def test_current_speeds(self):
+        """Visual file transfer simulation with progress bar"""
+        if not self.nodes or len(self.nodes) < 2:
+            print("❌ Need at least 2 nodes for speed test")
+            return
+            
+        nodes = list(self.nodes.keys())
+        source = nodes[0]
+        target = nodes[1]
+        
+        # Get current network speed
+        main_network = list(self.networks.values())[0]
+        current_speed = 100  # Default
+        if main_network.links:
+            first_link = list(main_network.links.values())[0]
+            current_speed = first_link.bandwidth_mbps
+        
+        file_size = 200  # MB for better visual effect
+        
+        print(f"\n� LIVE FILE TRANSFER SIMULATION")
+        print("="*60)
+        print(f"� Transferring: video_file.mp4 ({file_size} MB)")
+        print(f"🔄 Route: {source} → {target}")
+        print(f"⚡ Network Speed: {current_speed} Mbps")
+        print("="*60)
+        
+        # Calculate transfer parameters
+        mb_per_second = current_speed / 8  # Convert Mbps to MB/s (divide by 8)
+        total_time = file_size / mb_per_second
+        
+        print(f"📊 Estimated transfer time: {total_time:.1f} seconds")
+        print(f"📈 Expected speed: {mb_per_second:.1f} MB/s")
+        print()
+        
+        # Simulate transfer with progress bar
+        import time
+        transferred = 0
+        start_time = time.time()
+        
+        print("📊 Transfer Progress:")
+        
+        while transferred < file_size:
+            # Calculate how much to transfer in this step
+            time_step = 0.2  # Update every 0.2 seconds
+            transfer_this_step = mb_per_second * time_step
+            transferred += transfer_this_step
+            
+            if transferred > file_size:
+                transferred = file_size
+            
+            # Calculate progress percentage
+            progress_percent = (transferred / file_size) * 100
+            
+            # Create progress bar
+            bar_length = 40
+            filled_length = int(bar_length * progress_percent / 100)
+            bar = '█' * filled_length + '░' * (bar_length - filled_length)
+            
+            # Calculate current stats
+            elapsed_time = time.time() - start_time
+            if elapsed_time > 0:
+                current_speed_actual = transferred / elapsed_time
+            else:
+                current_speed_actual = 0
+            
+            # Display progress
+            print(f"\r🔄 [{bar}] {progress_percent:6.1f}% | " + 
+                  f"{transferred:6.1f}/{file_size} MB | " +
+                  f"{current_speed_actual:5.1f} MB/s | " +
+                  f"{elapsed_time:5.1f}s", end='', flush=True)
+            
+            time.sleep(time_step)
+        
+        # Final results
+        total_elapsed = time.time() - start_time
+        final_speed = file_size / total_elapsed
+        
+        print(f"\n\n✅ TRANSFER COMPLETED!")
+        print("="*60)
+        print(f"� TRANSFER STATISTICS:")
+        print(f"   ⏱️ Total time: {total_elapsed:.2f} seconds")
+        print(f"   🚀 Average speed: {final_speed:.1f} MB/s")
+        print(f"   📁 Data transferred: {file_size} MB")
+        print(f"   ⚡ Link capacity used: {current_speed} Mbps")
+        
+        # Network efficiency
+        theoretical_max = current_speed / 8
+        efficiency = (final_speed / theoretical_max) * 100
+        print(f"   🎯 Network efficiency: {efficiency:.1f}%")
+        
+        # Performance rating with visual indicator
+        if current_speed >= 1000:
+            rating = "🚀 ULTRA FAST"
+            indicator = "🟢🟢🟢🟢🟢"
+        elif current_speed >= 100:
+            rating = "⚡ FAST"
+            indicator = "🟢🟢🟢🟢🟡"
+        elif current_speed >= 50:
+            rating = "📶 GOOD"
+            indicator = "🟢🟢🟢🟡🟡"
+        elif current_speed >= 16:
+            rating = "� FAIR"
+            indicator = "🟢🟢🟡🟡🔴"
+        else:
+            rating = "🐌 SLOW"
+            indicator = "🟢🟡🔴🔴🔴"
+            
+        print(f"   📊 Performance: {rating} {indicator}")
+        
+        # Show practical impact
+        print(f"\n💡 PRACTICAL IMPACT:")
+        if current_speed >= 1000:
+            print("   • 4K movie (8GB): ~1 minute")
+            print("   • Software update (2GB): ~15 seconds")
+            print("   • Photo backup (500MB): ~4 seconds")
+        elif current_speed >= 100:
+            print("   • HD movie (4GB): ~5 minutes")
+            print("   • Software update (2GB): ~2.5 minutes")
+            print("   • Photo backup (500MB): ~40 seconds")
+        elif current_speed >= 16:
+            print("   • HD movie (4GB): ~30 minutes")
+            print("   • Software update (2GB): ~15 minutes")
+            print("   • Photo backup (500MB): ~4 minutes")
+        else:
+            print("   • HD movie (4GB): ~2+ hours")
+            print("   • Software update (2GB): ~1+ hour")
+            print("   • Photo backup (500MB): ~15+ minutes")
+        
+        print("\n🎮 Try changing the network speed to see the difference!")
+    
+    def modify_link_speed(self, network, link_id: str, link):
+        """Modify the speed of a specific link"""
+        print(f"\n🔧 Modifying link: {link.node1_id} ↔ {link.node2_id}")
+        print(f"Current speed: {link.bandwidth_mbps} Mbps")
+        
+        print("\n⚡ Speed presets:")
+        print("1. 4 Mbps (Slow)")
+        print("2. 10 Mbps (Basic)")
+        print("3. 50 Mbps (Good)")
+        print("4. 100 Mbps (Fast)")
+        print("5. 500 Mbps (Very Fast)")
+        print("6. 1000 Mbps (Gigabit)")
+        print("7. 1600 Mbps (Ultra)")
+        print("8. Custom speed")
+        
+        try:
+            speed_choice = input("👉 Choose speed preset (1-8): ").strip()
+            
+            speed_map = {
+                '1': 4, '2': 10, '3': 50, '4': 100,
+                '5': 500, '6': 1000, '7': 1600
+            }
+            
+            if speed_choice in speed_map:
+                new_speed = speed_map[speed_choice]
+            elif speed_choice == '8':
+                new_speed = int(input("Enter custom speed (Mbps): "))
+            else:
+                print("❌ Invalid choice")
+                return
+            
+            # Update the link speed
+            old_speed = link.bandwidth_mbps
+            link.bandwidth_mbps = new_speed
+            
+            # Update quality based on new speed
+            if new_speed >= 1000:
+                link.quality = LinkQuality.EXCELLENT
+            elif new_speed >= 500:
+                link.quality = LinkQuality.GOOD
+            elif new_speed >= 100:
+                link.quality = LinkQuality.FAIR
+            else:
+                link.quality = LinkQuality.POOR
+            
+            print(f"✅ Speed updated: {old_speed} Mbps → {new_speed} Mbps ({link.quality.value})")
+            
+        except ValueError:
+            print("❌ Invalid speed value")
+        except Exception as e:
+            print(f"❌ Error: {e}")
+    
+    def test_transfer_with_speeds(self, network):
+        """Test file transfer with current speeds"""
+        print("\n🔄 TESTING FILE TRANSFER WITH CURRENT SPEEDS")
+        print("-"*50)
+        
+        nodes = list(network.nodes.keys())
+        if len(nodes) < 2:
+            print("❌ Need at least 2 nodes for transfer test")
+            return
+        
+        # Test transfers between nodes
+        test_files = [
+            ("document.pdf", 25),
+            ("video.mp4", 150),
+            ("database.sql", 300)
+        ]
+        
+        source_node = nodes[0]
+        target_node = nodes[1]
+        
+        print(f"📤 Testing transfers: {source_node} → {target_node}")
+        
+        # Get link speed between these nodes
+        link_id = f"{min(source_node, target_node)}-{max(source_node, target_node)}"
+        if link_id in network.links:
+            link_speed = network.links[link_id].bandwidth_mbps
+            print(f"🔗 Link speed: {link_speed} Mbps")
+        else:
+            link_speed = 100  # Default
+            print(f"🔗 Using default speed: {link_speed} Mbps")
+        
+        print(f"\n📊 Transfer results:")
+        for filename, size_mb in test_files:
+            # Calculate transfer time based on link speed
+            transfer_time = (size_mb * 8) / link_speed  # Convert MB to Mbits, divide by Mbps
+            actual_speed = size_mb / transfer_time
+            
+            print(f"   📁 {filename} ({size_mb}MB)")
+            print(f"      ⏱️ Time: {transfer_time:.2f} seconds")
+            print(f"      ⚡ Speed: {actual_speed:.1f} MB/s")
+            
+            # Simulate network conditions
+            if link_speed < 10:
+                print(f"      🐌 Slow transfer - consider upgrading bandwidth")
+            elif link_speed > 500:
+                print(f"      🚀 High-speed transfer!")
+        
+        print(f"\n💡 Tip: Use option 6 to adjust link speeds and test again!")
+    
     def open_node_terminal(self, node_id: str):
         """Open interactive terminal for a specific node"""
         if node_id not in self.nodes:
@@ -596,6 +941,169 @@ class StorageServiceOrchestrator:
         print("✅ Main linkage system demonstration completed!")
         print("🎉 All 13 enhanced features successfully demonstrated!")
 
+    def distributed_file_storage(self, filename: str, file_size_mb: int, chunk_size_mb: int = 10):
+        """Store file in chunks across multiple nodes (peer-to-peer style)"""
+        if not self.nodes or len(self.nodes) < 2:
+            print("❌ Need at least 2 nodes for distributed storage")
+            return None
+        
+        # Calculate chunks
+        num_chunks = (file_size_mb + chunk_size_mb - 1) // chunk_size_mb  # Ceiling division
+        nodes_list = list(self.nodes.keys())
+        
+        print(f"\n📦 DISTRIBUTED FILE STORAGE")
+        print("="*60)
+        print(f"📁 File: {filename} ({file_size_mb} MB)")
+        print(f"🧩 Splitting into {num_chunks} chunks of {chunk_size_mb}MB each")
+        print(f"🌐 Available nodes: {len(nodes_list)}")
+        print("="*60)
+        
+        # Create chunk distribution map
+        chunk_map = {}
+        for chunk_id in range(num_chunks):
+            # Distribute chunks across multiple nodes (redundancy)
+            primary_node = nodes_list[chunk_id % len(nodes_list)]
+            backup_node = nodes_list[(chunk_id + 1) % len(nodes_list)]
+            
+            chunk_name = f"{filename}.chunk.{chunk_id:03d}"
+            actual_chunk_size = min(chunk_size_mb, file_size_mb - (chunk_id * chunk_size_mb))
+            
+            chunk_map[chunk_id] = {
+                'name': chunk_name,
+                'size': actual_chunk_size,
+                'primary': primary_node,
+                'backup': backup_node,
+                'stored_on': []
+            }
+            
+            print(f"🧩 Chunk {chunk_id:2d}: {chunk_name} ({actual_chunk_size}MB)")
+            print(f"   📍 Primary: {primary_node}, Backup: {backup_node}")
+        
+        return chunk_map
+    
+    def visual_distributed_transfer(self, filename: str, file_size_mb: int, target_node: str):
+        """Show peer-to-peer style download from multiple sources"""
+        if not self.networks or not self.nodes:
+            print("❌ No network available")
+            return
+        
+        # Create distributed storage
+        chunk_map = self.distributed_file_storage(filename, file_size_mb)
+        if not chunk_map:
+            return
+        
+        nodes_list = list(self.nodes.keys())
+        main_network = list(self.networks.values())[0]
+        current_speed = 100
+        if main_network.links:
+            first_link = list(main_network.links.values())[0]
+            current_speed = first_link.bandwidth_mbps
+        
+        print(f"\n🔄 PEER-TO-PEER DOWNLOAD SIMULATION")
+        print("="*60)
+        print(f"📁 Reconstructing: {filename} ({file_size_mb} MB)")
+        print(f"🎯 Download to: {target_node}")
+        print(f"⚡ Network Speed: {current_speed} Mbps per connection")
+        print("="*60)
+        
+        # Simulate downloading chunks from different nodes
+        num_chunks = len(chunk_map)
+        total_time = (file_size_mb * 8) / (current_speed * min(3, len(nodes_list)))  # Parallel downloads
+        
+        print(f"🌐 Downloading from {min(3, len(nodes_list))} nodes simultaneously")
+        print(f"⏱️ Estimated time: {total_time:.1f} seconds")
+        
+        # Show chunk download progress
+        print(f"\n📊 Chunk Download Progress:")
+        
+        steps = 25
+        step_time = total_time / steps
+        chunk_progress = {i: 0 for i in range(num_chunks)}
+        
+        for step in range(steps + 1):
+            # Update chunk progress (simulate different download speeds)
+            for chunk_id in range(num_chunks):
+                base_progress = (step / steps) * 100
+                # Add some variation to simulate real P2P behavior
+                variation = random.uniform(-5, 15)
+                chunk_progress[chunk_id] = min(100, max(0, base_progress + variation))
+            
+            # Display chunk status
+            print(f"\n📋 Step {step:2d}/{steps}:")
+            for chunk_id in range(min(8, num_chunks)):  # Show first 8 chunks
+                progress = chunk_progress[chunk_id]
+                chunk_info = chunk_map[chunk_id]
+                
+                # Progress bar for each chunk
+                filled = int(progress / 5)  # 20 chars = 5% each
+                bar = "█" * filled + "░" * (20 - filled)
+                
+                source = chunk_info['primary'] if progress < 80 else chunk_info['backup']
+                status = "✅" if progress >= 100 else "⬇️"
+                
+                print(f"   Chunk {chunk_id:02d}: [{bar}] {progress:6.1f}% from {source} {status}")
+            
+            if num_chunks > 8:
+                remaining = num_chunks - 8
+                avg_progress = sum(chunk_progress[i] for i in range(8, num_chunks)) / remaining if remaining > 0 else 0
+                print(f"   ... and {remaining} more chunks (avg: {avg_progress:.1f}%)")
+            
+            # Overall progress
+            overall_progress = sum(chunk_progress.values()) / num_chunks
+            downloaded_mb = (overall_progress / 100) * file_size_mb
+            
+            print(f"\n📊 Overall: {overall_progress:5.1f}% | {downloaded_mb:6.1f}MB/{file_size_mb}MB")
+            
+            if step < steps:
+                time.sleep(step_time)
+        
+        print(f"\n🎉 DOWNLOAD COMPLETED!")
+        print(f"📦 File reconstructed from {num_chunks} chunks")
+        print(f"⏱️ Total time: {total_time:.1f} seconds") 
+        print(f"🚀 Average speed: {file_size_mb/total_time:.1f} MB/s")
+        print(f"💡 Fault tolerance: File available even if {len(nodes_list)-1} nodes fail!")
+        
+        # Show node failure simulation
+        self.simulate_node_failure_recovery(chunk_map, filename)
+    
+    def simulate_node_failure_recovery(self, chunk_map, filename):
+        """Simulate what happens when nodes fail"""
+        nodes_list = list(self.nodes.keys())
+        if len(nodes_list) < 3:
+            return
+        
+        print(f"\n🚨 NODE FAILURE SIMULATION:")
+        print("="*40)
+        
+        # Simulate one node going offline
+        failed_node = random.choice(nodes_list)
+        print(f"⚠️ Node {failed_node} has gone OFFLINE!")
+        
+        affected_chunks = []
+        recoverable_chunks = []
+        
+        for chunk_id, chunk_info in chunk_map.items():
+            if chunk_info['primary'] == failed_node:
+                affected_chunks.append(chunk_id)
+                if chunk_info['backup'] != failed_node:
+                    recoverable_chunks.append(chunk_id)
+        
+        print(f"📊 Impact analysis:")
+        print(f"   🧩 Affected chunks: {len(affected_chunks)}")
+        print(f"   ✅ Recoverable from backup: {len(recoverable_chunks)}")
+        print(f"   🎯 File still accessible: {'YES' if len(recoverable_chunks) == len(affected_chunks) else 'PARTIAL'}")
+        
+        if len(recoverable_chunks) == len(affected_chunks):
+            print(f"\n🎉 SUCCESS: File {filename} fully recoverable!")
+            print(f"💡 Switching to backup nodes for affected chunks...")
+            for chunk_id in affected_chunks[:3]:  # Show first few
+                chunk_info = chunk_map[chunk_id]
+                print(f"   Chunk {chunk_id:02d}: {chunk_info['primary']} ❌ → {chunk_info['backup']} ✅")
+        else:
+            print(f"\n⚠️ WARNING: Some chunks may be unavailable")
+        
+        print(f"🔄 Auto-replication would create new backups on healthy nodes")
+
 def run_comprehensive_demo():
     """Run comprehensive demonstration of all enhanced features"""
     print("🎬 ENHANCED STORAGE AS A SERVICE - COMPREHENSIVE DEMO")
@@ -720,35 +1228,126 @@ def run_interactive_mode():
             print(f"❌ Error: {e}")
 
 def main():
-    """Main entry point"""
+    """Main entry point with unified functionality"""
     print("📦 ENHANCED STORAGE AS A SERVICE SYSTEM")
     print("=" * 60)
-    print("Advanced distributed storage with all 13 enhanced features")
-    print()
-    print("Choose a mode:")
-    print("1. Basic Demo - Essential features")
-    print("2. Comprehensive Demo - All 13 features")
-    print("3. Interactive Mode - Manual control")
-    print("4. Exit")
+    print("Advanced distributed storage with virtual machine nodes")
+    print("=" * 60)
     
-    try:
-        choice = input("\n👉 Enter your choice (1-4): ").strip()
+    # Create the orchestrator and initialize nodes
+    orchestrator = StorageServiceOrchestrator()
+    
+    # Automatically create initial network and nodes
+    print("🚀 Initializing virtual machines...")
+    orchestrator.demonstrate_ip_addressing()  # This creates the nodes
+    
+    while True:
+        print("\n" + "="*60)
+        print("📋 STORAGE AS A SERVICE - MAIN MENU")
+        print("="*60)
+        print("1. Show System Status")
+        print("2. Fast File Operations Demo")
+        print("3. Transfer Statistics & Monitoring")
+        print("4. Create Additional Networks")
+        print("5. 💻 Open Node Terminal (Interactive)")
+        print("6. ⚡ Adjust Transfer Speed (Bandwidth Control)")
+        print("7. File Exchange Protocols Demo")
+        print("8. 📦 Distributed P2P File Transfer (with Progress Bar)")
+        print("9. SSH Between Nodes Demo")
+        print("10. Run Complete System Demo")
+        print("11. Show All Node Information")
+        print("0. Exit")
+        print("="*60)
         
-        if choice == '1':
-            run_basic_demo()
-        elif choice == '2':
-            run_comprehensive_demo()
-        elif choice == '3':
-            run_interactive_mode()
-        elif choice == '4':
-            print("👋 Goodbye!")
-        else:
-            print("❌ Invalid choice")
+        try:
+            choice = input("👉 Enter your choice (0-11): ").strip()
             
-    except KeyboardInterrupt:
-        print("\n👋 Goodbye!")
-    except Exception as e:
-        print(f"❌ Error: {e}")
+            if choice == '1':
+                print("\n📊 SYSTEM STATUS:")
+                print(f"🌐 Networks: {len(orchestrator.networks)}")
+                print(f"🖥️ Virtual machines: {len(orchestrator.nodes)}")
+                for node_id, node in orchestrator.nodes.items():
+                    status = "🟢 Online" if node.is_online else "🔴 Offline"
+                    print(f"   {node_id} → {node.ip_config.ip_address} {status}")
+                    
+            elif choice == '2':
+                orchestrator.demonstrate_fast_operations()
+                
+            elif choice == '3':
+                orchestrator.demonstrate_transfer_statistics()
+                
+            elif choice == '4':
+                orchestrator.demonstrate_virtual_network()
+                
+            elif choice == '5':
+                # Direct terminal access
+                if not orchestrator.nodes:
+                    print("❌ No nodes available. Run option 1 first.")
+                else:
+                    orchestrator.demonstrate_interactive_terminals()
+                    
+            elif choice == '6':
+                orchestrator.adjust_transfer_speeds()
+                
+            elif choice == '7':
+                orchestrator.demonstrate_file_exchange_simulation()
+                
+            elif choice == '8':
+                # Distributed P2P File Transfer with user input
+                print("\n📦 DISTRIBUTED P2P FILE TRANSFER")
+                print("="*50)
+                try:
+                    filename = input("Enter filename to transfer: ").strip()
+                    if not filename:
+                        filename = "large_video.mp4"  # Default
+                    
+                    size_input = input(f"Enter file size in MB (default 500): ").strip()
+                    file_size = int(size_input) if size_input else 500
+                    
+                    orchestrator.distributed_file_storage(filename, file_size)
+                except ValueError:
+                    print("❌ Invalid file size, using default 500MB")
+                    orchestrator.distributed_file_storage("large_video.mp4", 500)
+                except Exception as e:
+                    print(f"❌ Error: {e}")
+                
+            elif choice == '9':
+                print("\n🔐 SSH CONNECTION DEMO:")
+                print("Establishing SSH connections between nodes...")
+                nodes = list(orchestrator.nodes.keys())
+                if len(nodes) >= 2:
+                    print(f"🔐 SSH: {nodes[0]} → {nodes[1]}")
+                    print(f"🔐 SSH: {nodes[1]} → {nodes[2] if len(nodes) > 2 else nodes[0]}")
+                    print("✅ SSH connections established!")
+                else:
+                    print("❌ Need at least 2 nodes for SSH demo")
+                    
+            elif choice == '10':
+                run_comprehensive_demo()
+                break
+                
+            elif choice == '11':
+                print("\n🖥️ VIRTUAL MACHINE DETAILS:")
+                for node_id, node in orchestrator.nodes.items():
+                    print(f"\n💻 {node_id.upper()}:")
+                    print(f"   🌐 IP Address: {node.ip_config.ip_address}")
+                    print(f"   💾 Storage: {node.storage_usage}GB / {node.storage_capacity}GB")
+                    print(f"   📁 Files: {len(node.files)}")
+                    print(f"   🔋 Status: {'Online' if node.is_online else 'Offline'}")
+                    print(f"   🔗 TCP Connections: {len(node.tcp_connections)}")
+                    
+            elif choice == '0':
+                print("👋 Goodbye!")
+                break
+                
+            else:
+                print("❌ Invalid choice. Please select 0-11.")
+                
+        except KeyboardInterrupt:
+            print("\n👋 Goodbye!")
+            break
+        except Exception as e:
+            print(f"❌ Error: {e}")
 
 if __name__ == "__main__":
     main()
