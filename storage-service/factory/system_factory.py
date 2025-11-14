@@ -345,21 +345,21 @@ class ConfigurationTemplates:
 # Convenience functions for quick system creation
 def create_default_system(silent: bool = False) -> StorageServiceOrchestrator:
     """Quick function to create default system"""
-    return StorageSystemFactory.create_default_system(silent)
+    return StorageSystemFactory.create_default_system(silent_mode=silent)
 
 def create_development_system(silent: bool = False) -> StorageServiceOrchestrator:
     """Quick function to create development system"""
     config = ConfigurationTemplates.get_development_config()
-    return StorageSystemFactory.create_custom_system(config, silent)
+    return StorageSystemFactory.create_custom_system(config, silent_mode=silent)
 
 def create_production_system(silent: bool = False) -> StorageServiceOrchestrator:
     """Quick function to create production system"""
     config = ConfigurationTemplates.get_production_config()
-    return StorageSystemFactory.create_custom_system(config, silent)
+    return StorageSystemFactory.create_custom_system(config, silent_mode=silent)
 
 def create_testing_system(nodes: int = 5, silent: bool = True) -> StorageServiceOrchestrator:
     """Quick function to create testing system"""
-    return StorageSystemFactory.create_testing_system(nodes, silent)
+    return StorageSystemFactory.create_testing_system(nodes, silent_mode=silent)
 
 
 import random

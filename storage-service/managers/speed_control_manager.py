@@ -286,8 +286,8 @@ class SpeedControlManager:
             time.sleep(0.3)  # Brief pause for realism
         
         # Update network speed (simplified)
-        for link_id, link_info in self.network.links.items():
-            link_info['bandwidth'] = new_speed
+        for link_id, link in self.network.links.items():
+            link.bandwidth_mbps = new_speed
         
         return True
     
@@ -385,11 +385,10 @@ class SpeedControlManager:
         """Apply custom network configuration"""
         try:
             # Update network parameters
-            for link_id, link_info in self.network.links.items():
-                link_info['bandwidth'] = speed
-                link_info['latency'] = latency
-                link_info['jitter'] = jitter
-                link_info['packet_loss'] = packet_loss
+            for link_id, link in self.network.links.items():
+                link.bandwidth_mbps = speed
+                link.latency_ms = latency
+                # Note: jitter and packet_loss may not be available on all link objects
             
             print("\n⚙️ Applying configuration...")
             time.sleep(1)  # Simulate configuration time

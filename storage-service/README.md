@@ -1,52 +1,115 @@
-# Storage as a Service System# Enhanced Storage as a Service System
+# 🎓 SchoolBridge Distributed Storage System
 
+**OOP-Based Enhanced Distributed Storage with Virtual Machine Simulation**
 
+A comprehensive, object-oriented distributed storage system featuring advanced networking, peer-to-peer file distribution, interactive terminals, and dynamic bandwidth control. Each node behaves like a real virtual machine with full command-line access and network capabilities.
 
-A simple distributed storage simulation system that demonstrates file transfer capabilities between virtual nodes.A comprehensive distributed storage system with advanced networking features including IP addressing, TCP/IP networking, SSH connections, interactive node terminals, and distributed file storage. **Each node behaves like a real virtual computer with its own terminal interface.**
+## 🌟 Key Highlights
 
+- 🏗️ **Clean OOP Architecture** - Modular managers with single responsibility principle
+- 🖥️ **Virtual Machine Simulation** - Each node acts like a real Linux server
+- 🌐 **Advanced Networking** - TCP/IP, SSH, multiple topologies (MESH/STAR/RING)
+- 📁 **Peer-to-Peer Storage** - Distributed file chunks across multiple nodes
+- ⚡ **Dynamic Bandwidth Control** - Real-time speed adjustment (4 Mbps to 1.6 Gbps)
+- 💻 **Interactive Terminals** - Full command-line access to each virtual node
+- 🏭 **Factory Pattern** - Easy system creation with predefined configurations
 
+## 🏗️ Project Structure
 
-## Features## 🏗️ Project Structure
+```
+SchoolBridge-/storage-service/
+├── main_oop.py                    # 🚀 New OOP-based main entry point
+├── main.py                        # 📜 Legacy main (preserved)
+├── test_oop_system.py            # 🧪 Comprehensive test suite
+├── factory/
+│   ├── system_factory.py         # 🏭 Factory pattern for system creation
+│   └── __init__.py
+├── managers/                      # 🎛️ OOP Manager Classes
+│   ├── network_manager.py        # 🌐 Network & node management
+│   ├── storage_orchestrator.py   # 🎪 Main orchestration & menu system
+│   ├── file_transfer_manager.py  # 📁 File operations & P2P distribution
+│   ├── speed_control_manager.py  # ⚡ Bandwidth control & speed testing
+│   ├── terminal_manager.py       # 💻 SSH & terminal management
+│   └── __init__.py
+├── src/                          # 🔧 Core Components
+│   ├── enhanced_storage_node.py  # 🖥️ Virtual machine nodes
+│   ├── enhanced_virtual_network.py # 🌐 Advanced networking
+│   └── ...
+├── .gitignore                    # 🔒 Security protection
+└── README.md                     # 📖 This documentation
+```
 
+## 🚀 Quick Start
 
+### 1. Run the OOP System (Recommended)
+```bash
+python main_oop.py
+```
 
-- **Storage Nodes**: Virtual nodes with configurable CPU, memory, and storage capacity```
+### 2. Choose Your System Configuration
+- **🏠 Default System**: 3 nodes, mesh topology, quick setup
+- **💼 Development System**: Optimized for development work
+- **🏭 Production System**: High-performance enterprise setup
+- **🧪 Testing System**: Configurable nodes for testing
+- **🌍 Distributed System**: Multi-region simulation
+- **🔬 Performance System**: Ultra-high specifications
+- **💡 Minimal System**: Just 2 nodes for basic operations
 
-- **Network Connections**: Connect nodes with specified bandwidthEnhanced Storage Service/
+### 3. Explore the Features
+Access the unified menu system with 11 main categories:
+- 🌐 Network Management
+- 📁 File Operations
+- ⚡ Speed Control & Testing
+- 💻 Terminal Access
+- 🔗 P2P Distributed Storage
+- 📊 System Monitoring
+- And more...
 
-- **File Transfer**: Transfer files between nodes with realistic speed calculations├── enhanced_main.py                 # Enhanced comprehensive demonstration
+## 🏭 Factory Pattern Usage
 
-- **Network Status**: Monitor resource usage and file distribution├── interactive_terminal.py          # Interactive node terminal interface
+### Easy System Creation
+```python
+from factory.system_factory import create_default_system, create_production_system
 
-- **Interactive Mode**: Create nodes, connect them, and transfer files manually├── main.py                         # Original demonstration (legacy)
+# Quick default system
+system = create_default_system()
+system.run_interactive_menu()
 
-- **Demo Mode**: Automated demonstration of the system capabilities├── src/
+# High-performance production system
+prod_system = create_production_system()
 
-│   ├── enhanced_storage_node.py     # Enhanced nodes with IP, TCP/IP, terminals  
+# Custom testing environment
+test_system = create_testing_system(nodes=10)
+```
 
-## Quick Start│   ├── enhanced_virtual_network.py  # Advanced networking with SSH, routing
+### Advanced Configuration
+```python
+from factory.system_factory import StorageSystemFactory, ConfigurationTemplates
 
-│   ├── storage_virtual_node.py      # Original storage node (legacy)
+# Use predefined templates
+config = ConfigurationTemplates.get_production_config()
+system = StorageSystemFactory.create_custom_system(config)
 
-1. **Run the system:**│   └── storage_virtual_network.py   # Original network management (legacy)
+# Create distributed multi-region system
+distributed = StorageSystemFactory.create_distributed_system(regions=5)
+```
 
-   ```bash├── ENHANCED_README.md              # Comprehensive documentation
+## 🧪 Testing
 
-   python main.py└── README.md                       # This file
+Run comprehensive tests to verify all OOP components:
+```bash
+python test_oop_system.py
+```
 
-   ``````
+**Test Coverage:**
+- ✅ Basic functionality (NetworkManager, FileTransferManager, etc.)
+- ✅ Factory patterns (7 creation methods)
+- ✅ Configuration templates (3 predefined configs)
+- ✅ File operations (upload, download, P2P distribution)
+- ✅ Speed control (bandwidth management, presets)
+- ✅ Terminal operations (SSH, command execution)
 
-
-
-2. **Choose a mode:**## 🚀 Enhanced Features
-
-   - **Demo Mode (1)**: Automatic demonstration with predefined transfers
-
-   - **Interactive Mode (2)**: Manual control to create nodes and transfer files### ✅ All Advanced Requirements Implemented:
-
-
-
-## System Architecture1. **🌐 IP Address Assignment**: Each node has unique IP addresses (10.0.0.10, 10.0.0.20, etc.)
+## 🌟 Enhanced Features
 
 2. **⚡ Fast Operations**: Optimized algorithms with real-time performance monitoring  
 
