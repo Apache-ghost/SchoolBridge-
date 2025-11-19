@@ -278,8 +278,34 @@ class NetworkCoordinator:
         if not node_id:
             return {'status': 'error', 'message': 'Missing node_id'}
         
+        # Check if node is reconnecting
         if node_id in self.nodes:
-            return {'status': 'error', 'message': f'Node {node_id} already exists'}
+            # Allow reconnection - update existing node info
+            print(f"🔄 Node '{node_id}' is reconnecting...")
+            existing_node = self.nodes[node_id]
+            
+            # Update connection info
+            existing_node['address'] = message.get('address', 'localhost')
+            existing_node['port'] = message.get('port')
+            existing_node['last_heartbeat'] = time.time()
+            existing_node['status'] = 'active'
+            existing_node['registered_at'] = datetime.now().isoformat()
+            
+            # Update network interface
+            interface_info = self.network_interface.create_network_interface(
+                node_id, message.get('port')
+            )
+            if interface_info:
+                existing_node['network_interface'] = interface_info
+            
+            print(f"✅ Node '{node_id}' reconnected successfully!")
+            print(f"   📍 Address: {existing_node['address']}:{existing_node['port']}")
+            
+            return {
+                'status': 'success', 
+                'message': 'Reconnected successfully',
+                'network_interface': existing_node['network_interface']
+            }
         
         # Create network interface for the node
         interface_info = self.network_interface.create_network_interface(

@@ -14,6 +14,7 @@ import base64
 from typing import Dict, List, Optional
 from datetime import datetime
 from pathlib import Path
+from pathlib import Path
 from virtual_filesystem import VirtualFileSystem
 from virtual_hardware import VirtualHardware
 
@@ -53,15 +54,90 @@ class AutonomousNode:
         print("🖥️  Autonomous Node Starting...")
         print("=" * 40)
     
+    def get_existing_nodes(self):
+        """Get list of existing node storage directories"""
+        nodes_dir = Path("./vm_storage")
+        if not nodes_dir.exists():
+            return []
+        
+        existing_nodes = []
+        for item in nodes_dir.iterdir():
+            if item.is_dir():
+                existing_nodes.append(item.name)
+        return existing_nodes
+    
+    def choose_node_mode(self):
+        """Let user choose between creating new node or connecting to existing"""
+        existing_nodes = self.get_existing_nodes()
+        
+        print("🖥️  Node Management")
+        print("=" * 40)
+        
+        if existing_nodes:
+            print(f"📁 Found {len(existing_nodes)} existing nodes:")
+            for i, node_name in enumerate(existing_nodes, 1):
+                print(f"   {i}. {node_name}")
+            print()
+        
+        print("🎯 Choose an option:")
+        print("   1. Create new node")
+        if existing_nodes:
+            print("   2. Connect to existing node")
+        
+        while True:
+            try:
+                choice = input("\n🎯 Enter choice (1" + ("-2" if existing_nodes else "") + "): ").strip()
+                
+                if choice == "1":
+                    return self.get_user_configuration()
+                elif choice == "2" and existing_nodes:
+                    return self.select_existing_node(existing_nodes)
+                else:
+                    print("❌ Invalid choice!")
+            except KeyboardInterrupt:
+                print("\n👋 Setup cancelled.")
+                return False
+    
+    def select_existing_node(self, existing_nodes):
+        """Let user select from existing nodes"""
+        print("\n📋 Select existing node:")
+        for i, node_name in enumerate(existing_nodes, 1):
+            print(f"   {i}. {node_name}")
+        
+        while True:
+            try:
+                choice = input(f"\n🎯 Enter node number (1-{len(existing_nodes)}): ").strip()
+                idx = int(choice) - 1
+                
+                if 0 <= idx < len(existing_nodes):
+                    self.node_id = existing_nodes[idx]
+                    
+                    # Auto-assign port for existing node
+                    self.port = self._get_available_port()
+                    print(f"📡 Auto-assigned port: {self.port}")
+                    
+                    print(f"✅ Selected existing node: {self.node_id}")
+                    return True
+                else:
+                    print("❌ Invalid selection!")
+            except (ValueError, KeyboardInterrupt):
+                print("❌ Invalid input or cancelled!")
+                return False
+    
     def get_user_configuration(self):
-        """Get node configuration from user input"""
-        print("⚙️  Node Configuration Setup")
-        print("-" * 30)
+        """Get node configuration from user input for NEW node"""
+        print("\n⚙️  New Node Configuration Setup")
+        print("-" * 35)
         
         while True:
             try:
                 self.node_id = input("🏷️  Enter Node Name: ").strip()
                 if self.node_id:
+                    # Check if node already exists
+                    existing_nodes = self.get_existing_nodes()
+                    if self.node_id in existing_nodes:
+                        print(f"⚠️  Node '{self.node_id}' already exists! Choose a different name.")
+                        continue
                     break
                 print("❌ Node name cannot be empty!")
             except KeyboardInterrupt:
@@ -1154,8 +1230,8 @@ class AutonomousNode:
                 return
             
             nodes = [node for node in nodes_info.get('nodes', {}).keys() if node != self.node_id]
-            if len(nodes) < 2:
-                print("❌ Need at least 2 other nodes for transfer")
+            if len(nodes) < 1:
+                print("❌ Need at least 1 other node for transfer")
                 return
             
             print("🌐 Available nodes:")
@@ -1359,7 +1435,7 @@ class AutonomousNode:
     def start(self):
         """Start the autonomous node"""
         # Get configuration from user
-        if not self.get_user_configuration():
+        if not self.choose_node_mode():
             return
         
         print(f"\n🚀 Starting virtual machine '{self.node_id}'...")
