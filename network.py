@@ -136,8 +136,30 @@ class NetworkInterface:
         }
 
 class NetworkCoordinator:
-    def __init__(self, port: int = 8888):
-        self.port = port
+    def get_network_port(self):
+        """Get network port from user input"""
+        print("🌐 Network Coordinator Configuration")
+        print("=" * 40)
+        
+        while True:
+            try:
+                port_input = input("🔌 Enter network port (default 8888): ").strip()
+                if not port_input:
+                    return 8888
+                
+                port = int(port_input)
+                if 1024 <= port <= 65535:
+                    return port
+                else:
+                    print("❌ Port must be between 1024 and 65535")
+            except ValueError:
+                print("❌ Please enter a valid port number")
+            except KeyboardInterrupt:
+                print("\n👋 Configuration cancelled, using default port 8888")
+                return 8888
+    
+    def __init__(self, port: int = None):
+        self.port = port if port is not None else self.get_network_port()
         self.nodes = {}
         self.connections = {}
         self.message_queue = {}

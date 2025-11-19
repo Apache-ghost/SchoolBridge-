@@ -66,11 +66,99 @@ class AutonomousNode:
                 existing_nodes.append(item.name)
         return existing_nodes
     
+    def get_network_configuration(self):
+        """Get network connection settings"""
+        print("🌐 Network Configuration")
+        print("-" * 30)
+        
+        # Network host
+        while True:
+            try:
+                host_input = input("🌐 Enter network host (default localhost): ").strip()
+                if not host_input:
+                    self.network_host = "localhost"
+                    break
+                else:
+                    self.network_host = host_input
+                    break
+            except KeyboardInterrupt:
+                print("\n👋 Setup cancelled.")
+                return False
+        
+        # Network port
+        while True:
+            try:
+                port_input = input("🔌 Enter network port (default 8888): ").strip()
+                if not port_input:
+                    self.network_port = 8888
+                    break
+                else:
+                    port = int(port_input)
+                    if 1024 <= port <= 65535:
+                        self.network_port = port
+                        break
+                    else:
+                        print("❌ Port must be between 1024 and 65535")
+            except ValueError:
+                print("❌ Please enter a valid port number")
+            except KeyboardInterrupt:
+                print("\n👋 Setup cancelled.")
+                return False
+        
+        print(f"✅ Network target: {self.network_host}:{self.network_port}")
+        return True
+    
+    def get_network_configuration(self):
+        """Get network connection settings"""
+        print("\n🌐 Network Configuration")
+        print("-" * 30)
+        
+        # Network host
+        while True:
+            try:
+                host_input = input("🌐 Enter network host (default localhost): ").strip()
+                if not host_input:
+                    self.network_host = "localhost"
+                    break
+                else:
+                    self.network_host = host_input
+                    break
+            except KeyboardInterrupt:
+                print("\n👋 Setup cancelled.")
+                return False
+        
+        # Network port
+        while True:
+            try:
+                port_input = input("🔌 Enter network port (default 8888): ").strip()
+                if not port_input:
+                    self.network_port = 8888
+                    break
+                else:
+                    port = int(port_input)
+                    if 1024 <= port <= 65535:
+                        self.network_port = port
+                        break
+                    else:
+                        print("❌ Port must be between 1024 and 65535")
+            except ValueError:
+                print("❌ Please enter a valid port number")
+            except KeyboardInterrupt:
+                print("\n👋 Setup cancelled.")
+                return False
+        
+        print(f"✅ Network target: {self.network_host}:{self.network_port}")
+        return True
+    
     def choose_node_mode(self):
         """Let user choose between creating new node or connecting to existing"""
+        # Get network configuration first
+        if not self.get_network_configuration():
+            return False
+            
         existing_nodes = self.get_existing_nodes()
         
-        print("🖥️  Node Management")
+        print("\n🖥️  Node Management")
         print("=" * 40)
         
         if existing_nodes:
@@ -89,8 +177,14 @@ class AutonomousNode:
                 choice = input("\n🎯 Enter choice (1" + ("-2" if existing_nodes else "") + "): ").strip()
                 
                 if choice == "1":
+                    # Get network configuration first
+                    if not self.get_network_configuration():
+                        return False
                     return self.get_user_configuration()
                 elif choice == "2" and existing_nodes:
+                    # Get network configuration first
+                    if not self.get_network_configuration():
+                        return False
                     return self.select_existing_node(existing_nodes)
                 else:
                     print("❌ Invalid choice!")
@@ -154,8 +248,12 @@ class AutonomousNode:
                 else:
                     self.port = int(port_input)
                     if 1024 <= self.port <= 65535:
-                        break
-                    print("❌ Port must be between 1024 and 65535!")
+                        if self.port != self.network_port:
+                            break
+                        else:
+                            print(f"❌ Port {self.port} is already used by network coordinator!")
+                    else:
+                        print("❌ Port must be between 1024 and 65535!")
             except ValueError:
                 print("❌ Please enter a valid port number!")
             except KeyboardInterrupt:
@@ -371,7 +469,17 @@ class AutonomousNode:
             
             network_socket.send(json.dumps(registration_message).encode())
             response_data = network_socket.recv(4096)
-            response = json.loads(response_data.decode())
+            
+            if not response_data:
+                print("❌ Received empty response from network")
+                return False
+                
+            try:
+                response = json.loads(response_data.decode())
+            except json.JSONDecodeError as e:
+                print(f"❌ Invalid JSON response: {response_data.decode()[:100]}")
+                print(f"❌ JSON Error: {e}")
+                return False
             
             network_socket.close()
             
@@ -1238,11 +1346,32 @@ class AutonomousNode:
             for i, node_id in enumerate(nodes, 1):
                 print(f"   {i}. {node_id}")
             
-            source_idx = int(input("\n🎯 Enter source node number: ")) - 1
-            target_idx = int(input("🎯 Enter target node number: ")) - 1
+            # Get source node
+            while True:
+                try:
+                    source_input = input(f"\n🎯 Enter source node number (1-{len(nodes)}): ").strip()
+                    source_idx = int(source_input) - 1
+                    if 0 <= source_idx < len(nodes):
+                        break
+                    else:
+                        print(f"❌ Please enter a number between 1 and {len(nodes)}")
+                except ValueError:
+                    print("❌ Please enter a valid number")
             
-            if not (0 <= source_idx < len(nodes) and 0 <= target_idx < len(nodes)):
-                print("❌ Invalid node selection")
+            # Get target node  
+            while True:
+                try:
+                    target_input = input(f"🎯 Enter target node number (1-{len(nodes)}): ").strip()
+                    target_idx = int(target_input) - 1
+                    if 0 <= target_idx < len(nodes):
+                        break
+                    else:
+                        print(f"❌ Please enter a number between 1 and {len(nodes)}")
+                except ValueError:
+                    print("❌ Please enter a valid number")
+            
+            if source_idx == target_idx:
+                print("❌ Source and target cannot be the same")
                 return
             
             source_node = nodes[source_idx]
