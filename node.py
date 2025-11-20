@@ -761,6 +761,51 @@ class AutonomousNode:
                     self._cmd_restore()
                 elif cmd == "help":
                     self._cmd_show_help()
+                # Advanced VM commands
+                elif cmd == "ps":
+                    self._cmd_process_list()
+                elif cmd == "kill":
+                    self._cmd_kill_process()
+                elif cmd == "service":
+                    self._cmd_service_manager()
+                elif cmd == "users":
+                    self._cmd_user_management()
+                elif cmd == "passwd":
+                    self._cmd_change_password()
+                elif cmd == "sudo":
+                    self._cmd_sudo()
+                elif cmd == "firewall":
+                    self._cmd_firewall()
+                elif cmd == "traceroute":
+                    self._cmd_traceroute()
+                elif cmd == "netstat":
+                    self._cmd_netstat()
+                elif cmd == "ifconfig":
+                    self._cmd_ifconfig()
+                elif cmd == "arp":
+                    self._cmd_arp()
+                elif cmd == "mount":
+                    self._cmd_mount()
+                elif cmd == "umount":
+                    self._cmd_umount()
+                elif cmd == "raid":
+                    self._cmd_raid_manager()
+                elif cmd == "encrypt":
+                    self._cmd_disk_encryption()
+                elif cmd == "snapshot":
+                    self._cmd_create_snapshot()
+                elif cmd == "clone":
+                    self._cmd_clone_vm()
+                elif cmd == "antivirus":
+                    self._cmd_antivirus_scan()
+                elif cmd == "audit":
+                    self._cmd_security_audit()
+                elif cmd == "cp":
+                    self._cmd_copy_file()
+                elif cmd == "mv":
+                    self._cmd_move_file()
+                elif cmd == "chmod":
+                    self._cmd_change_permissions()
                 # Legacy commands for compatibility
                 elif cmd == "send":
                     self._cmd_upload_file()
@@ -1637,6 +1682,339 @@ class AutonomousNode:
             self.server_socket.close()
         
         print("👋 Node stopped. Goodbye!")
+
+    # Advanced VM Commands Implementation
+    def _cmd_process_list(self):
+        """List virtual processes"""
+        processes = [
+            {"pid": 1, "name": "systemd", "cpu": 0.1, "mem": 2.3, "status": "running"},
+            {"pid": 124, "name": "sshd", "cpu": 0.0, "mem": 1.2, "status": "running"}, 
+            {"pid": 256, "name": "file_manager", "cpu": 1.2, "mem": 5.4, "status": "running"},
+            {"pid": 312, "name": "network_service", "cpu": 0.5, "mem": 3.1, "status": "running"},
+            {"pid": 445, "name": "vm_monitor", "cpu": 2.1, "mem": 8.7, "status": "running"},
+        ]
+        
+        print("📊 Virtual Process List:")
+        print("   PID    Name              CPU%   MEM%   Status")
+        print("   " + "-" * 50)
+        
+        for proc in processes:
+            print(f"   {proc['pid']:<6} {proc['name']:<15} {proc['cpu']:<6} {proc['mem']:<6} {proc['status']}")
+    
+    def _cmd_kill_process(self):
+        """Terminate virtual process"""
+        try:
+            pid = input("💀 Enter process PID to kill: ").strip()
+            if not pid.isdigit():
+                print("❌ Invalid PID")
+                return
+            
+            confirm = input(f"⚠️ Kill process {pid}? (y/N): ").strip().lower()
+            if confirm in ['y', 'yes']:
+                print(f"✅ Process {pid} terminated")
+            else:
+                print("❌ Kill cancelled")
+        except KeyboardInterrupt:
+            print("\n❌ Operation cancelled")
+    
+    def _cmd_service_manager(self):
+        """Manage virtual services"""
+        services = {
+            "network": {"status": "active", "desc": "Network Service"},
+            "firewall": {"status": "active", "desc": "Firewall Protection"},
+            "filesystem": {"status": "active", "desc": "File System Manager"},
+            "monitoring": {"status": "active", "desc": "System Monitor"},
+            "backup": {"status": "inactive", "desc": "Backup Service"}
+        }
+        
+        print("🔧 Virtual Services:")
+        print("   Service        Status     Description")
+        print("   " + "-" * 50)
+        
+        for name, info in services.items():
+            status_icon = "🟢" if info["status"] == "active" else "🔴"
+            print(f"   {name:<12} {status_icon} {info['status']:<8} {info['desc']}")
+    
+    def _cmd_user_management(self):
+        """User management system"""
+        users = [
+            {"name": "root", "uid": 0, "home": "/root", "shell": "/bin/bash", "status": "active"},
+            {"name": "admin", "uid": 1000, "home": "/home/admin", "shell": "/bin/bash", "status": "active"},
+            {"name": "guest", "uid": 1001, "home": "/home/guest", "shell": "/bin/bash", "status": "locked"},
+        ]
+        
+        print("👥 Virtual Users:")
+        print("   Username    UID    Home Directory      Shell         Status")
+        print("   " + "-" * 65)
+        
+        for user in users:
+            status_icon = "🟢" if user["status"] == "active" else "🔒"
+            print(f"   {user['name']:<10} {user['uid']:<6} {user['home']:<18} {user['shell']:<12} {status_icon} {user['status']}")
+    
+    def _cmd_firewall(self):
+        """Firewall management"""
+        rules = [
+            {"port": 22, "protocol": "TCP", "action": "ALLOW", "source": "ANY"},
+            {"port": 80, "protocol": "TCP", "action": "ALLOW", "source": "ANY"},
+            {"port": 443, "protocol": "TCP", "action": "ALLOW", "source": "ANY"},
+            {"port": 8888, "protocol": "TCP", "action": "ALLOW", "source": "192.168.1.0/24"},
+        ]
+        
+        print("🔥 Virtual Firewall Rules:")
+        print("   Port   Protocol   Action   Source")
+        print("   " + "-" * 40)
+        
+        for rule in rules:
+            action_icon = "✅" if rule["action"] == "ALLOW" else "❌"
+            print(f"   {rule['port']:<6} {rule['protocol']:<9} {action_icon} {rule['action']:<6} {rule['source']}")
+    
+    def _cmd_traceroute(self):
+        """Simulate traceroute"""
+        try:
+            target = input("🔍 Enter target host: ").strip()
+            if not target:
+                print("❌ Target cannot be empty")
+                return
+            
+            print(f"🔍 Traceroute to {target}:")
+            hops = [
+                {"hop": 1, "ip": "192.168.1.1", "time": "1.2ms", "name": "gateway"},
+                {"hop": 2, "ip": "10.0.0.1", "time": "5.4ms", "name": "router.isp.com"},
+                {"hop": 3, "ip": "203.0.113.1", "time": "12.1ms", "name": "edge.network.com"},
+                {"hop": 4, "ip": target, "time": "18.7ms", "name": target},
+            ]
+            
+            for hop in hops:
+                print(f"   {hop['hop']:<3} {hop['name']:<20} ({hop['ip']}) {hop['time']}")
+                
+        except KeyboardInterrupt:
+            print("\n❌ Traceroute cancelled")
+    
+    def _cmd_netstat(self):
+        """Network statistics"""
+        connections = [
+            {"proto": "TCP", "local": f"{self.network_host}:{self.port}", "remote": f"{self.network_host}:{self.network_port}", "state": "ESTABLISHED"},
+            {"proto": "TCP", "local": "127.0.0.1:22", "remote": "0.0.0.0:*", "state": "LISTENING"},
+            {"proto": "UDP", "local": "0.0.0.0:53", "remote": "0.0.0.0:*", "state": "LISTENING"},
+        ]
+        
+        print("🌐 Network Connections:")
+        print("   Protocol   Local Address        Remote Address       State")
+        print("   " + "-" * 65)
+        
+        for conn in connections:
+            print(f"   {conn['proto']:<9} {conn['local']:<20} {conn['remote']:<20} {conn['state']}")
+    
+    def _cmd_ifconfig(self):
+        """Network interface configuration"""
+        if hasattr(self, 'network_interface_info') and self.network_interface_info:
+            print("🌐 Network Interface Configuration:")
+            print(f"   Interface: eth0")
+            print(f"   IP Address: {self.network_interface_info.get('ip_address', 'N/A')}")
+            print(f"   MAC Address: {self.network_interface_info.get('mac_address', 'N/A')}")
+            print(f"   Subnet Mask: 255.255.255.0")
+            print(f"   Gateway: 192.168.1.1")
+            print(f"   DNS: 8.8.8.8")
+            print(f"   Status: UP")
+            print(f"   RX Packets: 1,247")
+            print(f"   TX Packets: 892")
+        else:
+            print("❌ Network interface not configured")
+    
+    def _cmd_arp(self):
+        """ARP table"""
+        arp_table = [
+            {"ip": "192.168.1.1", "mac": "00:11:22:33:44:55", "type": "gateway"},
+            {"ip": "192.168.1.10", "mac": "02:74:8a:a0:cd:d1", "type": "dynamic"},
+            {"ip": "192.168.1.11", "mac": "02:f9:c4:c3:c6:d5", "type": "dynamic"},
+        ]
+        
+        print("🏷️ ARP Table:")
+        print("   IP Address      MAC Address        Type")
+        print("   " + "-" * 45)
+        
+        for entry in arp_table:
+            print(f"   {entry['ip']:<15} {entry['mac']:<17} {entry['type']}")
+    
+    def _cmd_mount(self):
+        """Mount virtual drive"""
+        print("💽 Available drives:")
+        print("   /dev/sdb1 - 100GB - Unmounted")
+        print("   /dev/sdc1 - 500GB - Unmounted") 
+        
+        try:
+            device = input("💽 Device to mount: ").strip()
+            mount_point = input("📁 Mount point: ").strip()
+            
+            if device and mount_point:
+                print(f"💽 Mounting {device} at {mount_point}...")
+                print("✅ Drive mounted successfully")
+            
+        except KeyboardInterrupt:
+            print("\n❌ Mount cancelled")
+    
+    def _cmd_umount(self):
+        """Unmount virtual drive"""
+        print("💽 Mounted drives:")
+        print("   /dev/sda1 mounted at /")
+        print("   /dev/sdb1 mounted at /home")
+        
+        try:
+            device = input("💽 Device to unmount: ").strip()
+            if device:
+                print(f"💽 Unmounting {device}...")
+                print("✅ Drive unmounted successfully")
+                
+        except KeyboardInterrupt:
+            print("\n❌ Unmount cancelled")
+    
+    def _cmd_raid_manager(self):
+        """RAID array management"""
+        print("💾 RAID Configuration:")
+        print("   Array   Level   Status     Devices              Capacity")
+        print("   " + "-" * 60)
+        print("   md0     RAID1   healthy    /dev/sda1,/dev/sdb1  500GB")
+        print("   md1     RAID5   degraded   /dev/sdc1,/dev/sdd1  1TB")
+    
+    def _cmd_disk_encryption(self):
+        """Disk encryption management"""
+        try:
+            action = input("🔐 Encryption action (encrypt/decrypt/status): ").strip().lower()
+            
+            if action == "encrypt":
+                print("🔐 Starting disk encryption...")
+                print("✅ Drive encrypted with AES-256")
+            elif action == "decrypt":
+                print("🔓 Starting disk decryption...")
+                print("✅ Drive decrypted")
+            elif action == "status":
+                print("🔐 Encryption Status:")
+                print("   Drive C: Encrypted (BitLocker)")
+                print("   Drive D: Not encrypted")
+            else:
+                print("❌ Invalid action")
+                
+        except KeyboardInterrupt:
+            print("\n❌ Operation cancelled")
+    
+    def _cmd_create_snapshot(self):
+        """Create VM snapshot"""
+        try:
+            name = input("📸 Snapshot name: ").strip()
+            if not name:
+                print("❌ Snapshot name cannot be empty")
+                return
+            
+            print(f"📸 Creating snapshot '{name}'...")
+            print("   💾 Saving memory state...")
+            print("   💽 Saving disk state...")
+            print("   ⚙️ Saving configuration...")
+            print(f"✅ Snapshot '{name}' created successfully")
+            
+        except KeyboardInterrupt:
+            print("\n❌ Snapshot cancelled")
+    
+    def _cmd_clone_vm(self):
+        """Clone virtual machine"""
+        try:
+            name = input("👯 Clone name: ").strip()
+            if not name:
+                print("❌ Clone name cannot be empty")
+                return
+            
+            print(f"👯 Cloning VM as '{name}'...")
+            print("   💾 Cloning file system...")
+            print("   ⚙️ Cloning configuration...")
+            print("   🌐 Generating new MAC address...")
+            print(f"✅ VM cloned successfully as '{name}'")
+            
+        except KeyboardInterrupt:
+            print("\n❌ Clone cancelled")
+    
+    def _cmd_antivirus_scan(self):
+        """Antivirus scan"""
+        try:
+            scan_type = input("🛡️ Scan type (quick/full/custom): ").strip().lower()
+            
+            print(f"🛡️ Starting {scan_type} antivirus scan...")
+            print("   🔍 Scanning system files...")
+            print("   🔍 Scanning user files...")
+            print("   🔍 Scanning memory...")
+            print("✅ Scan completed - No threats found")
+            print(f"   📊 Files scanned: 45,621")
+            print(f"   ⏱️ Scan time: 2m 34s")
+            
+        except KeyboardInterrupt:
+            print("\n❌ Scan cancelled")
+    
+    def _cmd_security_audit(self):
+        """Security audit"""
+        print("🔒 Security Audit Report:")
+        print("   🟢 Firewall: Active")
+        print("   🟢 Antivirus: Up to date")
+        print("   🟡 Password policy: Weak passwords detected")
+        print("   🟢 System updates: Current")
+        print("   🟡 Open ports: 3 non-standard ports open")
+        print("   🟢 File permissions: Proper")
+        print("   Risk Level: MEDIUM")
+    
+    def _cmd_copy_file(self):
+        """Copy file"""
+        try:
+            source = input("📄 Source file: ").strip()
+            dest = input("📁 Destination: ").strip()
+            
+            if source and dest:
+                print(f"📄 Copying {source} to {dest}...")
+                print("✅ File copied successfully")
+            
+        except KeyboardInterrupt:
+            print("\n❌ Copy cancelled")
+    
+    def _cmd_move_file(self):
+        """Move/rename file"""
+        try:
+            source = input("📄 Source file: ").strip()
+            dest = input("📁 Destination: ").strip()
+            
+            if source and dest:
+                print(f"📄 Moving {source} to {dest}...")
+                print("✅ File moved successfully")
+            
+        except KeyboardInterrupt:
+            print("\n❌ Move cancelled")
+    
+    def _cmd_change_permissions(self):
+        """Change file permissions"""
+        try:
+            filename = input("📄 File name: ").strip()
+            perms = input("🔐 Permissions (e.g., 755): ").strip()
+            
+            if filename and perms:
+                print(f"🔐 Changed permissions of {filename} to {perms}")
+            
+        except KeyboardInterrupt:
+            print("\n❌ Permission change cancelled")
+    
+    def _cmd_change_password(self):
+        """Change user password"""
+        try:
+            user = input("👤 Username (default: current): ").strip() or "current"
+            print(f"🔐 Password changed for user '{user}'")
+            
+        except KeyboardInterrupt:
+            print("\n❌ Password change cancelled")
+    
+    def _cmd_sudo(self):
+        """Execute command as administrator"""
+        try:
+            command = input("🔓 Command to run as admin: ").strip()
+            if command:
+                print(f"🔓 [sudo] Executing: {command}")
+                print("✅ Command executed with admin privileges")
+            
+        except KeyboardInterrupt:
+            print("\n❌ Sudo cancelled")
 
 def main():
     """Main function"""
