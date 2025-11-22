@@ -1371,10 +1371,12 @@ class AutonomousNode:
             
             nodes = nodes_info.get('nodes', {})
             node_list = []
-            for i, (node_id, node_info) in enumerate(nodes.items(), 1):
+            display_index = 1
+            for node_id, node_info in nodes.items():
                 if node_id != self.node_id:  # Don't show self
-                    print(f"   {i}. 🖥️ {node_id} ({node_info.get('files_stored', 0)} files)")
+                    print(f"   {display_index}. 🖥️ {node_id} ({node_info.get('files_stored', 0)} files)")
                     node_list.append(node_id)
+                    display_index += 1
             
             if not node_list:
                 print("❌ No other nodes available")
