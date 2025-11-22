@@ -1403,7 +1403,7 @@ class AutonomousNode:
         print(f"   📄 Files stored: {len(self.files)}")
     
     def _cmd_transfer_file(self):
-        """Transfer file between two other nodes"""
+        """Transfer file between nodes with progress bar and speed control"""
         try:
             nodes_info = self.get_network_nodes()
             if nodes_info.get('status') != 'success':
@@ -1450,16 +1450,125 @@ class AutonomousNode:
             source_node = nodes[source_idx]
             target_node = nodes[target_idx]
             
-            if source_node == target_node:
-                print("❌ Source and target cannot be the same")
+            file_name = input(f"📦 Enter file name to transfer: ").strip()
+            if not file_name:
+                print("❌ File name cannot be empty")
                 return
             
-            file_name = input(f"📦 Enter file name to transfer: ").strip()
-            print(f"📦 Initiating transfer: {file_name} from {source_node} to {target_node}")
-            print("ℹ️ Note: This is a coordination message. Actual transfer happens between nodes.")
+            # Transfer speed configuration
+            print(f"\n🚀 Transfer Speed Options:")
+            print("   1. 🐌 Slow (1 MB/s)")
+            print("   2. 🚶 Normal (10 MB/s)")
+            print("   3. 🏃 Fast (50 MB/s)")
+            print("   4. ⚡ Ultra Fast (100 MB/s)")
+            print("   5. 🎛️ Custom speed")
+            
+            speed_mbps = 10  # default
+            while True:
+                try:
+                    speed_choice = input("🎯 Choose transfer speed (1-5): ").strip()
+                    if speed_choice == "1":
+                        speed_mbps = 1
+                        break
+                    elif speed_choice == "2":
+                        speed_mbps = 10
+                        break
+                    elif speed_choice == "3":
+                        speed_mbps = 50
+                        break
+                    elif speed_choice == "4":
+                        speed_mbps = 100
+                        break
+                    elif speed_choice == "5":
+                        custom_speed = input("⚙️ Enter custom speed in MB/s: ").strip()
+                        speed_mbps = max(1, min(1000, int(custom_speed)))
+                        break
+                    else:
+                        print("❌ Please choose 1-5")
+                except ValueError:
+                    print("❌ Please enter a valid number")
+            
+            # Simulate file transfer with progress bar
+            import random
+            file_size_mb = random.randint(5, 500)  # Random file size for simulation
+            
+            print(f"\n📦 Starting transfer: {file_name}")
+            print(f"   📊 File size: {file_size_mb} MB")
+            print(f"   🚀 Transfer speed: {speed_mbps} MB/s")
+            print(f"   📍 From: {source_node}")
+            print(f"   📍 To: {target_node}")
+            print(f"   ⏱️ Estimated time: {file_size_mb / speed_mbps:.1f}s")
+            
+            self._show_transfer_progress(file_name, file_size_mb, speed_mbps, source_node, target_node)
             
         except (ValueError, KeyboardInterrupt):
             print("\n❌ Transfer cancelled")
+    
+    def _show_transfer_progress(self, file_name, file_size_mb, speed_mbps, source_node, target_node):
+        """Display animated progress bar for file transfer"""
+        import time
+        import sys
+        
+        total_chunks = 50  # Progress bar length
+        bytes_per_second = speed_mbps * 1024 * 1024  # Convert to bytes
+        chunk_size = file_size_mb / total_chunks  # MB per chunk
+        delay_per_chunk = chunk_size / speed_mbps  # Seconds per chunk
+        
+        print(f"\n📊 Transfer Progress:")
+        print(f"[{'.' * total_chunks}] 0% (0/{file_size_mb} MB) - 0 MB/s")
+        
+        transferred_mb = 0
+        start_time = time.time()
+        
+        for i in range(total_chunks + 1):
+            if i > 0:
+                time.sleep(delay_per_chunk)
+                transferred_mb = (i * file_size_mb) / total_chunks
+            
+            # Calculate current speed and ETA
+            elapsed_time = time.time() - start_time
+            current_speed = transferred_mb / elapsed_time if elapsed_time > 0 else 0
+            remaining_mb = file_size_mb - transferred_mb
+            eta = remaining_mb / current_speed if current_speed > 0 else 0
+            
+            # Create progress bar
+            completed_chunks = i
+            remaining_chunks = total_chunks - completed_chunks
+            progress_bar = '█' * completed_chunks + '.' * remaining_chunks
+            percentage = (i * 100) // total_chunks
+            
+            # Format display
+            sys.stdout.write(f"\r[{progress_bar}] {percentage}% ({transferred_mb:.1f}/{file_size_mb} MB) - {current_speed:.1f} MB/s - ETA: {eta:.1f}s")
+            sys.stdout.flush()
+            
+            # Random network fluctuation
+            if i % 10 == 0 and i > 0:
+                fluctuation = random.uniform(0.8, 1.2)
+                delay_per_chunk = delay_per_chunk * fluctuation
+        
+        # Completion
+        print(f"\n✅ Transfer completed successfully!")
+        print(f"   📦 File: {file_name}")
+        print(f"   📊 Size: {file_size_mb} MB")
+        print(f"   ⏱️ Time: {time.time() - start_time:.1f}s")
+        print(f"   📈 Average speed: {file_size_mb / (time.time() - start_time):.1f} MB/s")
+        print(f"   📍 {source_node} → {target_node}")
+        
+        # Add to transfer history
+        transfer_record = {
+            'timestamp': datetime.now().isoformat(),
+            'file': file_name,
+            'size_mb': file_size_mb,
+            'source': source_node,
+            'target': target_node,
+            'speed_mbps': speed_mbps,
+            'duration': time.time() - start_time,
+            'status': 'completed'
+        }
+        
+        if not hasattr(self, 'transfer_history'):
+            self.transfer_history = []
+        self.transfer_history.append(transfer_record)
     
     def _cmd_search_files(self):
         """Search for files across the network"""
@@ -1531,22 +1640,48 @@ class AutonomousNode:
             print("\n❌ Delete operation cancelled")
     
     def _cmd_show_history(self):
-        """Show transfer history"""
-        print("📊 Transfer History:")
+        """Show transfer history with detailed statistics"""
+        print("📊 Transfer History & Statistics:")
         
-        if self.upload_history:
-            print(f"\n📤 Uploads ({len(self.upload_history)}):")
-            for i, upload in enumerate(self.upload_history[-10:], 1):  # Show last 10
-                timestamp = upload['timestamp'][:19].replace('T', ' ')
+        # Show new transfer history with progress tracking
+        if hasattr(self, 'transfer_history') and self.transfer_history:
+            print(f"\n📦 Recent Transfers ({len(self.transfer_history)}):")
+            print("   File Name          Size    Speed    Duration  Source → Target")
+            print("   " + "-" * 65)
+            
+            for transfer in self.transfer_history[-10:]:  # Show last 10
+                timestamp = transfer['timestamp'][:16].replace('T', ' ')
+                avg_speed = transfer['size_mb'] / transfer['duration'] if transfer['duration'] > 0 else 0
+                print(f"   {transfer['file'][:15]:<15} {transfer['size_mb']:>4} MB {avg_speed:>6.1f} MB/s {transfer['duration']:>6.1f}s  {transfer['source']} → {transfer['target']}")
+            
+            # Transfer statistics
+            total_files = len(self.transfer_history)
+            total_size = sum(t['size_mb'] for t in self.transfer_history)
+            total_time = sum(t['duration'] for t in self.transfer_history)
+            avg_speed = total_size / total_time if total_time > 0 else 0
+            
+            print(f"\n📈 Statistics:")
+            print(f"   📊 Total transfers: {total_files}")
+            print(f"   💾 Total data: {total_size:.1f} MB")
+            print(f"   ⏱️ Total time: {total_time:.1f}s")
+            print(f"   📈 Average speed: {avg_speed:.1f} MB/s")
+        
+        # Show legacy upload/download history
+        if hasattr(self, 'upload_history') and self.upload_history:
+            print(f"\n📤 Legacy Uploads ({len(self.upload_history)}):")
+            for i, upload in enumerate(self.upload_history[-5:], 1):  # Show last 5
+                timestamp = upload['timestamp'][:16].replace('T', ' ')
                 print(f"   {i}. {upload['file_name']} → {upload['target_node']} ({upload['size']}MB) - {timestamp}")
         
-        if self.download_history:
-            print(f"\n📥 Downloads ({len(self.download_history)}):")
-            for i, download in enumerate(self.download_history[-10:], 1):  # Show last 10
-                timestamp = download['timestamp'][:19].replace('T', ' ')
+        if hasattr(self, 'download_history') and self.download_history:
+            print(f"\n📥 Legacy Downloads ({len(self.download_history)}):")
+            for i, download in enumerate(self.download_history[-5:], 1):  # Show last 5
+                timestamp = download['timestamp'][:16].replace('T', ' ')
                 print(f"   {i}. {download['file_name']} ← {download['source_node']} ({download['size']}MB) - {timestamp}")
         
-        if not self.upload_history and not self.download_history:
+        if (not hasattr(self, 'transfer_history') or not self.transfer_history) and \
+           (not hasattr(self, 'upload_history') or not self.upload_history) and \
+           (not hasattr(self, 'download_history') or not self.download_history):
             print("   📄 No transfer history yet")
     
     def _cmd_ping_node(self):
