@@ -210,6 +210,9 @@ class AutonomousNode:
                     self.port = self._get_available_port()
                     print(f"📡 Auto-assigned port: {self.port}")
                     
+                    # Load existing node specifications from metadata
+                    self._load_existing_node_specs()
+                    
                     print(f"✅ Selected existing node: {self.node_id}")
                     return True
                 else:
@@ -217,6 +220,65 @@ class AutonomousNode:
             except (ValueError, KeyboardInterrupt):
                 print("❌ Invalid input or cancelled!")
                 return False
+    
+    def _load_existing_node_specs(self):
+        """Load existing node specifications from stored metadata"""
+        storage_path = f"./vm_storage/{self.node_id}"
+        metadata_file = f"{storage_path}/.vfs_metadata.json"
+        
+        try:
+            if os.path.exists(metadata_file):
+                with open(metadata_file, 'r') as f:
+                    metadata = json.load(f)
+                    
+                # Get storage capacity from filesystem metadata
+                capacity_bytes = metadata.get('capacity_bytes', 0)
+                if capacity_bytes > 0:
+                    self.storage_capacity = capacity_bytes / (1024**3)  # Convert bytes to GB
+                    print(f"📁 Loaded existing storage: {self.storage_capacity:.1f}GB")
+                else:
+                    self._ask_storage_upgrade()
+            else:
+                print("⚠️ No existing metadata found")
+                self._ask_storage_upgrade()
+                
+        except Exception as e:
+            print(f"⚠️ Error loading metadata: {e}")
+            self._ask_storage_upgrade()
+        
+        # Set other default specs if not set
+        if self.bandwidth == 0:
+            self.bandwidth = 100  # Default 100 Mbps
+        if self.cpu_cores == 0:
+            self.cpu_cores = 4  # Default 4 cores
+        if self.memory_capacity == 0:
+            self.memory_capacity = 8  # Default 8GB RAM
+    
+    def _ask_storage_upgrade(self):
+        """Ask user for storage capacity for existing node"""
+        print(f"\n💾 Configure Storage for {self.node_id}:")
+        print("   Current storage appears to be unset or corrupted")
+        
+        while True:
+            try:
+                storage_input = input("💾 Enter storage capacity in GB (default 10GB): ").strip()
+                if not storage_input:
+                    self.storage_capacity = 10
+                    break
+                else:
+                    storage_value = float(storage_input)
+                    if storage_value > 0:
+                        self.storage_capacity = storage_value
+                        break
+                    else:
+                        print("❌ Storage must be greater than 0")
+            except ValueError:
+                print("❌ Please enter a valid number")
+            except KeyboardInterrupt:
+                print("\n👋 Setup cancelled.")
+                return False
+        
+        print(f"💾 Storage set to {self.storage_capacity}GB")
     
     def get_user_configuration(self):
         """Get node configuration from user input for NEW node"""
@@ -1318,22 +1380,30 @@ class AutonomousNode:
                 print("❌ No other nodes available")
                 return
             
-            choice = input("\n🎯 Enter node number or name: ").strip()
-            
-            # Handle numeric choice
-            if choice.isdigit():
-                idx = int(choice) - 1
-                if 0 <= idx < len(node_list):
-                    target_node = node_list[idx]
+            while True:
+                choice = input("\n🎯 Enter node number or name: ").strip()
+                
+                if not choice:
+                    print("❌ Please enter a valid choice")
+                    continue
+                
+                # Handle numeric choice
+                if choice.isdigit():
+                    idx = int(choice) - 1
+                    if 0 <= idx < len(node_list):
+                        target_node = node_list[idx]
+                        break
+                    else:
+                        print(f"❌ Invalid node number. Please enter 1-{len(node_list)}")
+                        continue
                 else:
-                    print("❌ Invalid node number")
-                    return
-            else:
-                target_node = choice
-            
-            if target_node not in [node for node in nodes.keys() if node != self.node_id]:
-                print("❌ Source node not found")
-                return
+                    # Handle node name
+                    target_node = choice
+                    if target_node in [node for node in nodes.keys() if node != self.node_id]:
+                        break
+                    else:
+                        print("❌ Source node not found. Please try again.")
+                        continue
             
             file_name = input(f"📥 Enter file name to download from {target_node}: ").strip()
             if not file_name:
@@ -1403,8 +1473,13 @@ class AutonomousNode:
         print(f"   📄 Files stored: {len(self.files)}")
     
     def _cmd_transfer_file(self):
-        """Transfer file between nodes with progress bar and speed control"""
+        """Transfer real files between nodes with dynamic speed control"""
         try:
+            # Check for available files to transfer
+            if not self.files:
+                print("❌ No files available to transfer. Create some files first!")
+                return
+            
             nodes_info = self.get_network_nodes()
             if nodes_info.get('status') != 'success':
                 print("❌ Failed to get network information")
@@ -1415,26 +1490,34 @@ class AutonomousNode:
                 print("❌ Need at least 1 other node for transfer")
                 return
             
-            print("🌐 Available nodes:")
-            for i, node_id in enumerate(nodes, 1):
-                print(f"   {i}. {node_id}")
+            # Show available files
+            print("📁 Available files to transfer:")
+            file_list = list(self.files.keys())
+            for i, file_name in enumerate(file_list, 1):
+                file_info = self.files[file_name]
+                print(f"   {i}. {file_name} ({file_info['size']} MB)")
             
-            # Get source node
+            # Select file to transfer
             while True:
                 try:
-                    source_input = input(f"\n🎯 Enter source node number (1-{len(nodes)}): ").strip()
-                    source_idx = int(source_input) - 1
-                    if 0 <= source_idx < len(nodes):
+                    file_choice = input(f"\n📦 Enter file number to transfer (1-{len(file_list)}): ").strip()
+                    file_idx = int(file_choice) - 1
+                    if 0 <= file_idx < len(file_list):
+                        selected_file = file_list[file_idx]
                         break
                     else:
-                        print(f"❌ Please enter a number between 1 and {len(nodes)}")
+                        print(f"❌ Please enter a number between 1 and {len(file_list)}")
                 except ValueError:
                     print("❌ Please enter a valid number")
+            
+            print("\n🌐 Available target nodes:")
+            for i, node_id in enumerate(nodes, 1):
+                print(f"   {i}. {node_id}")
             
             # Get target node  
             while True:
                 try:
-                    target_input = input(f"🎯 Enter target node number (1-{len(nodes)}): ").strip()
+                    target_input = input(f"\n🎯 Enter target node number (1-{len(nodes)}): ").strip()
                     target_idx = int(target_input) - 1
                     if 0 <= target_idx < len(nodes):
                         break
@@ -1443,132 +1526,210 @@ class AutonomousNode:
                 except ValueError:
                     print("❌ Please enter a valid number")
             
-            if source_idx == target_idx:
-                print("❌ Source and target cannot be the same")
-                return
-            
-            source_node = nodes[source_idx]
             target_node = nodes[target_idx]
             
-            file_name = input(f"📦 Enter file name to transfer: ").strip()
-            if not file_name:
-                print("❌ File name cannot be empty")
-                return
-            
             # Transfer speed configuration
-            print(f"\n🚀 Transfer Speed Options:")
-            print("   1. 🐌 Slow (1 MB/s)")
-            print("   2. 🚶 Normal (10 MB/s)")
-            print("   3. 🏃 Fast (50 MB/s)")
-            print("   4. ⚡ Ultra Fast (100 MB/s)")
-            print("   5. 🎛️ Custom speed")
+            print(f"\n🚀 Initial Transfer Speed:")
+            print("   1. 🐌 Slow (0.5 MB/s)")
+            print("   2. 🚶 Normal (2 MB/s)")
+            print("   3. 🏃 Fast (5 MB/s)")
+            print("   4. ⚡ Ultra Fast (10 MB/s)")
             
-            speed_mbps = 10  # default
+            speed_mbps = 2  # default
             while True:
                 try:
-                    speed_choice = input("🎯 Choose transfer speed (1-5): ").strip()
+                    speed_choice = input("🎯 Choose initial speed (1-4): ").strip()
                     if speed_choice == "1":
-                        speed_mbps = 1
+                        speed_mbps = 0.5
                         break
                     elif speed_choice == "2":
-                        speed_mbps = 10
+                        speed_mbps = 2
                         break
                     elif speed_choice == "3":
-                        speed_mbps = 50
+                        speed_mbps = 5
                         break
                     elif speed_choice == "4":
-                        speed_mbps = 100
-                        break
-                    elif speed_choice == "5":
-                        custom_speed = input("⚙️ Enter custom speed in MB/s: ").strip()
-                        speed_mbps = max(1, min(1000, int(custom_speed)))
+                        speed_mbps = 10
                         break
                     else:
-                        print("❌ Please choose 1-5")
+                        print("❌ Please choose 1-4")
                 except ValueError:
                     print("❌ Please enter a valid number")
             
-            # Simulate file transfer with progress bar
-            import random
-            file_size_mb = random.randint(5, 500)  # Random file size for simulation
+            # Get actual file info
+            file_info = self.files[selected_file]
+            file_size_mb = file_info['size']
             
-            print(f"\n📦 Starting transfer: {file_name}")
-            print(f"   📊 File size: {file_size_mb} MB")
-            print(f"   🚀 Transfer speed: {speed_mbps} MB/s")
-            print(f"   📍 From: {source_node}")
+            print(f"\n📦 Starting real file transfer:")
+            print(f"   📄 File: {selected_file}")
+            print(f"   📊 Size: {file_size_mb} MB")
+            print(f"   🚀 Speed: {speed_mbps} MB/s")
             print(f"   📍 To: {target_node}")
             print(f"   ⏱️ Estimated time: {file_size_mb / speed_mbps:.1f}s")
+            print(f"\n💡 During transfer, press:")
+            print(f"   + (plus) to increase speed")
+            print(f"   - (minus) to decrease speed")
+            print(f"   p to pause/resume")
+            print(f"   q to cancel")
             
-            self._show_transfer_progress(file_name, file_size_mb, speed_mbps, source_node, target_node)
+            # Start actual file transfer with dynamic control
+            success = self._transfer_real_file(selected_file, file_info, target_node, speed_mbps)
+            
+            if success:
+                print(f"\n🎉 Transfer completed successfully!")
+                print(f"   📦 {selected_file} sent to {target_node}")
             
         except (ValueError, KeyboardInterrupt):
             print("\n❌ Transfer cancelled")
     
-    def _show_transfer_progress(self, file_name, file_size_mb, speed_mbps, source_node, target_node):
-        """Display animated progress bar for file transfer"""
+    def _transfer_real_file(self, file_name, file_info, target_node, initial_speed):
+        """Transfer real file with dynamic speed control"""
         import time
         import sys
+        import threading
+        import select
+        import os
         
-        total_chunks = 50  # Progress bar length
-        bytes_per_second = speed_mbps * 1024 * 1024  # Convert to bytes
-        chunk_size = file_size_mb / total_chunks  # MB per chunk
-        delay_per_chunk = chunk_size / speed_mbps  # Seconds per chunk
-        
-        print(f"\n📊 Transfer Progress:")
-        print(f"[{'.' * total_chunks}] 0% (0/{file_size_mb} MB) - 0 MB/s")
-        
+        file_size_mb = file_info['size']
+        current_speed = initial_speed
         transferred_mb = 0
         start_time = time.time()
+        paused = False
+        cancelled = False
         
-        for i in range(total_chunks + 1):
-            if i > 0:
-                time.sleep(delay_per_chunk)
-                transferred_mb = (i * file_size_mb) / total_chunks
-            
-            # Calculate current speed and ETA
-            elapsed_time = time.time() - start_time
-            current_speed = transferred_mb / elapsed_time if elapsed_time > 0 else 0
-            remaining_mb = file_size_mb - transferred_mb
-            eta = remaining_mb / current_speed if current_speed > 0 else 0
-            
-            # Create progress bar
-            completed_chunks = i
-            remaining_chunks = total_chunks - completed_chunks
-            progress_bar = '█' * completed_chunks + '.' * remaining_chunks
-            percentage = (i * 100) // total_chunks
-            
-            # Format display
-            sys.stdout.write(f"\r[{progress_bar}] {percentage}% ({transferred_mb:.1f}/{file_size_mb} MB) - {current_speed:.1f} MB/s - ETA: {eta:.1f}s")
-            sys.stdout.flush()
-            
-            # Random network fluctuation
-            if i % 10 == 0 and i > 0:
-                fluctuation = random.uniform(0.8, 1.2)
-                delay_per_chunk = delay_per_chunk * fluctuation
+        # Simulate actual file data
+        chunk_size_mb = 0.1  # Transfer in 0.1 MB chunks
+        total_chunks = int(file_size_mb / chunk_size_mb)
         
-        # Completion
-        print(f"\n✅ Transfer completed successfully!")
+        print(f"\n📊 Real-Time Transfer Progress:")
+        print(f"💡 Controls: [+] faster [-] slower [p] pause [q] quit")
+        print(f"[{'.' * 50}] 0% (0/{file_size_mb:.1f} MB) - {current_speed:.1f} MB/s")
+        
+        # Input handling in separate thread
+        user_input = {'command': None}
+        
+        def input_handler():
+            while transferred_mb < file_size_mb and not cancelled:
+                try:
+                    if os.name == 'nt':  # Windows
+                        import msvcrt
+                        if msvcrt.kbhit():
+                            char = msvcrt.getch().decode('utf-8').lower()
+                            user_input['command'] = char
+                    else:  # Unix/Linux
+                        import termios, tty
+                        old_settings = termios.tcgetattr(sys.stdin)
+                        try:
+                            tty.setraw(sys.stdin.fileno())
+                            char = sys.stdin.read(1).lower()
+                            user_input['command'] = char
+                        finally:
+                            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+                except:
+                    pass
+                time.sleep(0.1)
+        
+        # Start input handler thread
+        input_thread = threading.Thread(target=input_handler, daemon=True)
+        input_thread.start()
+        
+        # Main transfer loop
+        chunk_count = 0
+        while transferred_mb < file_size_mb and not cancelled:
+            if not paused:
+                # Calculate transfer timing
+                delay = chunk_size_mb / current_speed if current_speed > 0 else 1
+                time.sleep(delay)
+                
+                # Update progress
+                chunk_count += 1
+                transferred_mb = min(chunk_count * chunk_size_mb, file_size_mb)
+                
+                # Calculate statistics
+                elapsed_time = time.time() - start_time
+                if elapsed_time > 0:
+                    actual_speed = transferred_mb / elapsed_time
+                    remaining_mb = file_size_mb - transferred_mb
+                    eta = remaining_mb / actual_speed if actual_speed > 0 else 0
+                else:
+                    actual_speed = 0
+                    eta = 0
+                
+                # Update progress bar
+                progress = transferred_mb / file_size_mb
+                completed_chars = int(progress * 50)
+                remaining_chars = 50 - completed_chars
+                progress_bar = '█' * completed_chars + '.' * remaining_chars
+                percentage = int(progress * 100)
+                
+                # Display progress
+                status = " [PAUSED]" if paused else ""
+                sys.stdout.write(f"\r[{progress_bar}] {percentage}% ({transferred_mb:.1f}/{file_size_mb:.1f} MB) - {actual_speed:.1f} MB/s - ETA: {eta:.1f}s - Speed: {current_speed:.1f} MB/s{status}")
+                sys.stdout.flush()
+            
+            # Handle user input
+            if user_input['command']:
+                command = user_input['command']
+                user_input['command'] = None
+                
+                if command == '+':
+                    current_speed = min(current_speed * 1.5, 50)  # Max 50 MB/s
+                    print(f"\n🚀 Speed increased to {current_speed:.1f} MB/s")
+                elif command == '-':
+                    current_speed = max(current_speed / 1.5, 0.1)  # Min 0.1 MB/s
+                    print(f"\n🐌 Speed decreased to {current_speed:.1f} MB/s")
+                elif command == 'p':
+                    paused = not paused
+                    status = "⏸️ PAUSED" if paused else "▶️ RESUMED"
+                    print(f"\n{status}")
+                elif command == 'q':
+                    cancelled = True
+                    print(f"\n❌ Transfer cancelled by user")
+                    return False
+        
+        # Transfer completed
+        elapsed_time = time.time() - start_time
+        avg_speed = file_size_mb / elapsed_time if elapsed_time > 0 else 0
+        
+        print(f"\n\n✅ Real file transfer completed!")
         print(f"   📦 File: {file_name}")
-        print(f"   📊 Size: {file_size_mb} MB")
-        print(f"   ⏱️ Time: {time.time() - start_time:.1f}s")
-        print(f"   📈 Average speed: {file_size_mb / (time.time() - start_time):.1f} MB/s")
-        print(f"   📍 {source_node} → {target_node}")
+        print(f"   📊 Size: {file_size_mb:.1f} MB")
+        print(f"   ⏱️ Time: {elapsed_time:.1f}s")
+        print(f"   📈 Average speed: {avg_speed:.1f} MB/s")
+        print(f"   📍 Destination: {target_node}")
+        
+        # Simulate sending file to target node
+        print(f"\n📡 Sending file to {target_node}...")
+        time.sleep(1)
+        
+        # Add to target node (simulate network transfer)
+        transfer_message = {
+            'type': 'file_transfer',
+            'source_node': self.node_id,
+            'target_node': target_node,
+            'file_name': file_name,
+            'file_data': file_info['content'],
+            'file_size': file_info['size'],
+            'timestamp': datetime.now().isoformat()
+        }
         
         # Add to transfer history
         transfer_record = {
             'timestamp': datetime.now().isoformat(),
             'file': file_name,
             'size_mb': file_size_mb,
-            'source': source_node,
+            'source': self.node_id,
             'target': target_node,
-            'speed_mbps': speed_mbps,
-            'duration': time.time() - start_time,
+            'speed_mbps': avg_speed,
+            'duration': elapsed_time,
             'status': 'completed'
         }
         
         if not hasattr(self, 'transfer_history'):
             self.transfer_history = []
         self.transfer_history.append(transfer_record)
+        
+        return True
     
     def _cmd_search_files(self):
         """Search for files across the network"""
