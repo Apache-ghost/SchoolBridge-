@@ -35,6 +35,10 @@ class StorageVirtualNetwork:
         self.server_thread = None
         self.running = False
         
+        # Synchronization events
+        self.ready_event = threading.Event()
+        self.node_registration_events = {}  # Track individual node registrations
+        
         print(f"Network coordinator initialized on port {self.port}")
     
     def start_network(self):
@@ -53,6 +57,8 @@ class StorageVirtualNetwork:
             self.server_socket.listen(10)
             
             print(f"Network coordinator listening on localhost:{self.port}")
+            # Signal that network is ready to accept connections
+            self.ready_event.set()
             
             while self.running:
                 try:
@@ -300,6 +306,21 @@ class StorageVirtualNetwork:
     def get_node_info(self, node_id: str) -> Optional[Dict]:
         """Get information about a specific node"""
         return self.nodes.get(node_id)
+    
+    def wait_for_nodes(self, expected_count: int, timeout: float = 30.0) -> bool:
+        """Wait for specified number of nodes to register"""
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            if len(self.nodes) >= expected_count:
+                # Wait a bit more for all nodes to be fully ready
+                time.sleep(1)
+                return True
+            time.sleep(0.5)
+        return False
+    
+    def wait_for_network_ready(self, timeout: float = 10.0) -> bool:
+        """Wait for network to be ready to accept connections"""
+        return self.ready_event.wait(timeout)
     
     def stop_network(self):
         """Stop the network coordinator"""

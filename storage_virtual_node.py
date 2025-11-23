@@ -35,6 +35,10 @@ class StorageVirtualNode:
         self.heartbeat_thread = None
         self.running = False
         
+        # Synchronization events
+        self.ready_event = threading.Event()
+        self.connected_to_network_event = threading.Event()
+        
         print(f"Node {self.node_id} initialized on port {self.port}")
     
     def _get_available_port(self):
@@ -55,6 +59,10 @@ class StorageVirtualNode:
         # Start heartbeat thread
         self.heartbeat_thread = threading.Thread(target=self._heartbeat_loop, daemon=True)
         self.heartbeat_thread.start()
+        
+        # Wait briefly for server to start, then signal ready
+        time.sleep(0.5)
+        self.ready_event.set()
         
         print(f"Node {self.node_id} started and listening on port {self.port}")
     
@@ -207,6 +215,7 @@ class StorageVirtualNode:
             
             if response.get('status') == 'registered':
                 print(f"Node {self.node_id} successfully connected to network at {network_address}:{network_port}")
+                self.connected_to_network_event.set()
                 return True
             else:
                 print(f"Node {self.node_id} failed to register with network")
@@ -274,6 +283,14 @@ class StorageVirtualNode:
             'utilization_percent': utilization_percent,
             'files_count': len(self.stored_files)
         }
+    
+    def wait_for_ready(self, timeout: float = 10.0) -> bool:
+        """Wait for node to be ready"""
+        return self.ready_event.wait(timeout)
+    
+    def wait_for_network_connection(self, timeout: float = 30.0) -> bool:
+        """Wait for successful network connection"""
+        return self.connected_to_network_event.wait(timeout)
     
     def stop_node(self):
         """Stop the node"""

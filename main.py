@@ -9,7 +9,7 @@ from storage_virtual_node import StorageVirtualNode
 stop_event = threading.Event()
 
 def create_autonomous_node(node_id: str, cpu_capacity: int, memory_capacity: int, 
-                          storage_capacity: int, bandwidth: int, network_port: int):
+                          storage_capacity: int, bandwidth: int, network: StorageVirtualNetwork):
     """Create and start an autonomous node that connects to the network"""
     def node_lifecycle():
         # Create node
@@ -24,11 +24,18 @@ def create_autonomous_node(node_id: str, cpu_capacity: int, memory_capacity: int
         # Start the node
         node.start_node()
         
-        # Wait a bit for node to start up
-        time.sleep(2)
+        # Wait for node to be ready
+        if not node.wait_for_ready(timeout=10):
+            print(f"✗ {node_id} failed to start properly")
+            return
+        
+        # Wait for network to be ready
+        if not network.wait_for_network_ready(timeout=15):
+            print(f"✗ {node_id} cannot connect - network not ready")
+            return
         
         # Connect to network
-        success = node.connect_to_network("localhost", network_port)
+        success = node.connect_to_network("localhost", network.port)
         if success:
             print(f"✓ {node_id} successfully joined the distributed system")
         else:
@@ -66,15 +73,20 @@ def create_autonomous_node(node_id: str, cpu_capacity: int, memory_capacity: int
     node_thread.start()
     return node_thread
 
-def demonstrate_file_operations(network: StorageVirtualNetwork):
+def demonstrate_file_operations(network: StorageVirtualNetwork, expected_nodes: int):
     """Demonstrate file operations between nodes"""
     print("\n🔄 Starting file operations demonstration...")
     
-    # Wait for nodes to initialize with stop_event check
-    for _ in range(15):
-        if stop_event.is_set():
-            return
-        time.sleep(1)
+    # Wait for expected number of nodes to be ready
+    print(f"⏳ Waiting for {expected_nodes} nodes to register...")
+    if not network.wait_for_nodes(expected_nodes, timeout=45):
+        print(f"❌ Timeout: Only {len(network.nodes)} of {expected_nodes} nodes registered")
+        return
+    
+    if stop_event.is_set():
+        return
+    
+    print(f"✅ All {expected_nodes} nodes are ready!")
     
     # Get list of active nodes
     stats = network.get_network_stats()
@@ -140,8 +152,11 @@ def main():
     network = StorageVirtualNetwork(port=NETWORK_PORT)
     network.start_network()
     
-    # Wait for network to start
-    time.sleep(2)
+    # Wait for network to be ready
+    print("⏳ Waiting for network coordinator to be ready...")
+    if not network.wait_for_network_ready(timeout=10):
+        print("❌ Network coordinator failed to start")
+        return
     
     # Node configurations (5 different nodes with varying capacities)
     node_configs = [
@@ -164,13 +179,14 @@ def main():
             memory_capacity=config["memory_capacity"],
             storage_capacity=config["storage_capacity"],
             bandwidth=config["bandwidth"],
-            network_port=NETWORK_PORT
+            network=network
         )
         node_threads.append(thread)
-        time.sleep(1)  # Stagger node creation
     
     print(f"\n⏳ Waiting for all nodes to join the network...")
-    time.sleep(10)
+    expected_nodes = len(node_configs)
+    if not network.wait_for_nodes(expected_nodes, timeout=60):
+        print(f"⚠️ Warning: Only {len(network.nodes)} of {expected_nodes} nodes joined the network")
     
     # Display network status
     stats = network.get_network_stats()
@@ -187,7 +203,7 @@ def main():
             network.connect_nodes(nodes[i], nodes[j], bandwidth=1000)
     
     # Start file operations demonstration
-    demo_thread = threading.Thread(target=demonstrate_file_operations, args=(network,), daemon=False)
+    demo_thread = threading.Thread(target=demonstrate_file_operations, args=(network, len(node_configs)), daemon=False)
     demo_thread.start()
     
     # Main monitoring loop
