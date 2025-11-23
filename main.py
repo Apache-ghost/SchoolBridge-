@@ -31,6 +31,7 @@ def create_autonomous_node(node_id: str, cpu_capacity: int, memory_capacity: int
             return
         
         # Keep the node running and perform autonomous activities
+        last_log_time = 0  # Track last logging time
         try:
             while node.running:
                 # Simulate some autonomous behavior
@@ -40,11 +41,13 @@ def create_autonomous_node(node_id: str, cpu_capacity: int, memory_capacity: int
                 node.cpu_usage = min(100, node.cpu_usage + 5)
                 node.memory_usage = min(100, node.memory_usage + 3)
                 
-                # Log node status periodically
-                if int(time.time()) % 30 == 0:  # Every 30 seconds
+                # Log node status periodically (every 30 seconds)
+                current_time = time.time()
+                if current_time - last_log_time >= 30:
                     storage_util = node.get_storage_utilization()
                     print(f"📊 {node_id}: CPU={node.cpu_usage}%, Memory={node.memory_usage}%, "
                           f"Storage={storage_util['utilization_percent']:.1f}%")
+                    last_log_time = current_time
                 
         except KeyboardInterrupt:
             print(f"🛑 Stopping {node_id}")
