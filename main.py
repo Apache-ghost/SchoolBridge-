@@ -1,7 +1,12 @@
 import time
 import threading
+import signal
+import sys
 from storage_virtual_network import StorageVirtualNetwork
 from storage_virtual_node import StorageVirtualNode
+
+# Global stop event for graceful shutdown
+stop_event = threading.Event()
 
 def create_autonomous_node(node_id: str, cpu_capacity: int, memory_capacity: int, 
                           storage_capacity: int, bandwidth: int, network_port: int):
@@ -33,9 +38,10 @@ def create_autonomous_node(node_id: str, cpu_capacity: int, memory_capacity: int
         # Keep the node running and perform autonomous activities
         last_log_time = 0  # Track last logging time
         try:
-            while node.running:
-                # Simulate some autonomous behavior
-                time.sleep(5)
+            while not stop_event.is_set() and node.running:
+                # Check stop event with timeout to allow graceful shutdown
+                if stop_event.wait(timeout=5):
+                    break
                 
                 # Update resource usage simulation
                 node.cpu_usage = min(100, node.cpu_usage + 5)
@@ -49,20 +55,26 @@ def create_autonomous_node(node_id: str, cpu_capacity: int, memory_capacity: int
                           f"Storage={storage_util['utilization_percent']:.1f}%")
                     last_log_time = current_time
                 
-        except KeyboardInterrupt:
-            print(f"🛑 Stopping {node_id}")
+        except Exception as e:
+            print(f"❌ Error in {node_id}: {e}")
         finally:
+            print(f"🛑 Stopping {node_id}")
             node.stop_node()
     
-    # Start node in its own thread
-    node_thread = threading.Thread(target=node_lifecycle, daemon=True)
+    # Start node in its own thread (not daemon for graceful shutdown)
+    node_thread = threading.Thread(target=node_lifecycle, daemon=False)
     node_thread.start()
     return node_thread
 
 def demonstrate_file_operations(network: StorageVirtualNetwork):
     """Demonstrate file operations between nodes"""
     print("\n🔄 Starting file operations demonstration...")
-    time.sleep(15)  # Wait for nodes to fully initialize
+    
+    # Wait for nodes to initialize with stop_event check
+    for _ in range(15):
+        if stop_event.is_set():
+            return
+        time.sleep(1)
     
     # Get list of active nodes
     stats = network.get_network_stats()
@@ -107,7 +119,16 @@ def demonstrate_file_operations(network: StorageVirtualNetwork):
                 
                 time.sleep(1)
 
+def signal_handler(signum, frame):
+    """Handle shutdown signals gracefully"""
+    print(f"\n\n🛑 Received shutdown signal ({signum}). Initiating graceful shutdown...")
+    stop_event.set()
+
 def main():
+    # Set up signal handlers for graceful shutdown
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
     print("🚀 Starting Distributed System with 5 Autonomous Nodes")
     print("=" * 60)
     
@@ -135,6 +156,7 @@ def main():
     
     # Create and start all nodes
     node_threads = []
+    demo_thread = None
     for config in node_configs:
         thread = create_autonomous_node(
             node_id=config["node_id"],
@@ -165,7 +187,7 @@ def main():
             network.connect_nodes(nodes[i], nodes[j], bandwidth=1000)
     
     # Start file operations demonstration
-    demo_thread = threading.Thread(target=demonstrate_file_operations, args=(network,), daemon=True)
+    demo_thread = threading.Thread(target=demonstrate_file_operations, args=(network,), daemon=False)
     demo_thread.start()
     
     # Main monitoring loop
@@ -173,8 +195,10 @@ def main():
         print(f"\n🔍 Monitoring distributed system (Press Ctrl+C to stop)...")
         print("=" * 60)
         
-        while True:
-            time.sleep(20)  # Update every 20 seconds
+        while not stop_event.is_set():
+            # Check stop event with timeout for monitoring updates
+            if stop_event.wait(timeout=20):
+                break
             
             # Display network statistics
             stats = network.get_network_stats()
@@ -193,7 +217,23 @@ def main():
                           f"(Last seen: {last_heartbeat:.1f}s ago)")
     
     except KeyboardInterrupt:
+        # This should not be reached due to signal handler, but keep as backup
+        print(f"\n\n🛑 KeyboardInterrupt caught in main thread...")
+        stop_event.set()
+    finally:
         print(f"\n\n🛑 Shutting down distributed system...")
+        
+        # Wait for all node threads to finish gracefully
+        print("⏳ Waiting for nodes to shut down gracefully...")
+        for thread in node_threads:
+            if thread.is_alive():
+                thread.join(timeout=10)  # Wait up to 10 seconds per thread
+        
+        # Wait for demo thread
+        if demo_thread and demo_thread.is_alive():
+            demo_thread.join(timeout=5)
+        
+        # Stop network
         network.stop_network()
         print("👋 Goodbye!")
 
