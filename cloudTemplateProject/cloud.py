@@ -18,8 +18,8 @@ class UserSecurityService(cloudsecurity_pb2_grpc.UserSecurityServiceServicer):
         self.pending_enrollments = {}  # user_id: {user_data, verification_code, expires}
         self.password_reset_tokens = {}  # token: {username, expires, verified}
         self.password_reset_attempts = {}  # username: {count, last_attempt}
-        # Initialize SQLite DB and load users into memory cache
-        self.db_path = os.path.join(os.path.dirname(__file__), 'cloud_security.db')
+        # Initialize SQLite DB and load users into memory cache - use existing data.db
+        self.db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data.db')
         self._init_db()
         self.load_database()
 
