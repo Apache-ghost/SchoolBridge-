@@ -1,20 +1,282 @@
-// generate the skeleton and stub classes
-// generate calculator_pb2.py and calculator_pb2_grpc.py.
-// python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. calculator.proto
+// Cloud Security Service Protocol Definition
+// Generate Python classes:
+// python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. cloudsecurity.proto
 
 syntax = "proto3";
 
-package cloud;
+package cloud.security;
 
-service UserService {
-  rpc login (Request) returns (Response);
+// Comprehensive User Security Service
+service UserSecurityService {
+  // User Authentication
+  rpc Login (LoginRequest) returns (LoginResponse);
+  rpc Logout (LogoutRequest) returns (LogoutResponse);
+  
+  // User Registration/Enrollment
+  rpc Enroll (EnrollRequest) returns (EnrollResponse);
+  rpc VerifyEnrollment (VerifyEnrollmentRequest) returns (VerifyEnrollmentResponse);
+  
+  // OTP (One-Time Password) Operations
+  rpc SendOTP (OTPRequest) returns (OTPResponse);
+  rpc VerifyOTP (VerifyOTPRequest) returns (VerifyOTPResponse);
+  rpc ResendOTP (ResendOTPRequest) returns (ResendOTPResponse);
+  
+  // Password Management
+  rpc ChangePassword (ChangePasswordRequest) returns (ChangePasswordResponse);
+  rpc ResetPassword (ResetPasswordRequest) returns (ResetPasswordResponse);
+  rpc ForgotPassword (ForgotPasswordRequest) returns (ForgotPasswordResponse);
+  
+  // Account Management
+  rpc GetUserProfile (ProfileRequest) returns (ProfileResponse);
+  rpc UpdateUserProfile (UpdateProfileRequest) returns (UpdateProfileResponse);
+  rpc DeleteAccount (DeleteAccountRequest) returns (DeleteAccountResponse);
+  
+  // Security Operations
+  rpc GetSecurityStatus (SecurityStatusRequest) returns (SecurityStatusResponse);
+  rpc Enable2FA (Enable2FARequest) returns (Enable2FAResponse);
+  rpc Disable2FA (Disable2FARequest) returns (Disable2FAResponse);
 }
 
-message Request {
-  string login = 1;
+// Authentication Messages
+message LoginRequest {
+  string username = 1;
   string password = 2;
+  string client_info = 3;  // Device/browser info
+  bool remember_me = 4;
 }
 
-message Response {
-  string result = 1;
+message LoginResponse {
+  string status = 1;        // "success", "failed", "otp_required", "account_locked"
+  string message = 2;
+  string session_token = 3;
+  string otp_method = 4;    // "email", "sms", "app"
+  int32 expires_in = 5;     // Session duration in seconds
+  UserProfile user_profile = 6;
+}
+
+message LogoutRequest {
+  string session_token = 1;
+  string username = 2;
+}
+
+message LogoutResponse {
+  string status = 1;
+  string message = 2;
+}
+
+// Enrollment Messages
+message EnrollRequest {
+  string username = 1;
+  string email = 2;
+  string password = 3;
+  string full_name = 4;
+  string phone_number = 5;
+  string security_question = 6;
+  string security_answer = 7;
+  string referral_code = 8;  // Optional
+}
+
+message EnrollResponse {
+  string status = 1;         // "success", "username_exists", "email_exists", "invalid_data"
+  string message = 2;
+  string verification_method = 3;  // "email", "sms"
+  string user_id = 4;
+}
+
+message VerifyEnrollmentRequest {
+  string user_id = 1;
+  string verification_code = 2;
+  string method = 3;         // "email", "sms"
+}
+
+message VerifyEnrollmentResponse {
+  string status = 1;         // "verified", "invalid_code", "expired", "max_attempts"
+  string message = 2;
+  string session_token = 3;  // Auto-login after verification
+}
+
+// OTP Messages
+message OTPRequest {
+  string username = 1;
+  string method = 2;         // "email", "sms"
+  string purpose = 3;        // "login", "password_reset", "transaction"
+}
+
+message OTPResponse {
+  string status = 1;
+  string message = 2;
+  string otp_id = 3;
+  int32 expires_in = 4;      // OTP validity in seconds
+}
+
+message VerifyOTPRequest {
+  string username = 1;
+  string otp_code = 2;
+  string otp_id = 3;
+  string purpose = 4;
+}
+
+message VerifyOTPResponse {
+  string status = 1;         // "verified", "invalid", "expired", "max_attempts"
+  string message = 2;
+  string session_token = 3;  // If verification grants access
+  int32 remaining_attempts = 4;
+}
+
+message ResendOTPRequest {
+  string username = 1;
+  string otp_id = 2;
+  string method = 3;         // "email", "sms"
+}
+
+message ResendOTPResponse {
+  string status = 1;
+  string message = 2;
+  string new_otp_id = 3;
+  int32 expires_in = 4;
+}
+
+// Password Management Messages
+message ChangePasswordRequest {
+  string session_token = 1;
+  string username = 2;
+  string current_password = 3;
+  string new_password = 4;
+  string confirm_password = 5;
+}
+
+message ChangePasswordResponse {
+  string status = 1;         // "success", "invalid_current", "weak_password", "mismatch"
+  string message = 2;
+  repeated string password_requirements = 3;  // If password is weak
+}
+
+message ResetPasswordRequest {
+  string username = 1;
+  string reset_token = 2;    // From forgot password email
+  string new_password = 3;
+  string confirm_password = 4;
+}
+
+message ResetPasswordResponse {
+  string status = 1;
+  string message = 2;
+}
+
+message ForgotPasswordRequest {
+  string username_or_email = 1;
+  string security_answer = 2;  // Optional security question answer
+}
+
+message ForgotPasswordResponse {
+  string status = 1;         // "sent", "user_not_found", "too_many_requests"
+  string message = 2;
+  string reset_method = 3;   // "email", "sms"
+}
+
+// Profile Management Messages
+message ProfileRequest {
+  string session_token = 1;
+  string username = 2;
+}
+
+message ProfileResponse {
+  string status = 1;
+  string message = 2;
+  UserProfile user_profile = 3;
+}
+
+message UpdateProfileRequest {
+  string session_token = 1;
+  string username = 2;
+  UserProfile updated_profile = 3;
+}
+
+message UpdateProfileResponse {
+  string status = 1;
+  string message = 2;
+  UserProfile user_profile = 3;
+}
+
+message DeleteAccountRequest {
+  string session_token = 1;
+  string username = 2;
+  string password = 3;       // Confirmation
+  string confirmation_text = 4;  // Must type "DELETE"
+}
+
+message DeleteAccountResponse {
+  string status = 1;
+  string message = 2;
+}
+
+// Security Status Messages
+message SecurityStatusRequest {
+  string session_token = 1;
+  string username = 2;
+}
+
+message SecurityStatusResponse {
+  string status = 1;
+  SecurityInfo security_info = 2;
+}
+
+message Enable2FARequest {
+  string session_token = 1;
+  string username = 2;
+  string method = 3;         // "email", "sms", "app"
+  string verification_code = 4;  // From current session
+}
+
+message Enable2FAResponse {
+  string status = 1;
+  string message = 2;
+  string backup_codes = 3;   // Comma-separated recovery codes
+}
+
+message Disable2FARequest {
+  string session_token = 1;
+  string username = 2;
+  string password = 3;       // Confirmation
+  string two_fa_code = 4;    // Current 2FA code
+}
+
+message Disable2FAResponse {
+  string status = 1;
+  string message = 2;
+}
+
+// Data Structures
+message UserProfile {
+  string user_id = 1;
+  string username = 2;
+  string email = 3;
+  string full_name = 4;
+  string phone_number = 5;
+  string profile_picture_url = 6;
+  string created_date = 7;
+  string last_login = 8;
+  bool email_verified = 9;
+  bool phone_verified = 10;
+  bool is_active = 11;
+  string role = 12;          // "user", "admin", "moderator"
+}
+
+message SecurityInfo {
+  bool two_fa_enabled = 1;
+  string two_fa_method = 2;  // "email", "sms", "app"
+  string last_password_change = 3;
+  int32 login_attempts = 4;
+  bool account_locked = 5;
+  string lock_reason = 6;
+  repeated string active_sessions = 7;
+  repeated LoginHistory recent_logins = 8;
+}
+
+message LoginHistory {
+  string timestamp = 1;
+  string ip_address = 2;
+  string device_info = 3;
+  string location = 4;       // City, Country
+  bool success = 5;
 }
