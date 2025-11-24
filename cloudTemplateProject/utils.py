@@ -12,13 +12,25 @@ def hash_password(password):
 def generate_otp():
     return str(random.randint(100000, 999999))
 
-def send_otp(to_email) -> str:
-
-    otp = generate_otp()
+def send_otp(to_email, otp_code=None, purpose="Authentication") -> str:
+    """Send OTP to email with custom code and purpose"""
+    if otp_code is None:
+        otp_code = generate_otp()
 
     # Sender configuration
-    subject = "Your OTP Code for the cloud security simulator"
-    body = f"Your OTP code is: {otp}"
+    subject = f"Your {purpose} Code - Cloud Security Service"
+    body = f"""
+    Hello,
+    
+    Your verification code for {purpose} is: {otp_code}
+    
+    This code will expire in 10 minutes.
+    
+    If you didn't request this code, please ignore this email.
+    
+    Best regards,
+    Cloud Security Team
+    """
 
     # Create the email
     msg = MIMEMultipart()
@@ -31,19 +43,20 @@ def send_otp(to_email) -> str:
     try:
         # Connect and send email
         with smtplib.SMTP('smtp.gmail.com', 587) as server:
-            print(f"Starting tls session on smtp.gmail.com:587 .........", end='')
+            print(f"📧 Starting TLS session on smtp.gmail.com:587 .........", end='')
             server.starttls()  # Upgrade the connection to a secure encrypted SSL/TLS connection
             print('[OK]')
-            print(f"login to the server with {from_email} .........", end='')
+            print(f"🔑 Authenticating with email server .........", end='')
             server.login('sasbergson@gmail.com', 'tgnw azxw lfjr jsuz')
             print('[OK]')
-            print(f"Sending OTP data to {to_email}  .........", end='')
+            print(f"📤 Sending {purpose} code to {to_email} .........", end='')
             server.send_message(msg)
             print('[OK]')
-            print(f"OTP data sent to {to_email} successfully!")
-            return f"OTP data sent to your email: {to_email} successfully!"
+            print(f"✅ {purpose} code sent to {to_email} successfully!")
+            return f"Code sent to your email: {to_email} successfully!"
     except Exception as e:
-        print(f"Failed to send email: {e}")
+        print(f"❌ Failed to send email: {e}")
+        raise e
 
 if __name__ == '__main__':
     credentials = {}
