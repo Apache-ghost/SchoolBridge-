@@ -158,6 +158,15 @@ class StorageSecurityBridge:
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
+            
+            # Check if users table exists, if not skip the demo
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
+            if not cursor.fetchone():
+                print("📝 Users table not found. Run Cloud Security Service first to create users.")
+                print("   💡 Try: Enroll a user through the security service to see integration!")
+                conn.close()
+                return
+                
             cursor.execute("SELECT username, email, role FROM users WHERE email_verified = 1 LIMIT 3")
             users = cursor.fetchall()
             conn.close()
