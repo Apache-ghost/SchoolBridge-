@@ -4,6 +4,7 @@ import uuid
 import time
 import json
 import os
+import sqlite3
 from concurrent import futures
 from datetime import datetime, timedelta
 import cloudsecurity_pb2
@@ -17,40 +18,105 @@ class UserSecurityService(cloudsecurity_pb2_grpc.UserSecurityServiceServicer):
         self.pending_enrollments = {}  # user_id: {user_data, verification_code, expires}
         self.password_reset_tokens = {}  # token: {username, expires, verified}
         self.password_reset_attempts = {}  # username: {count, last_attempt}
+        # Initialize SQLite DB and load users into memory cache
+        self.db_path = os.path.join(os.path.dirname(__file__), 'cloud_security.db')
+        self._init_db()
         self.load_database()
 
     def load_database(self):
-        """Load user database from files"""
+        """Load user database from SQLite into in-memory cache"""
         self.users = {}  # username: user_data
         self.emails_to_users = {}  # email: username
-        
-        # Load existing credentials
-        if os.path.exists('credentials'):
-            with open('credentials', 'r') as file:
-                for line in file:
-                    parts = line.strip().split(',')
-                    if len(parts) >= 3:
-                        username, email, password_hash = parts[:3]
-                        self.users[username] = {
-                            'username': username,
-                            'email': email,
-                            'password_hash': password_hash,
-                            'full_name': parts[3] if len(parts) > 3 else '',
-                            'phone_number': parts[4] if len(parts) > 4 else '',
-                            'created_date': parts[5] if len(parts) > 5 else datetime.now().isoformat(),
-                            'email_verified': parts[6] == 'True' if len(parts) > 6 else True,
-                            'is_active': parts[7] == 'True' if len(parts) > 7 else True,
-                            'two_fa_enabled': parts[8] == 'True' if len(parts) > 8 else False,
-                            'role': parts[9] if len(parts) > 9 else 'user'
-                        }
-                        self.emails_to_users[email] = username
+
+        conn = sqlite3.connect(self.db_path)
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT username, email, password_hash, full_name, phone_number, created_date, email_verified, is_active, two_fa_enabled, role, security_answer FROM users")
+            rows = cur.fetchall()
+            for row in rows:
+                username, email, password_hash, full_name, phone_number, created_date, email_verified, is_active, two_fa_enabled, role, security_answer = row
+                self.users[username] = {
+                    'username': username,
+                    'email': email,
+                    'password_hash': password_hash,
+                    'full_name': full_name or '',
+                    'phone_number': phone_number or '',
+                    'created_date': created_date or datetime.now().isoformat(),
+                    'email_verified': bool(email_verified),
+                    'is_active': bool(is_active),
+                    'two_fa_enabled': bool(two_fa_enabled),
+                    'role': role or 'user',
+                    'security_answer': security_answer or ''
+                }
+                self.emails_to_users[email] = username
+        finally:
+            conn.close()
 
     def save_database(self):
-        """Save user database to file"""
-        with open('credentials', 'w') as file:
+        """Persist in-memory users to SQLite (upsert)"""
+        conn = sqlite3.connect(self.db_path)
+        try:
+            cur = conn.cursor()
             for username, user_data in self.users.items():
-                line = f"{user_data['username']},{user_data['email']},{user_data['password_hash']},{user_data.get('full_name', '')},{user_data.get('phone_number', '')},{user_data.get('created_date', '')},{user_data.get('email_verified', True)},{user_data.get('is_active', True)},{user_data.get('two_fa_enabled', False)},{user_data.get('role', 'user')}\n"
-                file.write(line)
+                cur.execute(
+                    """
+                    INSERT INTO users (username, email, password_hash, full_name, phone_number, created_date, email_verified, is_active, two_fa_enabled, role, security_answer)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(username) DO UPDATE SET
+                        email=excluded.email,
+                        password_hash=excluded.password_hash,
+                        full_name=excluded.full_name,
+                        phone_number=excluded.phone_number,
+                        created_date=excluded.created_date,
+                        email_verified=excluded.email_verified,
+                        is_active=excluded.is_active,
+                        two_fa_enabled=excluded.two_fa_enabled,
+                        role=excluded.role,
+                        security_answer=excluded.security_answer
+                    """,
+                    (
+                        user_data['username'],
+                        user_data['email'],
+                        user_data['password_hash'],
+                        user_data.get('full_name', ''),
+                        user_data.get('phone_number', ''),
+                        user_data.get('created_date', ''),
+                        int(user_data.get('email_verified', True)),
+                        int(user_data.get('is_active', True)),
+                        int(user_data.get('two_fa_enabled', False)),
+                        user_data.get('role', 'user'),
+                        user_data.get('security_answer', '')
+                    )
+                )
+            conn.commit()
+        finally:
+            conn.close()
+
+    def _init_db(self):
+        """Initialize SQLite database and users table"""
+        conn = sqlite3.connect(self.db_path)
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                '''
+                CREATE TABLE IF NOT EXISTS users (
+                    username TEXT PRIMARY KEY,
+                    email TEXT UNIQUE,
+                    password_hash TEXT,
+                    full_name TEXT,
+                    phone_number TEXT,
+                    created_date TEXT,
+                    email_verified INTEGER DEFAULT 0,
+                    is_active INTEGER DEFAULT 1,
+                    two_fa_enabled INTEGER DEFAULT 0,
+                    role TEXT DEFAULT 'user',
+                    security_answer TEXT
+                )
+                '''
+            )
+            conn.commit()
+        finally:
+            conn.close()
 
     def generate_session_token(self):
         """Generate unique session token"""
@@ -296,7 +362,8 @@ class UserSecurityService(cloudsecurity_pb2_grpc.UserSecurityServiceServicer):
             'email_verified': True,
             'is_active': True,
             'two_fa_enabled': False,
-            'role': 'user'
+            'role': 'user',
+            'security_answer': pending.get('security_answer', '')
         }
         
         self.emails_to_users[pending['email']] = username
