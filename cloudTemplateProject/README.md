@@ -102,6 +102,32 @@ python client.py login
 - Email delivery with custom subjects
 - Verification with attempt limits
 
+### 🔐 Password Management
+```bash
+# Forgot password (no login required)
+python client.py forgot
+
+# Reset password with token
+python client.py reset
+
+# Change password (requires login)  
+python client.py change
+
+# Full password management menu
+python client.py password
+```
+
+#### Password Reset Flow:
+1. **Forgot Password**: Enter username/email → Reset token sent to email
+2. **Reset Password**: Enter username + token + new password
+3. **Change Password**: Login required → Enter current + new password
+
+#### Security Features:
+- **Password Strength**: Minimum 8 chars, uppercase, lowercase, numbers, special chars
+- **Rate Limiting**: Max 3 reset requests per hour per user
+- **Token Expiry**: Reset tokens expire in 1 hour
+- **Session Invalidation**: All sessions logged out after password change/reset
+
 ## 🔧 Server Configuration
 
 The server runs on **port 51234** and provides:
@@ -113,10 +139,10 @@ The server runs on **port 51234** and provides:
 - ✅ **VerifyEnrollment** - Account verification
 - ✅ **SendOTP** - OTP generation and delivery
 - ✅ **VerifyOTP** - OTP validation
+- ✅ **ChangePassword** - Change password (requires current password)
+- ✅ **ResetPassword** - Reset password with token
+- ✅ **ForgotPassword** - Initiate password reset process
 - 🔄 **ResendOTP** - Coming soon
-- 🔄 **ChangePassword** - Coming soon
-- 🔄 **ResetPassword** - Coming soon
-- 🔄 **ForgotPassword** - Coming soon
 - 🔄 **GetUserProfile** - Coming soon
 - 🔄 **UpdateUserProfile** - Coming soon
 - 🔄 **DeleteAccount** - Coming soon

@@ -219,6 +219,155 @@ class CloudSecurityClient:
         except grpc.RpcError as e:
             print(f"❌ gRPC Error: {e}")
 
+    def forgot_password(self):
+        """Initiate password reset process"""
+        print("\n🔄 === Forgot Password ===")
+        
+        username_or_email = input("Enter username or email: ").strip()
+        security_answer = ""
+        
+        # Optional security question answer
+        if input("\nDo you have a security answer? (y/N): ").strip().lower() == 'y':
+            security_answer = getpass.getpass("Security answer: ").strip()
+        
+        request = cloudsecurity_pb2.ForgotPasswordRequest(
+            username_or_email=username_or_email,
+            security_answer=security_answer
+        )
+        
+        try:
+            response = self.stub.ForgotPassword(request)
+            print(f"\n📋 Status: {response.status}")
+            print(f"📝 Message: {response.message}")
+            
+            if response.status == "sent":
+                print(f"📧 Reset method: {response.reset_method}")
+                print("\n🔗 Check your email for the reset token.")
+                
+                # Ask if user wants to reset password now
+                if input("\nDo you have the reset token? (y/N): ").strip().lower() == 'y':
+                    self.reset_password()
+                    
+            elif response.status == "too_many_requests":
+                print("⏳ Please wait before requesting another reset.")
+                
+        except grpc.RpcError as e:
+            print(f"❌ gRPC Error: {e}")
+
+    def reset_password(self):
+        """Reset password using token"""
+        print("\n🔐 === Reset Password ===")
+        
+        username = input("Username: ").strip()
+        reset_token = input("Reset token from email: ").strip()
+        
+        new_password = getpass.getpass("New password: ").strip()
+        confirm_password = getpass.getpass("Confirm new password: ").strip()
+        
+        if new_password != confirm_password:
+            print("❌ Passwords don't match!")
+            return
+        
+        request = cloudsecurity_pb2.ResetPasswordRequest(
+            username=username,
+            reset_token=reset_token,
+            new_password=new_password,
+            confirm_password=confirm_password
+        )
+        
+        try:
+            response = self.stub.ResetPassword(request)
+            print(f"\n📋 Status: {response.status}")
+            print(f"📝 Message: {response.message}")
+            
+            if response.status == "success":
+                print("✅ Password reset successfully!")
+                print("🔑 You can now log in with your new password.")
+                
+                # Ask if user wants to login now
+                if input("\nWould you like to login now? (y/N): ").strip().lower() == 'y':
+                    self.login_user()
+                    
+            elif response.status == "weak_password":
+                print("💪 Please choose a stronger password with:")
+                print("   - At least 8 characters")
+                print("   - Uppercase and lowercase letters")
+                print("   - Numbers and special characters")
+                
+        except grpc.RpcError as e:
+            print(f"❌ gRPC Error: {e}")
+
+    def change_password(self):
+        """Change password (requires current password)"""
+        if not self.session_token:
+            print("❌ Please log in first to change your password")
+            return
+        
+        print("\n🔒 === Change Password ===")
+        
+        current_password = getpass.getpass("Current password: ").strip()
+        new_password = getpass.getpass("New password: ").strip()
+        confirm_password = getpass.getpass("Confirm new password: ").strip()
+        
+        if new_password != confirm_password:
+            print("❌ Passwords don't match!")
+            return
+        
+        request = cloudsecurity_pb2.ChangePasswordRequest(
+            session_token=self.session_token,
+            username=self.username,
+            current_password=current_password,
+            new_password=new_password,
+            confirm_password=confirm_password
+        )
+        
+        try:
+            response = self.stub.ChangePassword(request)
+            print(f"\n📋 Status: {response.status}")
+            print(f"📝 Message: {response.message}")
+            
+            if response.status == "success":
+                print("✅ Password changed successfully!")
+                print("🔐 Other sessions have been logged out for security.")
+                
+            elif response.status == "invalid_current":
+                print("❌ Current password is incorrect")
+                
+            elif response.status == "weak_password":
+                print("💪 Password requirements:")
+                for req in response.password_requirements:
+                    print(f"   - {req}")
+                    
+            elif response.status == "unauthorized":
+                print("🔑 Session expired. Please log in again.")
+                self.session_token = None
+                self.username = None
+                
+        except grpc.RpcError as e:
+            print(f"❌ gRPC Error: {e}")
+
+    def password_menu(self):
+        """Password management submenu"""
+        while True:
+            print(f"\n🔐 === Password Management ===")
+            print("1. 🔄 Forgot Password (No login required)")
+            print("2. 🔐 Reset Password (With token)")
+            print("3. 🔒 Change Password (Requires login)")
+            print("4. ⬅️  Back to Main Menu")
+            
+            choice = input("\nSelect option (1-4): ").strip()
+            
+            if choice == "1":
+                self.forgot_password()
+            elif choice == "2":
+                self.reset_password()
+            elif choice == "3":
+                self.change_password()
+            elif choice == "4":
+                break
+            else:
+                print("❌ Invalid choice. Please select 1-4.")
+
     def show_status(self):
         """Show current client status"""
         print(f"\n📊 === Client Status ===")
@@ -232,34 +381,44 @@ class CloudSecurityClient:
             print(f"\n🔐 === Cloud Security Client ===")
             print("1. 📝 Register/Enroll")
             print("2. 🔑 Login")
-            print("3. 📱 Send OTP")
-            print("4. 👋 Logout")
-            print("5. 📊 Show Status")
-            print("6. ❌ Exit")
+            print("3. 🔐 Password Management")
+            print("4. 📱 Send OTP")
+            print("5. 👋 Logout")
+            print("6. 📊 Show Status")
+            print("7. ❌ Exit")
             
-            choice = input("\nSelect option (1-6): ").strip()
+            choice = input("\nSelect option (1-7): ").strip()
             
             if choice == "1":
                 self.enroll_user()
             elif choice == "2":
                 self.login_user()
             elif choice == "3":
-                self.send_otp()
+                self.password_menu()
             elif choice == "4":
-                self.logout_user()
+                self.send_otp()
             elif choice == "5":
-                self.show_status()
+                self.logout_user()
             elif choice == "6":
+                self.show_status()
+            elif choice == "7":
                 print("👋 Goodbye!")
                 break
             else:
-                print("❌ Invalid choice. Please select 1-6.")
+                print("❌ Invalid choice. Please select 1-7.")
 
 def run_command_line():
     """Run command line interface (legacy support)"""
     if len(sys.argv) < 2:
         print("Usage: python client.py <command> [args...]")
-        print("Commands: login, enroll, interactive")
+        print("Commands:")
+        print("  login [username] [password]  - User login")
+        print("  enroll                       - User registration")
+        print("  forgot                       - Forgot password")
+        print("  reset                        - Reset password with token")
+        print("  change                       - Change password (requires login)")
+        print("  password                     - Password management menu")
+        print("  interactive                  - Interactive mode")
         return
         
     client = CloudSecurityClient()
@@ -293,10 +452,19 @@ def run_command_line():
             
     elif command == "enroll":
         client.enroll_user()
+    elif command == "forgot":
+        client.forgot_password()
+    elif command == "reset":
+        client.reset_password()
+    elif command == "change":
+        client.change_password()
+    elif command == "password":
+        client.password_menu()
     elif command == "interactive":
         client.interactive_menu()
     else:
         print(f"Unknown command: {command}")
+        print("Use 'python client.py' without arguments for interactive mode")
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:

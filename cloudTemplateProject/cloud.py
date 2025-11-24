@@ -15,6 +15,8 @@ class UserSecurityService(cloudsecurity_pb2_grpc.UserSecurityServiceServicer):
         self.sessions = {}  # session_token: {username, expires, created}
         self.otp_storage = {}  # otp_id: {code, username, expires, purpose, attempts}
         self.pending_enrollments = {}  # user_id: {user_data, verification_code, expires}
+        self.password_reset_tokens = {}  # token: {username, expires, verified}
+        self.password_reset_attempts = {}  # username: {count, last_attempt}
         self.load_database()
 
     def load_database(self):
@@ -65,6 +67,52 @@ class UserSecurityService(cloudsecurity_pb2_grpc.UserSecurityServiceServicer):
             del self.sessions[session_token]
             return False
         return True
+
+    def validate_password_strength(self, password):
+        """Validate password strength and return requirements"""
+        requirements = []
+        issues = []
+        
+        if len(password) < 8:
+            issues.append("Password must be at least 8 characters long")
+        requirements.append("Minimum 8 characters")
+        
+        if not any(c.isupper() for c in password):
+            issues.append("Password must contain at least one uppercase letter")
+        requirements.append("At least one uppercase letter")
+        
+        if not any(c.islower() for c in password):
+            issues.append("Password must contain at least one lowercase letter")
+        requirements.append("At least one lowercase letter")
+        
+        if not any(c.isdigit() for c in password):
+            issues.append("Password must contain at least one number")
+        requirements.append("At least one number")
+        
+        if not any(c in '!@#$%^&*()_+-=[]{}|;:,.<>?' for c in password):
+            issues.append("Password must contain at least one special character")
+        requirements.append("At least one special character (!@#$%^&*()_+-=[]{}|;:,.<>?)")
+        
+        return len(issues) == 0, issues, requirements
+
+    def generate_reset_token(self):
+        """Generate secure reset token"""
+        return str(uuid.uuid4())
+
+    def can_request_password_reset(self, username):
+        """Check if user can request password reset (rate limiting)"""
+        attempts = self.password_reset_attempts.get(username, {'count': 0, 'last_attempt': None})
+        
+        # Allow 3 reset requests per hour
+        if attempts['count'] >= 3:
+            if attempts['last_attempt']:
+                last_attempt = datetime.fromisoformat(attempts['last_attempt'])
+                if datetime.now() - last_attempt < timedelta(hours=1):
+                    return False, f"Too many reset requests. Try again after {60 - (datetime.now() - last_attempt).seconds // 60} minutes"
+            # Reset counter after an hour
+            self.password_reset_attempts[username] = {'count': 0, 'last_attempt': None}
+        
+        return True, ""
 
     # Authentication Methods
     def Login(self, request, context):
@@ -370,18 +418,228 @@ class UserSecurityService(cloudsecurity_pb2_grpc.UserSecurityServiceServicer):
             session_token=session_token or ""
         )
 
+    # Password Management Methods
+    def ChangePassword(self, request, context):
+        """Change user password (requires current password)"""
+        print(f'🔑 Password change request for: {request.username}')
+        
+        # Validate session
+        if not self.is_valid_session(request.session_token, request.username):
+            return cloudsecurity_pb2.ChangePasswordResponse(
+                status="unauthorized",
+                message="Invalid or expired session"
+            )
+        
+        user_data = self.users.get(request.username)
+        if not user_data:
+            return cloudsecurity_pb2.ChangePasswordResponse(
+                status="failed",
+                message="User not found"
+            )
+        
+        # Verify current password
+        if not bcrypt.checkpw(request.current_password.encode('utf-8'), user_data['password_hash'].encode('utf-8')):
+            return cloudsecurity_pb2.ChangePasswordResponse(
+                status="invalid_current",
+                message="Current password is incorrect"
+            )
+        
+        # Check if new password matches confirmation
+        if request.new_password != request.confirm_password:
+            return cloudsecurity_pb2.ChangePasswordResponse(
+                status="mismatch",
+                message="New password and confirmation do not match"
+            )
+        
+        # Validate password strength
+        is_strong, issues, requirements = self.validate_password_strength(request.new_password)
+        if not is_strong:
+            return cloudsecurity_pb2.ChangePasswordResponse(
+                status="weak_password",
+                message="Password does not meet security requirements",
+                password_requirements=requirements
+            )
+        
+        # Update password
+        user_data['password_hash'] = hash_password(request.new_password)
+        user_data['last_password_change'] = datetime.now().isoformat()
+        self.save_database()
+        
+        # Invalidate all sessions except current one
+        sessions_to_remove = []
+        for token, session in self.sessions.items():
+            if session['username'] == request.username and token != request.session_token:
+                sessions_to_remove.append(token)
+        
+        for token in sessions_to_remove:
+            del self.sessions[token]
+        
+        print(f'✅ Password changed successfully for: {request.username}')
+        return cloudsecurity_pb2.ChangePasswordResponse(
+            status="success",
+            message="Password changed successfully. Other sessions have been logged out."
+        )
+    
+    def ForgotPassword(self, request, context):
+        """Initiate password reset process"""
+        print(f'🔄 Password reset request for: {request.username_or_email}')
+        
+        # Find user by username or email
+        user_data = None
+        username = None
+        
+        if request.username_or_email in self.users:
+            username = request.username_or_email
+            user_data = self.users[username]
+        elif request.username_or_email in self.emails_to_users:
+            username = self.emails_to_users[request.username_or_email]
+            user_data = self.users[username]
+        
+        if not user_data:
+            # Return generic message for security (don't reveal if user exists)
+            return cloudsecurity_pb2.ForgotPasswordResponse(
+                status="sent",
+                message="If the account exists, a password reset link has been sent to the registered email.",
+                reset_method="email"
+            )
+        
+        # Check rate limiting
+        can_reset, rate_message = self.can_request_password_reset(username)
+        if not can_reset:
+            return cloudsecurity_pb2.ForgotPasswordResponse(
+                status="too_many_requests",
+                message=rate_message
+            )
+        
+        # Verify security answer if provided
+        if request.security_answer and user_data.get('security_answer'):
+            if not bcrypt.checkpw(request.security_answer.encode('utf-8'), user_data['security_answer'].encode('utf-8')):
+                return cloudsecurity_pb2.ForgotPasswordResponse(
+                    status="user_not_found",
+                    message="Security answer is incorrect"
+                )
+        
+        # Generate reset token
+        reset_token = self.generate_reset_token()
+        self.password_reset_tokens[reset_token] = {
+            'username': username,
+            'expires': datetime.now() + timedelta(hours=1),  # 1 hour expiry
+            'verified': False
+        }
+        
+        # Update reset attempts counter
+        current_attempts = self.password_reset_attempts.get(username, {'count': 0})
+        self.password_reset_attempts[username] = {
+            'count': current_attempts['count'] + 1,
+            'last_attempt': datetime.now().isoformat()
+        }
+        
+        # Send reset email with token
+        try:
+            reset_message = f"""
+            Hello {user_data.get('full_name', username)},
+            
+            You have requested a password reset for your account.
+            
+            Your password reset token is: {reset_token}
+            
+            This token will expire in 1 hour.
+            
+            If you did not request this reset, please ignore this email.
+            
+            Best regards,
+            Cloud Security Team
+            """
+            
+            send_otp(user_data['email'], reset_token, "Password Reset")
+            
+            print(f'📧 Password reset email sent to: {user_data["email"]}')
+            return cloudsecurity_pb2.ForgotPasswordResponse(
+                status="sent",
+                message="Password reset token has been sent to your registered email address.",
+                reset_method="email"
+            )
+            
+        except Exception as e:
+            print(f'❌ Failed to send reset email: {e}')
+            return cloudsecurity_pb2.ForgotPasswordResponse(
+                status="user_not_found",
+                message="Failed to send reset email. Please try again later."
+            )
+    
+    def ResetPassword(self, request, context):
+        """Reset password using reset token"""
+        print(f'🔐 Password reset with token for: {request.username}')
+        
+        # Validate reset token
+        token_data = self.password_reset_tokens.get(request.reset_token)
+        if not token_data:
+            return cloudsecurity_pb2.ResetPasswordResponse(
+                status="invalid_token",
+                message="Invalid or expired reset token"
+            )
+        
+        # Check if token belongs to the user
+        if token_data['username'] != request.username:
+            return cloudsecurity_pb2.ResetPasswordResponse(
+                status="invalid_token",
+                message="Reset token does not match the username"
+            )
+        
+        # Check if token is expired
+        if datetime.now() > token_data['expires']:
+            del self.password_reset_tokens[request.reset_token]
+            return cloudsecurity_pb2.ResetPasswordResponse(
+                status="expired_token",
+                message="Reset token has expired. Please request a new one."
+            )
+        
+        # Check if new password matches confirmation
+        if request.new_password != request.confirm_password:
+            return cloudsecurity_pb2.ResetPasswordResponse(
+                status="mismatch",
+                message="New password and confirmation do not match"
+            )
+        
+        # Validate password strength
+        is_strong, issues, requirements = self.validate_password_strength(request.new_password)
+        if not is_strong:
+            return cloudsecurity_pb2.ResetPasswordResponse(
+                status="weak_password",
+                message="Password does not meet security requirements: " + "; ".join(issues)
+            )
+        
+        # Update password
+        user_data = self.users[request.username]
+        user_data['password_hash'] = hash_password(request.new_password)
+        user_data['last_password_change'] = datetime.now().isoformat()
+        self.save_database()
+        
+        # Invalidate all sessions for this user
+        sessions_to_remove = []
+        for token, session in self.sessions.items():
+            if session['username'] == request.username:
+                sessions_to_remove.append(token)
+        
+        for token in sessions_to_remove:
+            del self.sessions[token]
+        
+        # Remove the reset token
+        del self.password_reset_tokens[request.reset_token]
+        
+        # Reset the attempts counter
+        if request.username in self.password_reset_attempts:
+            del self.password_reset_attempts[request.username]
+        
+        print(f'✅ Password reset successfully for: {request.username}')
+        return cloudsecurity_pb2.ResetPasswordResponse(
+            status="success",
+            message="Password has been reset successfully. Please log in with your new password."
+        )
+    
     # Implement other methods with basic responses for now
     def ResendOTP(self, request, context):
         return cloudsecurity_pb2.ResendOTPResponse(status="not_implemented", message="Feature coming soon")
-    
-    def ChangePassword(self, request, context):
-        return cloudsecurity_pb2.ChangePasswordResponse(status="not_implemented", message="Feature coming soon")
-    
-    def ResetPassword(self, request, context):
-        return cloudsecurity_pb2.ResetPasswordResponse(status="not_implemented", message="Feature coming soon")
-    
-    def ForgotPassword(self, request, context):
-        return cloudsecurity_pb2.ForgotPasswordResponse(status="not_implemented", message="Feature coming soon")
     
     def GetUserProfile(self, request, context):
         return cloudsecurity_pb2.ProfileResponse(status="not_implemented", message="Feature coming soon")
@@ -413,6 +671,8 @@ def run():
     print('   - User Enrollment/Registration') 
     print('   - OTP Generation/Verification')
     print('   - Session Management')
+    print('   - Password Reset/Change')
+    print('   - Security Rate Limiting')
     server.wait_for_termination()
 
 if __name__ == '__main__':
