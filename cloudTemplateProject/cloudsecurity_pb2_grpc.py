@@ -5,7 +5,7 @@ import warnings
 
 import cloudsecurity_pb2 as cloudsecurity__pb2
 
-GRPC_GENERATED_VERSION = '1.68.0'
+GRPC_GENERATED_VERSION = '1.76.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -18,15 +18,16 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + f' but the generated code in cloudsecurity_pb2_grpc.py depends on'
+        + ' but the generated code in cloudsecurity_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
     )
 
 
-class UserServiceStub(object):
-    """Missing associated documentation comment in .proto file."""
+class UserSecurityServiceStub(object):
+    """Comprehensive User Security Service
+    """
 
     def __init__(self, channel):
         """Constructor.
@@ -34,43 +35,291 @@ class UserServiceStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.login = channel.unary_unary(
-                '/cloud.UserService/login',
-                request_serializer=cloudsecurity__pb2.Request.SerializeToString,
-                response_deserializer=cloudsecurity__pb2.Response.FromString,
+        self.Login = channel.unary_unary(
+                '/cloud.security.UserSecurityService/Login',
+                request_serializer=cloudsecurity__pb2.LoginRequest.SerializeToString,
+                response_deserializer=cloudsecurity__pb2.LoginResponse.FromString,
+                _registered_method=True)
+        self.Logout = channel.unary_unary(
+                '/cloud.security.UserSecurityService/Logout',
+                request_serializer=cloudsecurity__pb2.LogoutRequest.SerializeToString,
+                response_deserializer=cloudsecurity__pb2.LogoutResponse.FromString,
+                _registered_method=True)
+        self.Enroll = channel.unary_unary(
+                '/cloud.security.UserSecurityService/Enroll',
+                request_serializer=cloudsecurity__pb2.EnrollRequest.SerializeToString,
+                response_deserializer=cloudsecurity__pb2.EnrollResponse.FromString,
+                _registered_method=True)
+        self.VerifyEnrollment = channel.unary_unary(
+                '/cloud.security.UserSecurityService/VerifyEnrollment',
+                request_serializer=cloudsecurity__pb2.VerifyEnrollmentRequest.SerializeToString,
+                response_deserializer=cloudsecurity__pb2.VerifyEnrollmentResponse.FromString,
+                _registered_method=True)
+        self.SendOTP = channel.unary_unary(
+                '/cloud.security.UserSecurityService/SendOTP',
+                request_serializer=cloudsecurity__pb2.OTPRequest.SerializeToString,
+                response_deserializer=cloudsecurity__pb2.OTPResponse.FromString,
+                _registered_method=True)
+        self.VerifyOTP = channel.unary_unary(
+                '/cloud.security.UserSecurityService/VerifyOTP',
+                request_serializer=cloudsecurity__pb2.VerifyOTPRequest.SerializeToString,
+                response_deserializer=cloudsecurity__pb2.VerifyOTPResponse.FromString,
+                _registered_method=True)
+        self.ResendOTP = channel.unary_unary(
+                '/cloud.security.UserSecurityService/ResendOTP',
+                request_serializer=cloudsecurity__pb2.ResendOTPRequest.SerializeToString,
+                response_deserializer=cloudsecurity__pb2.ResendOTPResponse.FromString,
+                _registered_method=True)
+        self.ChangePassword = channel.unary_unary(
+                '/cloud.security.UserSecurityService/ChangePassword',
+                request_serializer=cloudsecurity__pb2.ChangePasswordRequest.SerializeToString,
+                response_deserializer=cloudsecurity__pb2.ChangePasswordResponse.FromString,
+                _registered_method=True)
+        self.ResetPassword = channel.unary_unary(
+                '/cloud.security.UserSecurityService/ResetPassword',
+                request_serializer=cloudsecurity__pb2.ResetPasswordRequest.SerializeToString,
+                response_deserializer=cloudsecurity__pb2.ResetPasswordResponse.FromString,
+                _registered_method=True)
+        self.ForgotPassword = channel.unary_unary(
+                '/cloud.security.UserSecurityService/ForgotPassword',
+                request_serializer=cloudsecurity__pb2.ForgotPasswordRequest.SerializeToString,
+                response_deserializer=cloudsecurity__pb2.ForgotPasswordResponse.FromString,
+                _registered_method=True)
+        self.GetUserProfile = channel.unary_unary(
+                '/cloud.security.UserSecurityService/GetUserProfile',
+                request_serializer=cloudsecurity__pb2.ProfileRequest.SerializeToString,
+                response_deserializer=cloudsecurity__pb2.ProfileResponse.FromString,
+                _registered_method=True)
+        self.UpdateUserProfile = channel.unary_unary(
+                '/cloud.security.UserSecurityService/UpdateUserProfile',
+                request_serializer=cloudsecurity__pb2.UpdateProfileRequest.SerializeToString,
+                response_deserializer=cloudsecurity__pb2.UpdateProfileResponse.FromString,
+                _registered_method=True)
+        self.DeleteAccount = channel.unary_unary(
+                '/cloud.security.UserSecurityService/DeleteAccount',
+                request_serializer=cloudsecurity__pb2.DeleteAccountRequest.SerializeToString,
+                response_deserializer=cloudsecurity__pb2.DeleteAccountResponse.FromString,
+                _registered_method=True)
+        self.GetSecurityStatus = channel.unary_unary(
+                '/cloud.security.UserSecurityService/GetSecurityStatus',
+                request_serializer=cloudsecurity__pb2.SecurityStatusRequest.SerializeToString,
+                response_deserializer=cloudsecurity__pb2.SecurityStatusResponse.FromString,
+                _registered_method=True)
+        self.Enable2FA = channel.unary_unary(
+                '/cloud.security.UserSecurityService/Enable2FA',
+                request_serializer=cloudsecurity__pb2.Enable2FARequest.SerializeToString,
+                response_deserializer=cloudsecurity__pb2.Enable2FAResponse.FromString,
+                _registered_method=True)
+        self.Disable2FA = channel.unary_unary(
+                '/cloud.security.UserSecurityService/Disable2FA',
+                request_serializer=cloudsecurity__pb2.Disable2FARequest.SerializeToString,
+                response_deserializer=cloudsecurity__pb2.Disable2FAResponse.FromString,
                 _registered_method=True)
 
 
-class UserServiceServicer(object):
-    """Missing associated documentation comment in .proto file."""
+class UserSecurityServiceServicer(object):
+    """Comprehensive User Security Service
+    """
 
-    def login(self, request, context):
+    def Login(self, request, context):
+        """User Authentication
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Logout(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Enroll(self, request, context):
+        """User Registration/Enrollment
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def VerifyEnrollment(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SendOTP(self, request, context):
+        """OTP (One-Time Password) Operations
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def VerifyOTP(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ResendOTP(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ChangePassword(self, request, context):
+        """Password Management
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ResetPassword(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ForgotPassword(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetUserProfile(self, request, context):
+        """Account Management
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def UpdateUserProfile(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DeleteAccount(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetSecurityStatus(self, request, context):
+        """Security Operations
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Enable2FA(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Disable2FA(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
 
-def add_UserServiceServicer_to_server(servicer, server):
+def add_UserSecurityServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'login': grpc.unary_unary_rpc_method_handler(
-                    servicer.login,
-                    request_deserializer=cloudsecurity__pb2.Request.FromString,
-                    response_serializer=cloudsecurity__pb2.Response.SerializeToString,
+            'Login': grpc.unary_unary_rpc_method_handler(
+                    servicer.Login,
+                    request_deserializer=cloudsecurity__pb2.LoginRequest.FromString,
+                    response_serializer=cloudsecurity__pb2.LoginResponse.SerializeToString,
+            ),
+            'Logout': grpc.unary_unary_rpc_method_handler(
+                    servicer.Logout,
+                    request_deserializer=cloudsecurity__pb2.LogoutRequest.FromString,
+                    response_serializer=cloudsecurity__pb2.LogoutResponse.SerializeToString,
+            ),
+            'Enroll': grpc.unary_unary_rpc_method_handler(
+                    servicer.Enroll,
+                    request_deserializer=cloudsecurity__pb2.EnrollRequest.FromString,
+                    response_serializer=cloudsecurity__pb2.EnrollResponse.SerializeToString,
+            ),
+            'VerifyEnrollment': grpc.unary_unary_rpc_method_handler(
+                    servicer.VerifyEnrollment,
+                    request_deserializer=cloudsecurity__pb2.VerifyEnrollmentRequest.FromString,
+                    response_serializer=cloudsecurity__pb2.VerifyEnrollmentResponse.SerializeToString,
+            ),
+            'SendOTP': grpc.unary_unary_rpc_method_handler(
+                    servicer.SendOTP,
+                    request_deserializer=cloudsecurity__pb2.OTPRequest.FromString,
+                    response_serializer=cloudsecurity__pb2.OTPResponse.SerializeToString,
+            ),
+            'VerifyOTP': grpc.unary_unary_rpc_method_handler(
+                    servicer.VerifyOTP,
+                    request_deserializer=cloudsecurity__pb2.VerifyOTPRequest.FromString,
+                    response_serializer=cloudsecurity__pb2.VerifyOTPResponse.SerializeToString,
+            ),
+            'ResendOTP': grpc.unary_unary_rpc_method_handler(
+                    servicer.ResendOTP,
+                    request_deserializer=cloudsecurity__pb2.ResendOTPRequest.FromString,
+                    response_serializer=cloudsecurity__pb2.ResendOTPResponse.SerializeToString,
+            ),
+            'ChangePassword': grpc.unary_unary_rpc_method_handler(
+                    servicer.ChangePassword,
+                    request_deserializer=cloudsecurity__pb2.ChangePasswordRequest.FromString,
+                    response_serializer=cloudsecurity__pb2.ChangePasswordResponse.SerializeToString,
+            ),
+            'ResetPassword': grpc.unary_unary_rpc_method_handler(
+                    servicer.ResetPassword,
+                    request_deserializer=cloudsecurity__pb2.ResetPasswordRequest.FromString,
+                    response_serializer=cloudsecurity__pb2.ResetPasswordResponse.SerializeToString,
+            ),
+            'ForgotPassword': grpc.unary_unary_rpc_method_handler(
+                    servicer.ForgotPassword,
+                    request_deserializer=cloudsecurity__pb2.ForgotPasswordRequest.FromString,
+                    response_serializer=cloudsecurity__pb2.ForgotPasswordResponse.SerializeToString,
+            ),
+            'GetUserProfile': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetUserProfile,
+                    request_deserializer=cloudsecurity__pb2.ProfileRequest.FromString,
+                    response_serializer=cloudsecurity__pb2.ProfileResponse.SerializeToString,
+            ),
+            'UpdateUserProfile': grpc.unary_unary_rpc_method_handler(
+                    servicer.UpdateUserProfile,
+                    request_deserializer=cloudsecurity__pb2.UpdateProfileRequest.FromString,
+                    response_serializer=cloudsecurity__pb2.UpdateProfileResponse.SerializeToString,
+            ),
+            'DeleteAccount': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeleteAccount,
+                    request_deserializer=cloudsecurity__pb2.DeleteAccountRequest.FromString,
+                    response_serializer=cloudsecurity__pb2.DeleteAccountResponse.SerializeToString,
+            ),
+            'GetSecurityStatus': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetSecurityStatus,
+                    request_deserializer=cloudsecurity__pb2.SecurityStatusRequest.FromString,
+                    response_serializer=cloudsecurity__pb2.SecurityStatusResponse.SerializeToString,
+            ),
+            'Enable2FA': grpc.unary_unary_rpc_method_handler(
+                    servicer.Enable2FA,
+                    request_deserializer=cloudsecurity__pb2.Enable2FARequest.FromString,
+                    response_serializer=cloudsecurity__pb2.Enable2FAResponse.SerializeToString,
+            ),
+            'Disable2FA': grpc.unary_unary_rpc_method_handler(
+                    servicer.Disable2FA,
+                    request_deserializer=cloudsecurity__pb2.Disable2FARequest.FromString,
+                    response_serializer=cloudsecurity__pb2.Disable2FAResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'cloud.UserService', rpc_method_handlers)
+            'cloud.security.UserSecurityService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers('cloud.UserService', rpc_method_handlers)
+    server.add_registered_method_handlers('cloud.security.UserSecurityService', rpc_method_handlers)
 
 
  # This class is part of an EXPERIMENTAL API.
-class UserService(object):
-    """Missing associated documentation comment in .proto file."""
+class UserSecurityService(object):
+    """Comprehensive User Security Service
+    """
 
     @staticmethod
-    def login(request,
+    def Login(request,
             target,
             options=(),
             channel_credentials=None,
@@ -83,9 +332,414 @@ class UserService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/cloud.UserService/login',
-            cloudsecurity__pb2.Request.SerializeToString,
-            cloudsecurity__pb2.Response.FromString,
+            '/cloud.security.UserSecurityService/Login',
+            cloudsecurity__pb2.LoginRequest.SerializeToString,
+            cloudsecurity__pb2.LoginResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Logout(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/cloud.security.UserSecurityService/Logout',
+            cloudsecurity__pb2.LogoutRequest.SerializeToString,
+            cloudsecurity__pb2.LogoutResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Enroll(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/cloud.security.UserSecurityService/Enroll',
+            cloudsecurity__pb2.EnrollRequest.SerializeToString,
+            cloudsecurity__pb2.EnrollResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def VerifyEnrollment(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/cloud.security.UserSecurityService/VerifyEnrollment',
+            cloudsecurity__pb2.VerifyEnrollmentRequest.SerializeToString,
+            cloudsecurity__pb2.VerifyEnrollmentResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SendOTP(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/cloud.security.UserSecurityService/SendOTP',
+            cloudsecurity__pb2.OTPRequest.SerializeToString,
+            cloudsecurity__pb2.OTPResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def VerifyOTP(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/cloud.security.UserSecurityService/VerifyOTP',
+            cloudsecurity__pb2.VerifyOTPRequest.SerializeToString,
+            cloudsecurity__pb2.VerifyOTPResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ResendOTP(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/cloud.security.UserSecurityService/ResendOTP',
+            cloudsecurity__pb2.ResendOTPRequest.SerializeToString,
+            cloudsecurity__pb2.ResendOTPResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ChangePassword(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/cloud.security.UserSecurityService/ChangePassword',
+            cloudsecurity__pb2.ChangePasswordRequest.SerializeToString,
+            cloudsecurity__pb2.ChangePasswordResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ResetPassword(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/cloud.security.UserSecurityService/ResetPassword',
+            cloudsecurity__pb2.ResetPasswordRequest.SerializeToString,
+            cloudsecurity__pb2.ResetPasswordResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ForgotPassword(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/cloud.security.UserSecurityService/ForgotPassword',
+            cloudsecurity__pb2.ForgotPasswordRequest.SerializeToString,
+            cloudsecurity__pb2.ForgotPasswordResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetUserProfile(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/cloud.security.UserSecurityService/GetUserProfile',
+            cloudsecurity__pb2.ProfileRequest.SerializeToString,
+            cloudsecurity__pb2.ProfileResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def UpdateUserProfile(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/cloud.security.UserSecurityService/UpdateUserProfile',
+            cloudsecurity__pb2.UpdateProfileRequest.SerializeToString,
+            cloudsecurity__pb2.UpdateProfileResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DeleteAccount(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/cloud.security.UserSecurityService/DeleteAccount',
+            cloudsecurity__pb2.DeleteAccountRequest.SerializeToString,
+            cloudsecurity__pb2.DeleteAccountResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetSecurityStatus(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/cloud.security.UserSecurityService/GetSecurityStatus',
+            cloudsecurity__pb2.SecurityStatusRequest.SerializeToString,
+            cloudsecurity__pb2.SecurityStatusResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Enable2FA(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/cloud.security.UserSecurityService/Enable2FA',
+            cloudsecurity__pb2.Enable2FARequest.SerializeToString,
+            cloudsecurity__pb2.Enable2FAResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Disable2FA(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/cloud.security.UserSecurityService/Disable2FA',
+            cloudsecurity__pb2.Disable2FARequest.SerializeToString,
+            cloudsecurity__pb2.Disable2FAResponse.FromString,
             options,
             channel_credentials,
             insecure,
