@@ -34,7 +34,7 @@ def send_otp(to_email, otp_code=None, purpose="Authentication") -> str:
 
     # Create the email
     msg = MIMEMultipart()
-    msg['From'] = 'sasbergson@gmail.com'
+    msg['From'] = from_email
     msg['To'] = to_email
     msg['Subject'] = subject
     
@@ -46,8 +46,8 @@ def send_otp(to_email, otp_code=None, purpose="Authentication") -> str:
             print(f"📧 Starting TLS session on smtp.gmail.com:587 .........", end='')
             server.starttls()  # Upgrade the connection to a secure encrypted SSL/TLS connection
             print('[OK]')
-            print(f"🔑 Authenticating with email server .........", end='')
-            server.login('sasbergson@gmail.com', 'tgnw azxw lfjr jsuz')
+            print(f"🔑 Authenticating with email server .........")
+            server.login(from_email, app_password)
             print('[OK]')
             print(f"📤 Sending {purpose} code to {to_email} .........", end='')
             server.send_message(msg)

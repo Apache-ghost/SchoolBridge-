@@ -1,4 +1,4 @@
 
-from_email = "sasbergson@gmail.com"
-from_password = "Them0stw@ntedm@n"
-app_password = "tgnw azxw lfjr jsuz"
+from_email = "guegouomoghommahieguiddel@gmail.com"
+from_password = "ezgd jetn aqcw whwk"
+app_password = "ezgd jetn aqcw whwk"
