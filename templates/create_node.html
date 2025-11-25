@@ -50,13 +50,41 @@
                                     <small class="form-text text-muted">Port for P2P communication (8889-9999)</small>
                                 </div>
                                 
-                                <div class="mb-3">
-                                    <label class="form-label">Node Type</label>
-                                    <select class="form-select" id="node_type">
-                                        <option value="storage">Storage Node</option>
-                                        <option value="compute">Compute Node</option>
-                                        <option value="hybrid">Hybrid Node</option>
-                                    </select>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Storage Capacity (GB)</label>
+                                            <input type="number" class="form-control" id="storage_capacity" value="10" min="1" max="1000" required>
+                                            <small class="form-text text-muted">1GB - 1TB storage space</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">CPU Cores</label>
+                                            <input type="number" class="form-control" id="cpu_cores" value="2" min="1" max="16" required>
+                                            <small class="form-text text-muted">1-16 virtual CPU cores</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Memory (GB)</label>
+                                            <input type="number" class="form-control" id="memory_capacity" value="4" min="1" max="32" required>
+                                            <small class="form-text text-muted">1-32GB RAM</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Node Type</label>
+                                            <select class="form-select" id="node_type">
+                                                <option value="storage">Storage Node</option>
+                                                <option value="compute">Compute Node</option>
+                                                <option value="hybrid">Hybrid Node</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                 </div>
                                 
                                 <div class="mb-3">
@@ -131,6 +159,9 @@ document.getElementById('createNodeForm').addEventListener('submit', async funct
     const formData = {
         node_name: document.getElementById('node_name').value,
         port: parseInt(document.getElementById('port').value),
+        storage_capacity: parseInt(document.getElementById('storage_capacity').value),
+        cpu_cores: parseInt(document.getElementById('cpu_cores').value),
+        memory_capacity: parseInt(document.getElementById('memory_capacity').value),
         node_type: document.getElementById('node_type').value,
         auto_start: document.getElementById('auto_start').checked
     };

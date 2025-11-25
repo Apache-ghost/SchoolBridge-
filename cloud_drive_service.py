@@ -19,6 +19,7 @@ import time
 from storage_api_client import get_storage_client
 from vm_hypervisor import VMHypervisor
 from vm_web_interface import VMWebInterface
+from node import AutonomousNode
 
 class SimpleObject:
     """Simple object to convert dict to object with dot notation"""
@@ -364,31 +365,70 @@ class CloudDriveService:
             data = request.get_json()
             node_name = data.get('node_name', f'Node_{uuid.uuid4().hex[:8]}')
             node_port = data.get('port', 8889)
+            storage_capacity = data.get('storage_capacity', 10)
+            cpu_cores = data.get('cpu_cores', 2)
+            memory_capacity = data.get('memory_capacity', 4)
+            node_type = data.get('node_type', 'storage')
             
-            # Create autonomous node through VM hypervisor
             try:
-                vm_result = self.vm_hypervisor.create_vm(
-                    name=f'AutonomousNode-{node_name}',
-                    description=f'Autonomous node: {node_name}',
-                    os_type='Ubuntu 22.04',
-                    cpu_cores=2,
-                    ram_mb=1024,
-                    disk_gb=10,
-                    owner=session.get('username', 'user')
+                # Create new AutonomousNode instance
+                node = AutonomousNode()
+                
+                # Configure the node with user data
+                node.node_id = node_name
+                node.port = node_port
+                node.storage_capacity = storage_capacity
+                node.cpu_cores = cpu_cores
+                node.memory_capacity = memory_capacity
+                node.bandwidth = 100  # Default bandwidth
+                node.network_host = 'localhost'
+                node.network_port = 8888
+                
+                # Initialize virtual components
+                from virtual_hardware import VirtualHardware
+                from virtual_filesystem import VirtualFileSystem
+                
+                node.virtual_hardware = VirtualHardware(
+                    cpu_cores=cpu_cores,
+                    memory_gb=memory_capacity,
+                    storage_gb=storage_capacity
                 )
-                if vm_result['success']:
-                    vm_id = vm_result['vm_id']
-                    self.vm_hypervisor.start_vm(vm_id)
-                    result = {
-                        'success': True,
-                        'node_id': vm_id,
-                        'node_name': node_name,
-                        'port': node_port,
-                        'message': f'Autonomous node {node_name} created as VM {vm_id}',
-                        'vm_details': vm_result
-                    }
-                else:
-                    result = {'success': False, 'error': vm_result.get('error', 'Failed to create node')}
+                
+                node.virtual_filesystem = VirtualFileSystem(
+                    capacity_gb=storage_capacity,
+                    node_id=node_name
+                )
+                
+                # Save node configuration
+                node_config = {
+                    'node_id': node_name,
+                    'port': node_port,
+                    'storage_capacity': storage_capacity,
+                    'cpu_cores': cpu_cores,
+                    'memory_capacity': memory_capacity,
+                    'node_type': node_type,
+                    'created_by': session.get('username'),
+                    'created_at': datetime.now().isoformat(),
+                    'status': 'created'
+                }
+                
+                # Store node info in a registry file
+                os.makedirs('node_registry', exist_ok=True)
+                with open(f'node_registry/{node_name}.json', 'w') as f:
+                    json.dump(node_config, f, indent=2)
+                
+                result = {
+                    'success': True,
+                    'node_id': node_name,
+                    'node_name': node_name,
+                    'port': node_port,
+                    'storage_capacity': storage_capacity,
+                    'cpu_cores': cpu_cores,
+                    'memory_capacity': memory_capacity,
+                    'node_type': node_type,
+                    'message': f'Autonomous node {node_name} created successfully',
+                    'config': node_config
+                }
                 
                 return jsonify(result)
             except Exception as e:
@@ -432,42 +472,119 @@ class CloudDriveService:
             try:
                 nodes = []
                 
-                # Get VMs that act as autonomous nodes
-                vm_list = self.vm_hypervisor.get_vm_list()
-                for vm in vm_list:
-                    if 'AutonomousNode' in vm.get('name', '') or 'Node' in vm.get('name', ''):
+                # Get nodes from registry files
+                registry_dir = 'node_registry'
+                if os.path.exists(registry_dir):
+                    for file in os.listdir(registry_dir):
+                        if file.endswith('.json'):
+                            try:
+                                with open(os.path.join(registry_dir, file), 'r') as f:
+                                    node_config = json.load(f)
+                                nodes.append({
+                                    'id': node_config.get('node_id'),
+                                    'name': node_config.get('node_id'),
+                                    'type': node_config.get('node_type', 'storage'),
+                                    'status': node_config.get('status', 'stopped'),
+                                    'created': node_config.get('created_at', ''),
+                                    'owner': node_config.get('created_by', ''),
+                                    'ip': 'localhost',
+                                    'port': node_config.get('port', 8889),
+                                    'storage_capacity': node_config.get('storage_capacity', 0),
+                                    'cpu_cores': node_config.get('cpu_cores', 0),
+                                    'memory_capacity': node_config.get('memory_capacity', 0)
+                                })
+                            except Exception as e:
+                                print(f"Error reading node config {file}: {e}")
+                
+                # Get existing nodes from vm_storage directory (from node.py)
+                temp_node = AutonomousNode()
+                existing_vm_nodes = temp_node.get_existing_nodes()
+                for vm_node in existing_vm_nodes:
+                    # Check if not already in registry
+                    if not any(node['name'] == vm_node for node in nodes):
                         nodes.append({
-                            'id': vm['vm_id'],
-                            'name': vm['name'],
-                            'type': 'vm_node',
-                            'status': vm['power_state'],
-                            'created': vm.get('created_date', ''),
-                            'owner': vm.get('owner', ''),
+                            'id': vm_node,
+                            'name': vm_node,
+                            'type': 'vm_storage',
+                            'status': 'available',
+                            'created': 'Unknown',
+                            'owner': 'system',
                             'ip': 'localhost',
-                            'port': 8888 + len(nodes)
+                            'port': 8889,
+                            'storage_capacity': 'Unknown',
+                            'cpu_cores': 'Unknown',
+                            'memory_capacity': 'Unknown'
                         })
                 
-                # Get P2P network nodes
+                # Get P2P network status
+                p2p_status = {}
                 if hasattr(self.vm_hypervisor, 'get_p2p_network_status'):
-                    p2p_status = self.vm_hypervisor.get_p2p_network_status()
-                    for node in p2p_status.get('nodes', []):
-                        nodes.append({
-                            'id': node.get('node_id', ''),
-                            'name': f"P2P Node {node.get('node_id', '')[:8]}",
-                            'type': 'p2p_node',
-                            'status': 'active',
-                            'created': node.get('timestamp', ''),
-                            'vms': node.get('vms', []),
-                            'ip': 'localhost',
-                            'port': 8888
-                        })
+                    p2p_status = self.vm_hypervisor.get_p2p_network_status().get('network', {})
                 
                 return jsonify({
                     'success': True,
                     'nodes': nodes,
                     'total': len(nodes),
-                    'p2p_network': p2p_status.get('network', {}) if hasattr(self.vm_hypervisor, 'get_p2p_network_status') else {}
+                    'p2p_network': p2p_status
                 })
+            except Exception as e:
+                return jsonify({'success': False, 'error': str(e)})
+        
+        @self.app.route('/api/nodes/<node_id>/start', methods=['POST'])
+        def api_start_node(node_id):
+            if 'username' not in session:
+                return jsonify({'error': 'Not authenticated'}), 401
+            
+            try:
+                # Load node configuration
+                config_file = f'node_registry/{node_id}.json'
+                if os.path.exists(config_file):
+                    with open(config_file, 'r') as f:
+                        node_config = json.load(f)
+                    
+                    # Update status to running
+                    node_config['status'] = 'running'
+                    node_config['last_started'] = datetime.now().isoformat()
+                    
+                    with open(config_file, 'w') as f:
+                        json.dump(node_config, f, indent=2)
+                    
+                    return jsonify({
+                        'success': True,
+                        'message': f'Node {node_id} started successfully',
+                        'status': 'running'
+                    })
+                else:
+                    return jsonify({'success': False, 'error': 'Node configuration not found'})
+            except Exception as e:
+                return jsonify({'success': False, 'error': str(e)})
+        
+        @self.app.route('/api/nodes/<node_id>/stop', methods=['POST'])
+        def api_stop_node(node_id):
+            if 'username' not in session:
+                return jsonify({'error': 'Not authenticated'}), 401
+            
+            try:
+                # Load node configuration
+                config_file = f'node_registry/{node_id}.json'
+                if os.path.exists(config_file):
+                    with open(config_file, 'r') as f:
+                        node_config = json.load(f)
+                    
+                    # Update status to stopped
+                    node_config['status'] = 'stopped'
+                    node_config['last_stopped'] = datetime.now().isoformat()
+                    
+                    with open(config_file, 'w') as f:
+                        json.dump(node_config, f, indent=2)
+                    
+                    return jsonify({
+                        'success': True,
+                        'message': f'Node {node_id} stopped successfully',
+                        'status': 'stopped'
+                    })
+                else:
+                    return jsonify({'success': False, 'error': 'Node configuration not found'})
             except Exception as e:
                 return jsonify({'success': False, 'error': str(e)})
     

@@ -194,15 +194,26 @@ async function loadAvailableNodes() {
                 const statusBadge = node.status === 'running' ? 'success' : 
                                    node.status === 'stopped' ? 'danger' : 'warning';
                 nodesHtml += `
-                    <div class="border rounded p-2 mb-2 node-item" style="cursor: pointer;" 
-                         onclick="selectNode('${node.ip || 'localhost'}', ${node.port || 8888})">
-                        <div class="d-flex justify-content-between">
-                            <strong class="small">${node.name}</strong>
-                            <span class="badge bg-${statusBadge}">${node.status}</span>
-                        </div>
-                        <div class="small text-muted">
-                            ${node.ip || 'localhost'}:${node.port || 8888}<br>
-                            Type: ${node.type}
+                    <div class="border rounded p-2 mb-2 node-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div style="cursor: pointer;" onclick="selectNode('${node.ip || 'localhost'}', ${node.port || 8888})">
+                                <strong class="small">${node.name}</strong>
+                                <div class="small text-muted">
+                                    📍 ${node.ip || 'localhost'}:${node.port || 8888}<br>
+                                    🏷️ Type: ${node.type}<br>
+                                    ${node.storage_capacity !== 'Unknown' ? `💾 Storage: ${node.storage_capacity}GB<br>` : ''}
+                                    ${node.cpu_cores !== 'Unknown' ? `💻 CPU: ${node.cpu_cores} cores` : ''}
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-${statusBadge} d-block mb-1">${node.status}</span>
+                                ${node.status === 'created' || node.status === 'stopped' ? 
+                                    `<button class="btn btn-success btn-sm" onclick="startNode('${node.id}')">▶️</button>` :
+                                    node.status === 'running' ?
+                                    `<button class="btn btn-warning btn-sm" onclick="stopNode('${node.id}')">⏸️</button>` :
+                                    ''
+                                }
+                            </div>
                         </div>
                     </div>
                 `;
@@ -251,6 +262,70 @@ async function scanNetwork() {
         await loadAvailableNodes();
         resultDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-check"></i> Network scan completed. Check available nodes on the right.</div>';
     }, 2000);
+}
+
+async function startNode(nodeId) {
+    try {
+        const response = await fetch(`/api/nodes/${nodeId}/start`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            document.getElementById('result').innerHTML = `
+                <div class="alert alert-success">
+                    <i class="fas fa-play-circle"></i> ${result.message}
+                </div>
+            `;
+            loadAvailableNodes(); // Refresh list
+        } else {
+            document.getElementById('result').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> Failed to start node: ${result.error}
+                </div>
+            `;
+        }
+    } catch (error) {
+        document.getElementById('result').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i> Error: ${error.message}
+            </div>
+        `;
+    }
+}
+
+async function stopNode(nodeId) {
+    try {
+        const response = await fetch(`/api/nodes/${nodeId}/stop`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            document.getElementById('result').innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="fas fa-pause-circle"></i> ${result.message}
+                </div>
+            `;
+            loadAvailableNodes(); // Refresh list
+        } else {
+            document.getElementById('result').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> Failed to stop node: ${result.error}
+                </div>
+            `;
+        }
+    } catch (error) {
+        document.getElementById('result').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i> Error: ${error.message}
+            </div>
+        `;
+    }
 }
 
 // Load available nodes on page load
