@@ -342,6 +342,134 @@ class CloudDriveService:
                 result = self.rename_file(session['username'], item_id, new_name)
             
             return jsonify(result)
+        
+        # Node Management Routes - ADDED FOR AUTONOMOUS NODES
+        @self.app.route('/nodes/create')
+        def create_node_page():
+            if 'username' not in session:
+                return redirect(url_for('login'))
+            return render_template('create_node.html', user=self.get_user_info(session['username']))
+        
+        @self.app.route('/nodes/connect')
+        def connect_node_page():
+            if 'username' not in session:
+                return redirect(url_for('login'))
+            return render_template('connect_node.html', user=self.get_user_info(session['username']))
+        
+        @self.app.route('/api/nodes/create', methods=['POST'])
+        def api_create_node():
+            if 'username' not in session:
+                return jsonify({'error': 'Not authenticated'}), 401
+            
+            data = request.get_json()
+            node_name = data.get('node_name', f'Node_{uuid.uuid4().hex[:8]}')
+            node_port = data.get('port', 8889)
+            
+            # Create autonomous node through VM hypervisor
+            try:
+                vm_result = self.vm_hypervisor.create_vm(
+                    name=f'AutonomousNode-{node_name}',
+                    description=f'Autonomous node: {node_name}',
+                    os_type='Ubuntu 22.04',
+                    cpu_cores=2,
+                    ram_mb=1024,
+                    disk_gb=10,
+                    owner=session.get('username', 'user')
+                )
+                if vm_result['success']:
+                    vm_id = vm_result['vm_id']
+                    self.vm_hypervisor.start_vm(vm_id)
+                    result = {
+                        'success': True,
+                        'node_id': vm_id,
+                        'node_name': node_name,
+                        'port': node_port,
+                        'message': f'Autonomous node {node_name} created as VM {vm_id}',
+                        'vm_details': vm_result
+                    }
+                else:
+                    result = {'success': False, 'error': vm_result.get('error', 'Failed to create node')}
+                
+                return jsonify(result)
+            except Exception as e:
+                return jsonify({'success': False, 'error': str(e)})
+        
+        @self.app.route('/api/nodes/connect', methods=['POST'])
+        def api_connect_node():
+            if 'username' not in session:
+                return jsonify({'error': 'Not authenticated'}), 401
+            
+            data = request.get_json()
+            target_ip = data.get('ip', 'localhost')
+            target_port = data.get('port', 8888)
+            
+            try:
+                # Connect to existing node through P2P network
+                if hasattr(self.vm_hypervisor, 'connect_to_p2p_node'):
+                    result = self.vm_hypervisor.connect_to_p2p_node(target_ip, target_port)
+                else:
+                    # Simulate connection
+                    result = {
+                        'success': True,
+                        'message': f'Connected to node at {target_ip}:{target_port}',
+                        'node_info': {
+                            'ip': target_ip,
+                            'port': target_port,
+                            'status': 'connected',
+                            'timestamp': datetime.now().isoformat()
+                        }
+                    }
+                
+                return jsonify(result)
+            except Exception as e:
+                return jsonify({'success': False, 'error': str(e)})
+        
+        @self.app.route('/api/nodes/list')
+        def api_list_nodes():
+            if 'username' not in session:
+                return jsonify({'error': 'Not authenticated'}), 401
+            
+            try:
+                nodes = []
+                
+                # Get VMs that act as autonomous nodes
+                vm_list = self.vm_hypervisor.get_vm_list()
+                for vm in vm_list:
+                    if 'AutonomousNode' in vm.get('name', '') or 'Node' in vm.get('name', ''):
+                        nodes.append({
+                            'id': vm['vm_id'],
+                            'name': vm['name'],
+                            'type': 'vm_node',
+                            'status': vm['power_state'],
+                            'created': vm.get('created_date', ''),
+                            'owner': vm.get('owner', ''),
+                            'ip': 'localhost',
+                            'port': 8888 + len(nodes)
+                        })
+                
+                # Get P2P network nodes
+                if hasattr(self.vm_hypervisor, 'get_p2p_network_status'):
+                    p2p_status = self.vm_hypervisor.get_p2p_network_status()
+                    for node in p2p_status.get('nodes', []):
+                        nodes.append({
+                            'id': node.get('node_id', ''),
+                            'name': f"P2P Node {node.get('node_id', '')[:8]}",
+                            'type': 'p2p_node',
+                            'status': 'active',
+                            'created': node.get('timestamp', ''),
+                            'vms': node.get('vms', []),
+                            'ip': 'localhost',
+                            'port': 8888
+                        })
+                
+                return jsonify({
+                    'success': True,
+                    'nodes': nodes,
+                    'total': len(nodes),
+                    'p2p_network': p2p_status.get('network', {}) if hasattr(self.vm_hypervisor, 'get_p2p_network_status') else {}
+                })
+            except Exception as e:
+                return jsonify({'success': False, 'error': str(e)})
     
     def authenticate_user(self, username, password):
         """Authenticate user login"""

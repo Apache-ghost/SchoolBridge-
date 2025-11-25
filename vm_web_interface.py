@@ -359,6 +359,109 @@ class VMWebInterface:
             
             nodes = self.hypervisor.get_network_nodes()
             return jsonify(nodes)
+        
+        @self.app.route('/api/vm/<vm_id>/p2p-transfer', methods=['POST'])
+        def start_p2p_transfer(vm_id):
+            """Start P2P chunked file transfer between VMs"""
+            if 'username' not in session:
+                return jsonify({'error': 'Not authenticated'}), 401
+            
+            data = request.get_json()
+            target_vm = data.get('target_vm')
+            file_name = data.get('file_name')
+            
+            if hasattr(self.hypervisor, 'start_p2p_file_transfer'):
+                result = self.hypervisor.start_p2p_file_transfer(vm_id, target_vm, file_name)
+            else:
+                result = {'success': False, 'error': 'P2P transfer not supported'}
+            return jsonify(result)
+        
+        @self.app.route('/api/transfer/<transfer_id>/status')
+        def transfer_status(transfer_id):
+            """Get P2P transfer status"""
+            if 'username' not in session:
+                return jsonify({'error': 'Not authenticated'}), 401
+            
+            if hasattr(self.hypervisor, 'get_transfer_status'):
+                status = self.hypervisor.get_transfer_status(transfer_id)
+            else:
+                status = {'success': False, 'error': 'Transfer tracking not supported'}
+            return jsonify(status)
+        
+        @self.app.route('/api/network/p2p-status')
+        def p2p_network_status():
+            """Get P2P network status"""
+            if 'username' not in session:
+                return jsonify({'error': 'Not authenticated'}), 401
+            
+            if hasattr(self.hypervisor, 'get_p2p_network_status'):
+                status = self.hypervisor.get_p2p_network_status()
+            else:
+                status = {
+                    'success': True,
+                    'network': {
+                        'port': 8888,
+                        'total_nodes': 0,
+                        'active_nodes': 0,
+                        'active_transfers': 0,
+                        'completed_transfers': 0
+                    },
+                    'nodes': []
+                }
+            return jsonify(status)
+        
+        @self.app.route('/api/vm/<vm_id>/command-help')
+        def command_help(vm_id):
+            """Get available commands for VM"""
+            if 'username' not in session:
+                return jsonify({'error': 'Not authenticated'}), 401
+            
+            commands = {
+                'File Operations': {
+                    'ls [path]': 'List directory contents',
+                    'mkdir <dir>': 'Create directory',
+                    'rm <file>': 'Remove files/directories',
+                    'cp <src> <dst>': 'Copy files',
+                    'mv <src> <dst>': 'Move/rename files',
+                    'format [fs]': 'Format disk',
+                    'mount [device]': 'Mount filesystem'
+                },
+                'System Admin': {
+                    'ps': 'List running processes',
+                    'kill <pid>': 'Terminate process',
+                    'users': 'List system users',
+                    'service [action] [name]': 'Manage services',
+                    'top': 'System resource usage',
+                    'hwinfo': 'Hardware information'
+                },
+                'Networking': {
+                    'ping <host>': 'Test network connectivity',
+                    'traceroute <host>': 'Trace network path',
+                    'netstat': 'Network connections',
+                    'ifconfig': 'Network interface config',
+                    'firewall [action]': 'Firewall management'
+                },
+                'Security': {
+                    'passwd [user]': 'Change password',
+                    'sudo <command>': 'Execute with privileges',
+                    'antivirus [action]': 'Antivirus operations',
+                    'encrypt <file>': 'Encrypt files',
+                    'audit': 'Security audit'
+                },
+                'VM Management': {
+                    'snapshot [name]': 'Create VM snapshot',
+                    'clone [name]': 'Clone VM',
+                    'backup [location]': 'Backup VM',
+                    'restore [backup]': 'Restore from backup'
+                }
+            }
+            
+            return jsonify({
+                'success': True,
+                'commands': commands,
+                'vm_id': vm_id,
+                'total_commands': sum(len(cat) for cat in commands.values())
+            })
     
     def _execute_vm_command(self, vm, command):
         """Execute command in VM and return result"""

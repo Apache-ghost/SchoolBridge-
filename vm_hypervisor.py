@@ -407,6 +407,248 @@ class VirtualProcessManager:
                 round(total_cpu / 100 * random.uniform(0.8, 1.2), 2)
             ]
         }
+    
+    def execute_command(self, command, args=[]):
+        """Execute system commands with realistic simulation"""
+        # Parse the full command string
+        if isinstance(command, str) and ' ' in command:
+            parts = command.strip().split()
+            cmd = parts[0].lower()
+            args = parts[1:] if len(parts) > 1 else []
+        else:
+            cmd = command.lower().strip() if isinstance(command, str) else str(command).lower()
+        
+        # File Operations
+        if cmd == 'ls':
+            return self._cmd_ls(args)
+        elif cmd == 'mkdir':
+            return self._cmd_mkdir(args)
+        elif cmd == 'rm':
+            return self._cmd_rm(args)
+        elif cmd == 'cp':
+            return self._cmd_cp(args)
+        elif cmd == 'mv':
+            return self._cmd_mv(args)
+        elif cmd == 'format':
+            return self._cmd_format(args)
+        elif cmd == 'mount':
+            return self._cmd_mount(args)
+        
+        # System Admin
+        elif cmd == 'ps':
+            return self._cmd_ps(args)
+        elif cmd == 'kill':
+            return self._cmd_kill(args)
+        elif cmd == 'users':
+            return self._cmd_users(args)
+        elif cmd == 'service':
+            return self._cmd_service(args)
+        elif cmd == 'top':
+            return self._cmd_top(args)
+        elif cmd == 'hwinfo':
+            return self._cmd_hwinfo(args)
+        
+        # Networking
+        elif cmd == 'ping':
+            return self._cmd_ping(args)
+        elif cmd == 'traceroute':
+            return self._cmd_traceroute(args)
+        elif cmd == 'netstat':
+            return self._cmd_netstat(args)
+        elif cmd == 'ifconfig':
+            return self._cmd_ifconfig(args)
+        elif cmd == 'firewall':
+            return self._cmd_firewall(args)
+        
+        # Security
+        elif cmd == 'passwd':
+            return self._cmd_passwd(args)
+        elif cmd == 'sudo':
+            return self._cmd_sudo(args)
+        elif cmd == 'antivirus':
+            return self._cmd_antivirus(args)
+        elif cmd == 'encrypt':
+            return self._cmd_encrypt(args)
+        elif cmd == 'audit':
+            return self._cmd_audit(args)
+        
+        # VM Management
+        elif cmd == 'snapshot':
+            return self._cmd_snapshot(args)
+        elif cmd == 'clone':
+            return self._cmd_clone(args)
+        elif cmd == 'backup':
+            return self._cmd_backup(args)
+        elif cmd == 'restore':
+            return self._cmd_restore(args)
+        
+        else:
+            return {
+                'success': False,
+                'output': f"Command '{command}' not recognized",
+                'exit_code': 127
+            }
+    
+    # File Operations Commands
+    def _cmd_ls(self, args):
+        path = args[0] if args else '/home'
+        files = ['Documents', 'Downloads', 'Pictures', 'Videos', 'config.txt', 'data.json', 'script.py']
+        return {'success': True, 'output': '\n'.join(files), 'exit_code': 0}
+    
+    def _cmd_mkdir(self, args):
+        if not args:
+            return {'success': False, 'output': 'mkdir: missing directory name', 'exit_code': 1}
+        return {'success': True, 'output': f"Directory '{args[0]}' created", 'exit_code': 0}
+    
+    def _cmd_rm(self, args):
+        if not args:
+            return {'success': False, 'output': 'rm: missing file name', 'exit_code': 1}
+        return {'success': True, 'output': f"File '{args[0]}' removed", 'exit_code': 0}
+    
+    def _cmd_cp(self, args):
+        if len(args) < 2:
+            return {'success': False, 'output': 'cp: missing source or destination', 'exit_code': 1}
+        return {'success': True, 'output': f"Copied '{args[0]}' to '{args[1]}'", 'exit_code': 0}
+    
+    def _cmd_mv(self, args):
+        if len(args) < 2:
+            return {'success': False, 'output': 'mv: missing source or destination', 'exit_code': 1}
+        return {'success': True, 'output': f"Moved '{args[0]}' to '{args[1]}'", 'exit_code': 0}
+    
+    def _cmd_format(self, args):
+        filesystem = args[0] if args else 'ext4'
+        return {'success': True, 'output': f"Disk formatted with {filesystem} filesystem", 'exit_code': 0}
+    
+    def _cmd_mount(self, args):
+        device = args[0] if args else '/dev/sda1'
+        return {'success': True, 'output': f"Device {device} mounted successfully", 'exit_code': 0}
+    
+    # System Admin Commands
+    def _cmd_ps(self, args):
+        process_list = []
+        for pid, proc in self.processes.items():
+            process_list.append(f"{pid:>5} {proc['name']:<15} {proc['cpu_percent']:>6.1f}% {proc['memory_mb']:>6}MB")
+        header = "  PID COMMAND         CPU%   MEM"
+        return {'success': True, 'output': header + '\n' + '\n'.join(process_list), 'exit_code': 0}
+    
+    def _cmd_kill(self, args):
+        if not args:
+            return {'success': False, 'output': 'kill: missing process ID', 'exit_code': 1}
+        pid = args[0]
+        if pid in self.processes:
+            del self.processes[pid]
+            return {'success': True, 'output': f"Process {pid} terminated", 'exit_code': 0}
+        return {'success': False, 'output': f"Process {pid} not found", 'exit_code': 1}
+    
+    def _cmd_users(self, args):
+        users = ['root', 'admin', 'user1', 'guest']
+        return {'success': True, 'output': ' '.join(users), 'exit_code': 0}
+    
+    def _cmd_service(self, args):
+        if not args:
+            services = ['nginx: active', 'ssh: active', 'mysql: stopped', 'docker: active']
+            return {'success': True, 'output': '\n'.join(services), 'exit_code': 0}
+        action, service = args[0], args[1] if len(args) > 1 else 'unknown'
+        return {'success': True, 'output': f"Service {service} {action}ed", 'exit_code': 0}
+    
+    def _cmd_top(self, args):
+        output = "top - 14:30:25 up 2 days, 4:12, 2 users, load average: 0.15, 0.20, 0.18\n"
+        output += "Tasks: 156 total, 1 running, 155 sleeping\n"
+        output += "CPU usage: 5.2% us, 2.1% sy, 0.0% ni, 92.7% id\n"
+        output += "Memory: 8192MB total, 3456MB used, 4736MB free\n"
+        return {'success': True, 'output': output, 'exit_code': 0}
+    
+    def _cmd_hwinfo(self, args):
+        info = "Hardware Information:\n"
+        info += f"CPU: {random.choice(['Intel i7-9700K', 'AMD Ryzen 7 3700X', 'Intel i5-10400'])}\n"
+        info += f"RAM: {random.randint(8, 32)}GB DDR4\n"
+        info += f"Storage: {random.randint(256, 2048)}GB SSD\n"
+        info += f"Network: Gigabit Ethernet\n"
+        return {'success': True, 'output': info, 'exit_code': 0}
+    
+    # Networking Commands
+    def _cmd_ping(self, args):
+        target = args[0] if args else '8.8.8.8'
+        output = f"PING {target}:\n"
+        for i in range(4):
+            latency = random.uniform(10, 50)
+            output += f"64 bytes from {target}: icmp_seq={i+1} time={latency:.1f}ms\n"
+        return {'success': True, 'output': output, 'exit_code': 0}
+    
+    def _cmd_traceroute(self, args):
+        target = args[0] if args else 'google.com'
+        hops = ['192.168.1.1', '10.0.0.1', '203.0.113.1', target]
+        output = f"traceroute to {target}:\n"
+        for i, hop in enumerate(hops, 1):
+            latency = random.uniform(5, 30) * i
+            output += f"{i:2d}  {hop} ({latency:.1f}ms)\n"
+        return {'success': True, 'output': output, 'exit_code': 0}
+    
+    def _cmd_netstat(self, args):
+        connections = [
+            "tcp  0.0.0.0:22     0.0.0.0:*    LISTEN",
+            "tcp  0.0.0.0:80     0.0.0.0:*    LISTEN", 
+            "tcp  127.0.0.1:3306 0.0.0.0:*    LISTEN"
+        ]
+        return {'success': True, 'output': '\n'.join(connections), 'exit_code': 0}
+    
+    def _cmd_ifconfig(self, args):
+        output = "eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>\n"
+        output += f"      inet 192.168.1.{random.randint(10, 254)}\n"
+        output += "      netmask 255.255.255.0\n"
+        output += "      broadcast 192.168.1.255\n"
+        return {'success': True, 'output': output, 'exit_code': 0}
+    
+    def _cmd_firewall(self, args):
+        if not args:
+            return {'success': True, 'output': 'Firewall status: ACTIVE\nRules: 15 active', 'exit_code': 0}
+        action = args[0]
+        return {'success': True, 'output': f"Firewall {action} completed", 'exit_code': 0}
+    
+    # Security Commands
+    def _cmd_passwd(self, args):
+        user = args[0] if args else 'current user'
+        return {'success': True, 'output': f"Password changed for {user}", 'exit_code': 0}
+    
+    def _cmd_sudo(self, args):
+        if not args:
+            return {'success': False, 'output': 'sudo: no command specified', 'exit_code': 1}
+        return {'success': True, 'output': f"Executing '{' '.join(args)}' with elevated privileges", 'exit_code': 0}
+    
+    def _cmd_antivirus(self, args):
+        action = args[0] if args else 'scan'
+        if action == 'scan':
+            return {'success': True, 'output': 'Antivirus scan completed. No threats detected.', 'exit_code': 0}
+        return {'success': True, 'output': f"Antivirus {action} completed", 'exit_code': 0}
+    
+    def _cmd_encrypt(self, args):
+        target = args[0] if args else 'file.txt'
+        return {'success': True, 'output': f"File '{target}' encrypted successfully", 'exit_code': 0}
+    
+    def _cmd_audit(self, args):
+        output = "Security Audit Results:\n"
+        output += "- Password policy: COMPLIANT\n"
+        output += "- Firewall status: ACTIVE\n"
+        output += "- System updates: CURRENT\n"
+        output += "- Failed logins: 0 in last 24h\n"
+        return {'success': True, 'output': output, 'exit_code': 0}
+    
+    # VM Management Commands
+    def _cmd_snapshot(self, args):
+        name = args[0] if args else f"snapshot_{int(time.time())}"
+        return {'success': True, 'output': f"VM snapshot '{name}' created successfully", 'exit_code': 0}
+    
+    def _cmd_clone(self, args):
+        name = args[0] if args else 'vm_clone'
+        return {'success': True, 'output': f"VM cloned as '{name}'", 'exit_code': 0}
+    
+    def _cmd_backup(self, args):
+        location = args[0] if args else '/backup'
+        return {'success': True, 'output': f"VM backed up to {location}", 'exit_code': 0}
+    
+    def _cmd_restore(self, args):
+        backup = args[0] if args else 'latest'
+        return {'success': True, 'output': f"VM restored from backup '{backup}'", 'exit_code': 0}
 
 class VMHypervisor:
     """Main VM Hypervisor class managing all virtual machines"""
@@ -418,6 +660,9 @@ class VMHypervisor:
         
         # Create VM storage directory
         os.makedirs("vm_storage", exist_ok=True)
+        
+        # Initialize P2P network
+        self.init_p2p_network()
     
     def init_database(self):
         """Initialize VM management database"""
@@ -802,6 +1047,200 @@ class VMHypervisor:
     
     def get_network_nodes(self):
         return {'total_nodes': len(self.vms), 'active_nodes': 0, 'nodes': []}
+    
+    def init_p2p_network(self):
+        """Initialize P2P network for file transfers"""
+        import socket
+        import threading
+        
+        self.p2p_port = 8888
+        self.p2p_active_transfers = {}
+        self.p2p_nodes = {}
+        self.chunk_size = 4096
+        
+        # Start P2P listener thread
+        self.p2p_listener_thread = threading.Thread(target=self._start_p2p_listener, daemon=True)
+        self.p2p_listener_thread.start()
+    
+    def _start_p2p_listener(self):
+        """Start P2P network listener"""
+        try:
+            import socket
+            self.p2p_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.p2p_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.p2p_socket.bind(('localhost', self.p2p_port))
+            self.p2p_socket.listen(5)
+            
+            print(f"P2P network listener started on port {self.p2p_port}")
+            
+            while True:
+                try:
+                    client_socket, addr = self.p2p_socket.accept()
+                    # Handle P2P connection in separate thread
+                    threading.Thread(
+                        target=self._handle_p2p_connection,
+                        args=(client_socket, addr),
+                        daemon=True
+                    ).start()
+                except Exception as e:
+                    print(f"P2P listener error: {e}")
+                    break
+        except Exception as e:
+            print(f"Failed to start P2P listener: {e}")
+    
+    def _handle_p2p_connection(self, client_socket, addr):
+        """Handle incoming P2P connection"""
+        try:
+            # Receive P2P request
+            data = client_socket.recv(1024).decode('utf-8')
+            request = json.loads(data)
+            
+            if request.get('type') == 'file_request':
+                self._handle_file_request(client_socket, request)
+            elif request.get('type') == 'node_discovery':
+                self._handle_node_discovery(client_socket, request)
+            
+        except Exception as e:
+            print(f"P2P connection error: {e}")
+        finally:
+            client_socket.close()
+    
+    def _handle_file_request(self, client_socket, request):
+        """Handle file transfer request"""
+        vm_id = request.get('vm_id')
+        file_name = request.get('file_name')
+        
+        if vm_id in self.vms:
+            # Simulate file chunking and transfer
+            file_size = random.randint(1024, 10240)  # Simulated file size
+            chunks = (file_size + self.chunk_size - 1) // self.chunk_size
+            
+            response = {
+                'success': True,
+                'file_size': file_size,
+                'chunks': chunks,
+                'chunk_size': self.chunk_size
+            }
+            
+            client_socket.send(json.dumps(response).encode('utf-8'))
+            
+            # Send file chunks
+            for chunk_id in range(chunks):
+                chunk_data = b'x' * min(self.chunk_size, file_size - chunk_id * self.chunk_size)
+                client_socket.send(chunk_data)
+                time.sleep(0.01)  # Simulate network delay
+        else:
+            response = {'success': False, 'error': 'VM not found'}
+            client_socket.send(json.dumps(response).encode('utf-8'))
+    
+    def _handle_node_discovery(self, client_socket, request):
+        """Handle node discovery request"""
+        node_info = {
+            'node_id': request.get('node_id'),
+            'timestamp': datetime.now().isoformat(),
+            'vms': list(self.vms.keys())
+        }
+        
+        self.p2p_nodes[request.get('node_id')] = node_info
+        
+        response = {
+            'success': True,
+            'nodes': list(self.p2p_nodes.keys()),
+            'total_nodes': len(self.p2p_nodes)
+        }
+        
+        client_socket.send(json.dumps(response).encode('utf-8'))
+    
+    def start_p2p_file_transfer(self, source_vm, target_vm, file_name):
+        """Start P2P file transfer between VMs"""
+        transfer_id = str(uuid.uuid4())
+        
+        transfer_info = {
+            'transfer_id': transfer_id,
+            'source_vm': source_vm,
+            'target_vm': target_vm,
+            'file_name': file_name,
+            'status': 'starting',
+            'progress': 0,
+            'start_time': datetime.now().isoformat(),
+            'chunks_total': 0,
+            'chunks_completed': 0
+        }
+        
+        self.p2p_active_transfers[transfer_id] = transfer_info
+        
+        # Start transfer in background thread
+        threading.Thread(
+            target=self._execute_p2p_transfer,
+            args=(transfer_id,),
+            daemon=True
+        ).start()
+        
+        return {
+            'success': True,
+            'transfer_id': transfer_id,
+            'message': 'Transfer started'
+        }
+    
+    def _execute_p2p_transfer(self, transfer_id):
+        """Execute P2P file transfer"""
+        try:
+            transfer = self.p2p_active_transfers[transfer_id]
+            transfer['status'] = 'in_progress'
+            
+            # Simulate chunked file transfer
+            file_size = random.randint(5120, 51200)  # Random file size
+            chunks_total = (file_size + self.chunk_size - 1) // self.chunk_size
+            transfer['chunks_total'] = chunks_total
+            
+            for chunk_id in range(chunks_total):
+                # Simulate chunk transfer
+                time.sleep(0.1)  # Simulate network delay
+                transfer['chunks_completed'] = chunk_id + 1
+                transfer['progress'] = int((chunk_id + 1) / chunks_total * 100)
+            
+            transfer['status'] = 'completed'
+            transfer['end_time'] = datetime.now().isoformat()
+            
+        except Exception as e:
+            transfer = self.p2p_active_transfers.get(transfer_id, {})
+            transfer['status'] = 'failed'
+            transfer['error'] = str(e)
+    
+    def get_transfer_status(self, transfer_id):
+        """Get P2P transfer status"""
+        if transfer_id in self.p2p_active_transfers:
+            return {
+                'success': True,
+                'transfer': self.p2p_active_transfers[transfer_id]
+            }
+        else:
+            return {
+                'success': False,
+                'error': 'Transfer not found'
+            }
+    
+    def get_p2p_network_status(self):
+        """Get P2P network status"""
+        active_transfers = len([t for t in self.p2p_active_transfers.values() 
+                             if t['status'] == 'in_progress'])
+        completed_transfers = len([t for t in self.p2p_active_transfers.values() 
+                                if t['status'] == 'completed'])
+        
+        return {
+            'success': True,
+            'network': {
+                'port': self.p2p_port,
+                'total_nodes': len(self.p2p_nodes),
+                'active_nodes': len([n for n in self.p2p_nodes.values() 
+                                   if (datetime.now() - datetime.fromisoformat(n['timestamp'])).seconds < 300]),
+                'active_transfers': active_transfers,
+                'completed_transfers': completed_transfers
+            },
+            'nodes': list(self.p2p_nodes.values()),
+            'active_transfers': [t for t in self.p2p_active_transfers.values() 
+                               if t['status'] == 'in_progress']
+        }
 
 if __name__ == "__main__":
     # Example usage
