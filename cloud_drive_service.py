@@ -18,6 +18,12 @@ import threading
 import time
 from storage_api_client import get_storage_client
 
+class SimpleObject:
+    """Simple object to convert dict to object with dot notation"""
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
 class CloudDriveService:
     def __init__(self, storage_path="cloud_storage", db_path="data.db"):
         self.app = Flask(__name__)
@@ -149,18 +155,21 @@ class CloudDriveService:
         """Setup Flask routes for the web interface"""
         
         @self.app.route('/')
-        def dashboard():
+        @self.app.route('/folder/<folder_id>')
+        def dashboard(folder_id='/'):
             if 'username' not in session:
                 return redirect(url_for('login'))
             
+            current_folder = folder_id if folder_id != '/' else '/'
             user_info = self.get_user_info(session['username'])
-            files = self.get_user_files(session['username'])
-            folders = self.get_user_folders(session['username'])
+            files = self.get_user_files(session['username'], current_folder)
+            folders = self.get_user_folders(session['username'], current_folder)
             
             return render_template('dashboard.html', 
                                  user=user_info, 
                                  files=files, 
-                                 folders=folders)
+                                 folders=folders,
+                                 current_folder=current_folder)
         
         @self.app.route('/login', methods=['GET', 'POST'])
         def login():
@@ -202,17 +211,23 @@ class CloudDriveService:
             if 'username' not in session:
                 return jsonify({'error': 'Not authenticated'}), 401
             
-            if 'file' not in request.files:
-                return jsonify({'error': 'No file provided'}), 400
-            
-            file = request.files['file']
+            # Handle multiple files
+            files = request.files.getlist('files[]') or [request.files.get('file')]
             folder = request.form.get('folder', '/')
             
-            if file.filename == '':
-                return jsonify({'error': 'No file selected'}), 400
+            if not files or all(f is None for f in files):
+                return jsonify({'error': 'No files provided'}), 400
             
-            result = self.save_uploaded_file(session['username'], file, folder)
-            return jsonify(result)
+            results = []
+            for file in files:
+                if file and file.filename != '':
+                    result = self.save_uploaded_file(session['username'], file, folder)
+                    results.append(result)
+            
+            if all(r.get('success') for r in results):
+                return jsonify({'success': True, 'message': f'Uploaded {len(results)} files'})
+            else:
+                return jsonify({'success': False, 'error': 'Some files failed to upload'})
         
         @self.app.route('/download/<file_id>')
         def download_file(file_id):
@@ -226,12 +241,18 @@ class CloudDriveService:
             
             return jsonify({'error': 'File not found'}), 404
         
-        @self.app.route('/delete/<file_id>', methods=['POST'])
-        def delete_file(file_id):
+        @self.app.route('/delete/<item_id>', methods=['POST'])
+        def delete_item(item_id):
             if 'username' not in session:
                 return jsonify({'error': 'Not authenticated'}), 401
             
-            result = self.delete_user_file(session['username'], file_id)
+            item_type = request.json.get('type', 'file')
+            
+            if item_type == 'folder':
+                result = self.delete_user_folder(session['username'], item_id)
+            else:
+                result = self.delete_user_file(session['username'], item_id)
+            
             return jsonify(result)
         
         @self.app.route('/share/<file_id>', methods=['POST'])
@@ -275,6 +296,45 @@ class CloudDriveService:
             parent_folder = request.json.get('parent', '/')
             
             result = self.create_user_folder(session['username'], folder_name, parent_folder)
+            return jsonify(result)
+        
+        @self.app.route('/folder/<folder_id>')
+        def get_folder_contents(folder_id):
+            if 'username' not in session:
+                return jsonify({'error': 'Not authenticated'}), 401
+            
+            files = self.get_user_files(session['username'], folder_id)
+            folders = self.get_user_folders(session['username'], folder_id)
+            
+            return jsonify({
+                'files': [{
+                    'file_id': f.file_id,
+                    'filename': f.filename,
+                    'original_filename': f.original_filename,
+                    'file_size': f.file_size,
+                    'mime_type': f.mime_type,
+                    'upload_date': f.upload_date
+                } for f in files],
+                'folders': [{
+                    'folder_id': f.folder_id,
+                    'folder_name': f.folder_name,
+                    'created_date': f.created_date
+                } for f in folders]
+            })
+        
+        @self.app.route('/rename/<item_id>', methods=['POST'])
+        def rename_item(item_id):
+            if 'username' not in session:
+                return jsonify({'error': 'Not authenticated'}), 401
+            
+            new_name = request.json.get('name')
+            item_type = request.json.get('type', 'file')
+            
+            if item_type == 'folder':
+                result = self.rename_folder(session['username'], item_id, new_name)
+            else:
+                result = self.rename_file(session['username'], item_id, new_name)
+            
             return jsonify(result)
     
     def authenticate_user(self, username, password):
@@ -417,16 +477,18 @@ class CloudDriveService:
         
         files = []
         for row in cursor.fetchall():
-            files.append({
-                'file_id': row[0],
-                'filename': row[1],
-                'size': self.format_file_size(row[2]),
-                'mime_type': row[3],
-                'upload_date': row[4],
-                'last_modified': row[5],
-                'is_shared': row[6],
-                'folder': row[7]
-            })
+            files.append(SimpleObject(
+                file_id=row[0],
+                filename=row[1],
+                original_filename=row[1],
+                file_size=row[2],
+                size=self.format_file_size(row[2]),
+                mime_type=row[3],
+                upload_date=row[4],
+                last_modified=row[5],
+                is_shared=row[6],
+                folder=row[7]
+            ))
         
         conn.close()
         return files
@@ -445,12 +507,13 @@ class CloudDriveService:
         
         folders = []
         for row in cursor.fetchall():
-            folders.append({
-                'folder_id': row[0],
-                'name': row[1],
-                'created_date': row[2],
-                'is_shared': row[3]
-            })
+            folders.append(SimpleObject(
+                folder_id=row[0],
+                name=row[1],
+                folder_name=row[1],
+                created_date=row[2],
+                is_shared=row[3]
+            ))
         
         conn.close()
         return folders
@@ -644,6 +707,137 @@ class CloudDriveService:
             
             conn.close()
             time.sleep(3600)  # Check every hour
+    
+    def delete_user_folder(self, username, folder_id):
+        """Delete a user's folder"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            # Check if folder belongs to user
+            cursor.execute('''
+                SELECT folder_name FROM folders 
+                WHERE folder_id = ? AND username = ?
+            ''', (folder_id, username))
+            
+            folder = cursor.fetchone()
+            if not folder:
+                return {'success': False, 'error': 'Folder not found'}
+            
+            # Check if folder is empty (no files or subfolders)
+            cursor.execute('''
+                SELECT COUNT(*) FROM files 
+                WHERE parent_folder = ? AND is_deleted = 0
+            ''', (folder_id,))
+            file_count = cursor.fetchone()[0]
+            
+            cursor.execute('''
+                SELECT COUNT(*) FROM folders 
+                WHERE parent_folder = ?
+            ''', (folder_id,))
+            subfolder_count = cursor.fetchone()[0]
+            
+            if file_count > 0 or subfolder_count > 0:
+                return {'success': False, 'error': 'Folder is not empty'}
+            
+            # Delete the folder
+            cursor.execute('''
+                DELETE FROM folders WHERE folder_id = ? AND username = ?
+            ''', (folder_id, username))
+            
+            conn.commit()
+            conn.close()
+            
+            self.log_activity(username, 'delete_folder', folder_id, 
+                            f'Deleted folder {folder[0]}')
+            
+            return {'success': True}
+            
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+    
+    def rename_file(self, username, file_id, new_name):
+        """Rename a user's file"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            # Check if file belongs to user
+            cursor.execute('''
+                SELECT original_filename FROM files 
+                WHERE file_id = ? AND username = ? AND is_deleted = 0
+            ''', (file_id, username))
+            
+            old_file = cursor.fetchone()
+            if not old_file:
+                return {'success': False, 'error': 'File not found'}
+            
+            # Update filename
+            cursor.execute('''
+                UPDATE files 
+                SET original_filename = ?, last_modified = ?
+                WHERE file_id = ? AND username = ?
+            ''', (new_name, datetime.now().isoformat(), file_id, username))
+            
+            conn.commit()
+            conn.close()
+            
+            self.log_activity(username, 'rename_file', file_id, 
+                            f'Renamed file from {old_file[0]} to {new_name}')
+            
+            return {'success': True}
+            
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+    
+    def rename_folder(self, username, folder_id, new_name):
+        """Rename a user's folder"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            # Check if folder belongs to user
+            cursor.execute('''
+                SELECT folder_name FROM folders 
+                WHERE folder_id = ? AND username = ?
+            ''', (folder_id, username))
+            
+            old_folder = cursor.fetchone()
+            if not old_folder:
+                return {'success': False, 'error': 'Folder not found'}
+            
+            # Check if new name already exists in same parent
+            cursor.execute('''
+                SELECT parent_folder FROM folders 
+                WHERE folder_id = ?
+            ''', (folder_id,))
+            parent_folder = cursor.fetchone()[0]
+            
+            cursor.execute('''
+                SELECT COUNT(*) FROM folders 
+                WHERE folder_name = ? AND parent_folder = ? AND username = ? AND folder_id != ?
+            ''', (new_name, parent_folder, username, folder_id))
+            
+            if cursor.fetchone()[0] > 0:
+                return {'success': False, 'error': 'Folder name already exists'}
+            
+            # Update folder name
+            cursor.execute('''
+                UPDATE folders 
+                SET folder_name = ?
+                WHERE folder_id = ? AND username = ?
+            ''', (new_name, folder_id, username))
+            
+            conn.commit()
+            conn.close()
+            
+            self.log_activity(username, 'rename_folder', folder_id, 
+                            f'Renamed folder from {old_folder[0]} to {new_name}')
+            
+            return {'success': True}
+            
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
     
     def start_service(self, host='localhost', port=5000, debug=True):
         """Start the CloudDrive web service"""
