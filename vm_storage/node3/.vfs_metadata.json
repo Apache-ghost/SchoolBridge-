@@ -1,0 +1,13 @@
+{
+  "node_id": "node3",
+  "fs_type": "NTFS",
+  "formatted": true,
+  "capacity_bytes": 1073741824,
+  "allocation_table": {},
+  "directories": {
+    "/": []
+  },
+  "total_files": 0,
+  "used_space": 0,
+  "last_modified": "2025-11-19T17:59:40.046532"
+}

@@ -1,187 +1,70 @@
-#  SchoolBridge – A Digital Platform for Parent-Teacher Communication and Student Monitoring
+# Distributed Virtual Machine System
 
-##  Project Overview
-**SchoolBridge** is a digital communication platform that connects **schools, teachers, and parents** to promote effective collaboration and real-time student monitoring — even in areas with limited internet access.  
+A distributed system with autonomous virtual machine nodes that can communicate, transfer files, and perform VM-like operations.
 
-It ensures that no parent misses vital updates about their child’s education by providing **online and offline communication channels** (via web, SMS, and USSD).
+## Features
 
----
-#  Problem Statement
-Effective communication between parents and teachers is crucial for student success, yet in many schools—especially in developing regions—communication remains **inefficient and inconsistent**.
+### 🖥️ **Real Virtual Machine Experience**
+- **Boot Sequence**: POST (Power-On Self-Test), BIOS simulation, OS loading
+- **Hardware Virtualization**: Virtual CPU, RAM, storage, network adapters with realistic specs
+- **File Systems**: Full NTFS/FAT32/EXT4 support with formatting, defragmentation, fsck
+- **Process Management**: Virtual processes, CPU scheduling, memory allocation
+- **System Services**: Virtual services (networking, file system, security)
 
-### Parents often:
-- ❌ Miss important school announcements and parent-teacher meetings  
-- 📉 Have no structured way to monitor academic progress beyond report cards  
-- 🚫 Lack real-time updates on attendance, assignments, or discipline issues  
+### 🌐 **Advanced Networking**
+- **Virtual NICs**: Automatic IP/MAC assignment with realistic network interfaces
+- **DHCP Simulation**: Dynamic IP allocation with lease management
+- **Network Discovery**: ARP tables, ping, traceroute, network scanning
+- **Bandwidth Throttling**: Configurable network speeds and latency simulation
 
-### Teachers, on the other hand:
-- ⏰ Spend hours on manual communication (calls, letters, or physical meetings)  
-- 📚 Struggle to keep parents consistently informed about students’ performance  
-- 📵 Face challenges engaging parents who lack smartphones or internet access  
+### 💾 **Enterprise Storage Features**
+- **RAID Simulation**: RAID 0/1/5 configurations with failure simulation
+- **Disk Encryption**: Virtual BitLocker/LUKS encryption
+- **Snapshots**: VM state snapshots and rollback functionality
+- **Backup Systems**: Automated backups with compression and versioning
 
-### As a result:
-- Parental engagement drops  
-- Student performance decreases  
-- Collaboration between home and school weakens  
+### 🔧 **System Administration**
+- **User Management**: Multi-user support with permissions and groups
+- **Security**: Firewall rules, antivirus scanning, intrusion detection
+- **Monitoring**: Real-time performance metrics, system logs, alerts
+- **Package Management**: Virtual package installer/updater system
 
----
-## 🎯 Project Justification
+## Quick Start
 
-### 🔹 Why SchoolBridge is Needed
-**SchoolBridge** provides a **unified, reliable, and inclusive communication system** connecting schools, teachers, and parents — accessible even without internet.
+1. **Start Network Coordinator**:
+   ```bash
+   python network.py
+   ```
+   Choose port (default: 8888)
 
-It helps:
-- Close the communication gap between schools and families  
-- Deliver **real-time updates** on attendance, assignments, and discipline  
-- Support **data-driven decision-making** for teachers and administrators  
-- Enable **offline access via SMS and USSD** for low-income parents  
-- Promote **accountability, transparency, and collaboration** in education  
+2. **Start Node**:
+   ```bash
+   python node.py
+   ```
+   Configure network connection and create/connect to node
 
----
+3. **Available Commands**:
+   
+   **File System**: `ls`, `mkdir`, `rm`, `cat`, `find`, `cp`, `mv`, `chmod`, `df`
+   
+   **Storage**: `format`, `defrag`, `fsck`, `mount`, `umount`, `raid`, `encrypt`
+   
+   **System**: `hwinfo`, `top`, `ps`, `kill`, `service`, `cron`, `users`
+   
+   **Network**: `ping`, `traceroute`, `netstat`, `arp`, `ifconfig`, `firewall`
+   
+   **Security**: `passwd`, `sudo`, `antivirus`, `audit`, `keys`
+   
+   **Management**: `snapshot`, `backup`, `restore`, `clone`, `migrate`
 
-## ⚙️ The Problem with Centralized Systems
-Most existing school communication systems are **centralized**, meaning they depend on a **single central server** to handle all data and requests.
+## Architecture
 
-### Centralized Systems Cause:
-| Problem | Description |
-|----------|-------------|
-| 🧩 **Single Point of Failure** | If the main server crashes, all communication stops |
-| 🐢 **Slow Performance** | One server handles all users, causing delays |
-| 🚫 **Limited Access** | Schools in remote areas face downtime during network outages |
-| 📶 **Dependence on Internet** | Parents without smartphones or internet are excluded |
-| 🔒 **Data Risk** | Server corruption or failure can lead to data loss |
+- **Network Layer**: TCP socket communication with JSON messaging
+- **Virtual Hardware**: Simulated CPU, memory, storage, and network components
+- **File System**: Virtual file system with NTFS/FAT32/EXT4 support
+- **Node Management**: Create new nodes or reconnect to existing ones
 
----
+## Requirements
 
-## 🌐 SchoolBridge’s Shift to a Distributed System
-
-To overcome these challenges, **SchoolBridge transitions from a centralized to a distributed architecture**, ensuring **reliability, scalability, and inclusivity**.
-
-### 🧱 How It Works
-Instead of one central server, **multiple interconnected nodes** (mini-servers) are deployed — one for each school or region.
-
-Each node:
-- Processes communication **locally**
-- Stores data on attendance, assignments, and messages  
-- **Synchronizes automatically** with other nodes to maintain consistency  
-- Continues operating even if another node or region fails  
-
----
-
-## 🧩 Distributed Architecture Components
-
-### 1. **Distributed Communication Service (Core Service)**
-Handles key functions:
-- Attendance alerts  
-- Report card delivery  
-- Fee notifications  
-- Messages and event broadcasts  
-
-Each school runs its **own node**, which syncs automatically with others to ensure uninterrupted service.
-
----
-
-### 2. **Replication & Distributed Data Storage**
-- Student data and communication logs are **replicated across multiple databases**  
-- Updates propagate asynchronously to ensure **consistency and speed**  
-- If one database fails, others continue providing access  
-- Guarantees **fault tolerance and high availability**
-
----
-
-### 3. **Peer-to-Peer (P2P) Communication Layer**
-- Enables **direct, real-time interaction** between teachers and parents  
-- Uses **secure WebSocket connections** for chat and alerts  
-- Reduces dependence on central servers  
-- Ensures parents and teachers stay connected even during regional outages  
-
----
-
-### 4. **Multi-Region Cloud Deployment**
-- Nodes are hosted across **multiple cloud regions**  
-- Load balancers route users to the nearest active region  
-- If one region fails, others take over instantly  
-- All regions stay synchronized for **uniform access and reliability**
-
----
-##  Centralized vs Distributed Comparison
-
-| Feature | Centralized System | SchoolBridge Distributed System |
-|----------|-------------------|--------------------------------|
-| **Data Storage** | One central server | Replicated across multiple school nodes |
-| **Performance** | Slows down with many users | Scales easily with new nodes |
-| **Reliability** | Failure of one server halts communication | Other nodes keep running |
-| **Offline Access** | Internet required | Supports SMS and USSD |
-| **Scalability** | Limited | Unlimited – each new school adds capacity |
-
----
-
-## 💡 How Distribution Solves Real Problems
-
-| Problem | Distributed Solution |
-|----------|---------------------|
-| Missed updates | Local nodes send SMS or in-app alerts instantly |
-| Downtime | Fault-tolerant nodes continue communication |
-| Poor scalability | Add new nodes or schools seamlessly |
-| Low-income parent access | Local SMS gateways for offline communication |
-| Data loss | Replication ensures recovery and consistency |
-
----
-
-##  System Characteristics
-- 🛡️ **Fault Tolerance:** Communication continues even if a node fails  
-- 📈 **Scalability:** Add new schools or regions easily  
-- 🔄 **Data Consistency:** Automatic synchronization between nodes  
-- 🔗 **Collaboration:** Enables smooth interaction between teachers, parents, and admins  
-- ☁️ **Resilience:** Multi-region cloud backup ensures zero downtime  
-
----
-
-##  Example Scenario
-1. A teacher at School A sends a message to a parent.  
-2. The message is processed by the **local node** and delivered via SMS or app notification.  
-3. Even if the internet or central region is offline, the message goes through locally.  
-4. Once connection is restored, the data **syncs with all other nodes**.  
-
-✅ **Result:** No communication loss. Real-time updates. Continuous access.
-
----
-
-##  Conclusion
-By shifting from a **centralized** to a **distributed architecture**,  
-**SchoolBridge** ensures:
-- Reliable and fast communication  
-- Equal access for all parents (online & offline)  
-- Fault tolerance and scalability  
-- Enhanced school-community collaboration  
-
-💬 *“SchoolBridge — Always Connected, Always Reliable, Always Inclusive.”*
-
----
-
-##  Tech Stack (Example)
-- **Frontend:** React / Flutter (for mobile)  
-- **Backend:** Flask (Python) or Node.js (Express)  
-- **Database:** PostgreSQL / MongoDB (with replication)  
-- **Cloud:** AWS / Google Cloud / Azure (multi-region deployment)  
-- **Communication Layer:** WebSocket + Twilio (SMS/USSD integration)
-
----
-
-##  Future Enhancements
-- AI-based student performance analytics  
-- Voice notification support for non-literate parents  
-- Integration with national education databases  
-- Multilingual support for regional languages  
-
----
-
-##  Contact
-**Developer:** [Guegouo Moghommahie Guiddel]  
-**Email:** [guegouo.guiddel@ictuniversity.edu.cm]  
-**Institution:** [The ICT University]  
-**GitHub Repository:** [https://github.com/Apache-ghost/SchoolBridge-.git]  
-
----
-
-⭐ If you like this project, give it a **star** on GitHub and contribute to improving **education communication systems!**
+- Python 3.7+
+- No external dependencies (uses standard library only)

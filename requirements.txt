@@ -1,0 +1,24 @@
+# CloudDrive - Distributed Storage System Requirements
+# Python 3.7+ required
+
+# Web Framework
+flask>=2.0.0
+werkzeug>=2.0.0
+
+# Security & Authentication  
+bcrypt>=3.2.0
+
+# gRPC & Protocol Buffers
+grpcio>=1.40.0
+grpcio-tools>=1.40.0
+
+# HTTP & Networking
+requests>=2.25.0
+
+# Database (Built-in with Python 3.7+)
+# sqlite3 - included with Python
+
+# Optional: For enhanced features
+# redis>=4.0.0          # For caching
+# psycopg2>=2.8.0       # For PostgreSQL support
+# gunicorn>=20.0.0      # For production deployment

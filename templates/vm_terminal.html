@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>VM Terminal - {{ node_id }}</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background: #0c0c0c;
+            color: #cccccc;
+            overflow: hidden;
+        }
+        
+        .terminal-header {
+            background: #2d2d2d;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+        }
+        
+        .terminal-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #fff;
+            font-size: 14px;
+        }
+        
+        .terminal-controls {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .control-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .close { background: #ff5f56; }
+        .minimize { background: #ffbd2e; }
+        .maximize { background: #27ca3f; }
+        
+        .terminal-container {
+            height: calc(100vh - 45px);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .terminal-output {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            font-size: 14px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+        
+        .terminal-input-container {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            background: #1a1a1a;
+            border-top: 1px solid #444;
+        }
+        
+        .prompt {
+            color: #00ff00;
+            margin-right: 8px;
+        }
+        
+        .terminal-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #cccccc;
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        .command-line {
+            margin-bottom: 4px;
+        }
+        
+        .command {
+            color: #ffffff;
+        }
+        
+        .output {
+            color: #cccccc;
+            margin-left: 0px;
+        }
+        
+        .error {
+            color: #ff6b6b;
+        }
+        
+        .success {
+            color: #51cf66;
+        }
+        
+        .warning {
+            color: #ffd43b;
+        }
+        
+        .cursor {
+            background: #cccccc;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        .boot-sequence {
+            color: #00ff00;
+            font-family: monospace;
+        }
+        
+        .system-info {
+            color: #4dabf7;
+        }
+        
+        .disconnected {
+            color: #ff6b6b;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="terminal-header">
+        <div class="terminal-title">
+            <i class="fas fa-terminal"></i>
+            <span>VM Terminal - {{ node_id }}</span>
+            <span id="connectionStatus" class="connection-status">Connecting...</span>
+        </div>
+        <div class="terminal-controls">
+            <div class="control-btn minimize"></div>
+            <div class="control-btn maximize"></div>
+            <div class="control-btn close" onclick="window.close()"></div>
+        </div>
+    </div>
+    
+    <div class="terminal-container">
+        <div class="terminal-output" id="output">
+            <div class="boot-sequence">
+╔══════════════════════════════════════════════════════════════╗
+║                    CloudDrive VM Terminal                    ║
+║                      Node: {{ node_id[:8] }}...                     ║
+╚══════════════════════════════════════════════════════════════╝
+
+<span class="system-info">Initializing connection to VM node...</span>
+<span class="system-info">Loading virtual machine environment...</span>
+
+</div>
+        <div class="terminal-input-container">
+            <span class="prompt">vm@{{ node_id[:8] }}:~$</span>
+            <input type="text" class="terminal-input" id="commandInput" autocomplete="off" spellcheck="false">
+        </div>
+    </div>
+
+    <script>
+        let connected = false;
+        let commandHistory = [];
+        let historyIndex = -1;
+        let socket = null;
+        
+        const output = document.getElementById('output');
+        const commandInput = document.getElementById('commandInput');
+        const connectionStatus = document.getElementById('connectionStatus');
+        
+        // Initialize terminal
+        document.addEventListener('DOMContentLoaded', function() {
+            connectToVM();
+            setupInputHandlers();
+            focusInput();
+        });
+        
+        function connectToVM() {
+            // Simulate VM connection
+            setTimeout(() => {
+                connected = true;
+                connectionStatus.textContent = 'Connected';
+                connectionStatus.style.color = '#51cf66';
+                
+                addOutput('system-info', 'Connected to VM successfully!');
+                addOutput('system-info', 'Virtual Machine Status: RUNNING');
+                addOutput('system-info', 'CPU: 2 cores | RAM: 4GB | Storage: 50GB');
+                addOutput('system-info', 'OS: Linux Ubuntu 20.04 LTS');
+                addOutput('system-info', '');
+                addOutput('success', 'Welcome to your CloudDrive Virtual Machine!');
+                addOutput('', 'Type "help" for available commands.');
+                addOutput('', '');
+                
+                focusInput();
+            }, 2000);
+        }
+        
+        function setupInputHandlers() {
+            commandInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    executeCommand();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    navigateHistory(-1);
+                } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    navigateHistory(1);
+                } else if (e.key === 'Tab') {
+                    e.preventDefault();
+                    // Tab completion could be implemented here
+                }
+            });
+            
+            // Keep focus on input
+            document.addEventListener('click', focusInput);
+        }
+        
+        function executeCommand() {
+            if (!connected) {
+                addOutput('error', 'Not connected to VM');
+                return;
+            }
+            
+            const command = commandInput.value.trim();
+            if (!command) return;
+            
+            // Add command to history
+            commandHistory.unshift(command);
+            historyIndex = -1;
+            
+            // Display command
+            addCommandLine(command);
+            
+            // Execute command
+            processCommand(command);
+            
+            // Clear input
+            commandInput.value = '';
+            scrollToBottom();
+        }
+        
+        function processCommand(command) {
+            const parts = command.split(' ');
+            const cmd = parts[0].toLowerCase();
+            const args = parts.slice(1);
+            
+            switch (cmd) {
+                case 'help':
+                    showHelp();
+                    break;
+                case 'ls':
+                    listFiles(args);
+                    break;
+                case 'pwd':
+                    addOutput('', '/home/vm');
+                    break;
+                case 'whoami':
+                    addOutput('', 'vm');
+                    break;
+                case 'date':
+                    addOutput('', new Date().toString());
+                    break;
+                case 'uname':
+                    addOutput('', 'Linux vm-{{ node_id[:8] }} 5.4.0-42-generic #46-Ubuntu x86_64 GNU/Linux');
+                    break;
+                case 'top':
+                    showSystemInfo();
+                    break;
+                case 'ps':
+                    showProcesses();
+                    break;
+                case 'df':
+                    showDiskUsage();
+                    break;
+                case 'free':
+                    showMemoryInfo();
+                    break;
+                case 'ifconfig':
+                    showNetworkInfo();
+                    break;
+                case 'ping':
+                    if (args.length > 0) {
+                        simulatePing(args[0]);
+                    } else {
+                        addOutput('error', 'ping: usage: ping <hostname>');
+                    }
+                    break;
+                case 'clear':
+                    clearTerminal();
+                    break;
+                case 'history':
+                    showHistory();
+                    break;
+                case 'exit':
+                case 'logout':
+                    addOutput('warning', 'Connection closed');
+                    setTimeout(() => window.close(), 1000);
+                    break;
+                default:
+                    addOutput('error', `${cmd}: command not found`);
+                    break;
+            }
+        }
+        
+        function showHelp() {
+            const helpText = `
+Available commands:
+
+File System:
+  ls [dir]          - list files and directories
+  pwd               - print working directory
+  
+System Information:
+  whoami            - display current user
+  date              - display current date and time
+  uname             - display system information
+  top               - display running processes
+  ps                - show process status
+  df                - display disk usage
+  free              - display memory usage
+  
+Network:
+  ifconfig          - display network configuration
+  ping <host>       - ping a network host
+  
+Utilities:
+  clear             - clear the terminal screen
+  history           - show command history
+  exit              - close terminal session
+  help              - show this help message
+`;
+            addOutput('', helpText);
+        }
+        
+        function listFiles(args) {
+            const files = [
+                'drwxr-xr-x  2 vm vm  4096 Nov 25 10:30 Desktop',
+                'drwxr-xr-x  2 vm vm  4096 Nov 25 10:30 Documents',
+                'drwxr-xr-x  2 vm vm  4096 Nov 25 10:30 Downloads',
+                '-rw-r--r--  1 vm vm   220 Nov 25 10:30 .bash_logout',
+                '-rw-r--r--  1 vm vm  3771 Nov 25 10:30 .bashrc',
+                '-rw-r--r--  1 vm vm   807 Nov 25 10:30 .profile',
+                '-rw-r--r--  1 vm vm  1024 Nov 25 10:30 welcome.txt'
+            ];
+            
+            files.forEach(file => addOutput('', file));
+        }
+        
+        function showSystemInfo() {
+            const sysInfo = `
+top - ${new Date().toLocaleTimeString()} up 1 day, 2:34, 1 user, load average: 0.15, 0.10, 0.05
+
+Tasks:  78 total,   1 running,  77 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  2.3 us,  0.7 sy,  0.0 ni, 97.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+MiB Mem :   4096.0 total,   2048.5 free,   1024.2 used,   1023.3 buff/cache
+MiB Swap:   2048.0 total,   2048.0 free,      0.0 used.   2867.3 avail Mem
+
+  PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+    1 root      20   0  168588  13528   8936 S   0.0   0.3   0:01.23 systemd
+  456 vm        20   0   23456   5432   4321 S   0.0   0.1   0:00.15 bash
+  789 vm        20   0   12345   2345   1234 R   0.0   0.1   0:00.01 top
+`;
+            addOutput('', sysInfo);
+        }
+        
+        function showProcesses() {
+            const processes = `
+  PID TTY          TIME CMD
+    1 ?        00:00:01 systemd
+  456 pts/0    00:00:00 bash
+  789 pts/0    00:00:00 ps
+`;
+            addOutput('', processes);
+        }
+        
+        function showDiskUsage() {
+            const diskInfo = `
+Filesystem      1K-blocks    Used Available Use% Mounted on
+/dev/vda1        51539968 8234752  43305216  16% /
+tmpfs             2097152       0   2097152   0% /dev/shm
+/dev/vda2         1048576   32768   1015808   4% /boot
+`;
+            addOutput('', diskInfo);
+        }
+        
+        function showMemoryInfo() {
+            const memInfo = `
+               total        used        free      shared  buff/cache   available
+Mem:         4194304     1048576     2097152       65536     1048576     2867200
+Swap:        2097152           0     2097152
+`;
+            addOutput('', memInfo);
+        }
+        
+        function showNetworkInfo() {
+            const netInfo = `
+eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.1.100  netmask 255.255.255.0  broadcast 192.168.1.255
+        inet6 fe80::a00:27ff:fe4e:66a1  prefixlen 64  scopeid 0x20<link>
+        ether 08:00:27:4e:66:a1  txqueuelen 1000  (Ethernet)
+        RX packets 1234  bytes 123456 (120.5 KiB)
+        TX packets 987   bytes 98765 (96.4 KiB)
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x10<host>
+        loop  txqueuelen 1000  (Local Loopback)
+`;
+            addOutput('', netInfo);
+        }
+        
+        function simulatePing(host) {
+            addOutput('', `PING ${host} (93.184.216.34) 56(84) bytes of data.`);
+            
+            let pingCount = 0;
+            const pingInterval = setInterval(() => {
+                pingCount++;
+                const time = (Math.random() * 50 + 10).toFixed(1);
+                addOutput('', `64 bytes from ${host}: icmp_seq=${pingCount} ttl=64 time=${time} ms`);
+                
+                if (pingCount >= 4) {
+                    clearInterval(pingInterval);
+                    addOutput('', '');
+                    addOutput('', `--- ${host} ping statistics ---`);
+                    addOutput('', `${pingCount} packets transmitted, ${pingCount} received, 0% packet loss`);
+                }
+            }, 1000);
+        }
+        
+        function showHistory() {
+            commandHistory.slice().reverse().forEach((cmd, index) => {
+                addOutput('', `${index + 1}  ${cmd}`);
+            });
+        }
+        
+        function clearTerminal() {
+            output.innerHTML = '';
+        }
+        
+        function navigateHistory(direction) {
+            if (commandHistory.length === 0) return;
+            
+            historyIndex += direction;
+            
+            if (historyIndex < -1) {
+                historyIndex = -1;
+                commandInput.value = '';
+            } else if (historyIndex >= commandHistory.length) {
+                historyIndex = commandHistory.length - 1;
+            }
+            
+            if (historyIndex >= 0) {
+                commandInput.value = commandHistory[historyIndex];
+            } else {
+                commandInput.value = '';
+            }
+        }
+        
+        function addCommandLine(command) {
+            const line = document.createElement('div');
+            line.className = 'command-line';
+            line.innerHTML = `<span class="prompt">vm@{{ node_id[:8] }}:~$</span> <span class="command">${escapeHtml(command)}</span>`;
+            output.appendChild(line);
+        }
+        
+        function addOutput(className, text) {
+            const line = document.createElement('div');
+            line.className = `output ${className}`;
+            line.textContent = text;
+            output.appendChild(line);
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function scrollToBottom() {
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function focusInput() {
+            commandInput.focus();
+        }
+        
+        // Handle window resize
+        window.addEventListener('resize', scrollToBottom);
+    </script>
+</body>
+</html>
