@@ -267,6 +267,198 @@
             {% endif %}
             
             {% endif %}
+            
+            <!-- Enterprise VM Features Section -->
+            <div class="enterprise-features">
+                <div class="section-header">
+                    <h3><i class="fas fa-server"></i> Enterprise Features</h3>
+                </div>
+                
+                <!-- Feature Tabs -->
+                <div class="feature-tabs">
+                    <nav class="nav nav-pills" id="featureTabs" role="tablist">
+                        <a class="nav-link active" data-bs-toggle="pill" href="#hardwareVirt" role="tab">
+                            <i class="fas fa-microchip"></i> Hardware Virtualization
+                        </a>
+                        <a class="nav-link" data-bs-toggle="pill" href="#networking" role="tab">
+                            <i class="fas fa-network-wired"></i> Advanced Networking
+                        </a>
+                        <a class="nav-link" data-bs-toggle="pill" href="#storage" role="tab">
+                            <i class="fas fa-database"></i> Enterprise Storage
+                        </a>
+                        <a class="nav-link" data-bs-toggle="pill" href="#administration" role="tab">
+                            <i class="fas fa-cogs"></i> System Administration
+                        </a>
+                    </nav>
+                </div>
+                
+                <!-- Tab Content -->
+                <div class="tab-content" id="featureTabContent">
+                    <!-- Hardware Virtualization Tab -->
+                    <div class="tab-pane fade show active" id="hardwareVirt" role="tabpanel">
+                        <div class="feature-grid">
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-power-off"></i>
+                                </div>
+                                <h4>Boot Sequence Simulation</h4>
+                                <p>Complete POST, BIOS, and OS loading simulation with realistic boot times and hardware detection.</p>
+                                <button class="btn-feature" onclick="simulateBootSequence()">View Boot Process</button>
+                            </div>
+                            
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-cpu"></i>
+                                </div>
+                                <h4>Virtual Hardware</h4>
+                                <p>Realistic CPU, RAM, and storage specs with dynamic performance monitoring and resource allocation.</p>
+                                <button class="btn-feature" onclick="showHardwareSpecs()">Hardware Details</button>
+                            </div>
+                            
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-folder-open"></i>
+                                </div>
+                                <h4>File System Support</h4>
+                                <p>Full NTFS/FAT32/EXT4 support with formatting, defragmentation, and file system check utilities.</p>
+                                <button class="btn-feature" onclick="manageFileSystem()">File System Tools</button>
+                            </div>
+                            
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-tasks"></i>
+                                </div>
+                                <h4>Process Management</h4>
+                                <p>Virtual processes with CPU scheduling, memory allocation, and complete process lifecycle management.</p>
+                                <button class="btn-feature" onclick="showProcessManager()">Process Monitor</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Advanced Networking Tab -->
+                    <div class="tab-pane fade" id="networking" role="tabpanel">
+                        <div class="feature-grid">
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-ethernet"></i>
+                                </div>
+                                <h4>Virtual NICs</h4>
+                                <p>Automatic IP/MAC assignment with realistic network interfaces and adapter management.</p>
+                                <button class="btn-feature" onclick="configureNetworkAdapter()">Network Config</button>
+                            </div>
+                            
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-dharmachakra"></i>
+                                </div>
+                                <h4>DHCP Simulation</h4>
+                                <p>Dynamic IP allocation with lease management and automatic network discovery.</p>
+                                <button class="btn-feature" onclick="manageDHCP()">DHCP Manager</button>
+                            </div>
+                            
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-route"></i>
+                                </div>
+                                <h4>Network Discovery</h4>
+                                <p>ARP tables, ping, traceroute, and advanced network scanning capabilities.</p>
+                                <button class="btn-feature" onclick="networkDiscovery()">Discovery Tools</button>
+                            </div>
+                            
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-tachometer-alt"></i>
+                                </div>
+                                <h4>Bandwidth Control</h4>
+                                <p>Configurable network speeds, latency simulation, and traffic shaping.</p>
+                                <button class="btn-feature" onclick="bandwidthControl()">Traffic Control</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Enterprise Storage Tab -->
+                    <div class="tab-pane fade" id="storage" role="tabpanel">
+                        <div class="feature-grid">
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-hdd"></i>
+                                </div>
+                                <h4>RAID Simulation</h4>
+                                <p>RAID 0/1/5 configurations with failure simulation and automatic recovery.</p>
+                                <button class="btn-feature" onclick="configureRAID()">RAID Manager</button>
+                            </div>
+                            
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-lock"></i>
+                                </div>
+                                <h4>Disk Encryption</h4>
+                                <p>Virtual BitLocker/LUKS encryption with key management and secure storage.</p>
+                                <button class="btn-feature" onclick="encryptDisk()">Encryption Tools</button>
+                            </div>
+                            
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-camera"></i>
+                                </div>
+                                <h4>VM Snapshots</h4>
+                                <p>Complete VM state snapshots with rollback functionality and snapshot management.</p>
+                                <button class="btn-feature" onclick="manageSnapshots()">Snapshot Manager</button>
+                            </div>
+                            
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-archive"></i>
+                                </div>
+                                <h4>Backup Systems</h4>
+                                <p>Automated backups with compression, versioning, and disaster recovery.</p>
+                                <button class="btn-feature" onclick="backupManager()">Backup Center</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- System Administration Tab -->
+                    <div class="tab-pane fade" id="administration" role="tabpanel">
+                        <div class="feature-grid">
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-users-cog"></i>
+                                </div>
+                                <h4>User Management</h4>
+                                <p>Multi-user support with permissions, groups, and role-based access control.</p>
+                                <button class="btn-feature" onclick="userManager()">User Admin</button>
+                            </div>
+                            
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-shield-alt"></i>
+                                </div>
+                                <h4>Security Suite</h4>
+                                <p>Firewall rules, antivirus scanning, intrusion detection, and security monitoring.</p>
+                                <button class="btn-feature" onclick="securityCenter()">Security Dashboard</button>
+                            </div>
+                            
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <h4>Performance Monitoring</h4>
+                                <p>Real-time metrics, system logs, alerts, and comprehensive performance analytics.</p>
+                                <button class="btn-feature" onclick="performanceMonitor()">Monitoring Console</button>
+                            </div>
+                            
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-box"></i>
+                                </div>
+                                <h4>Package Management</h4>
+                                <p>Virtual package installer/updater system with dependency resolution.</p>
+                                <button class="btn-feature" onclick="packageManager()">Package Center</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -583,6 +775,128 @@
     border-radius: 8px;
     font-size: 14px;
 }
+
+/* Enterprise Features Styles */
+.enterprise-features {
+    margin-top: 40px;
+    padding: 30px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border-radius: 16px;
+}
+
+.feature-tabs {
+    margin: 20px 0;
+}
+
+.feature-tabs .nav-pills .nav-link {
+    background: none;
+    color: #5f6368;
+    border: 2px solid transparent;
+    border-radius: 12px;
+    padding: 12px 20px;
+    margin-right: 10px;
+    transition: all 0.3s ease;
+}
+
+.feature-tabs .nav-pills .nav-link.active {
+    background: #1a73e8;
+    color: white;
+    border-color: #1a73e8;
+}
+
+.feature-tabs .nav-pills .nav-link:hover {
+    background: #f1f3f4;
+    color: #1a73e8;
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin-top: 24px;
+}
+
+.feature-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    border: 1px solid #e8eaed;
+}
+
+.feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+
+.feature-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    color: white;
+    font-size: 32px;
+}
+
+.feature-card h4 {
+    color: #202124;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.feature-card p {
+    color: #5f6368;
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+
+.btn-feature {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-feature:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102,126,234,0.3);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e8eaed;
+}
+
+.section-header h3 {
+    color: #202124;
+    font-weight: 600;
+    margin: 0;
+}
+
+.vm-count {
+    background: #1a73e8;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 500;
+}
 </style>
 
 <script>
@@ -823,6 +1137,687 @@ function showNotification(message, type) {
         notification.classList.remove('show');
         setTimeout(() => document.body.removeChild(notification), 300);
     }, 3000);
+}
+
+// Enterprise VM Features Functions
+
+// Hardware Virtualization Features
+function simulateBootSequence() {
+    showModalDialog('Boot Sequence Simulation', `
+        <div class="boot-simulation">
+            <h5>🔌 Power-On Self-Test (POST)</h5>
+            <div class="progress mb-3">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+            </div>
+            <ul class="boot-steps">
+                <li>✅ CPU Detection: Virtual CloudVM CPU @ 2.8GHz</li>
+                <li>✅ Memory Test: 4096MB RAM detected and tested</li>
+                <li>✅ Storage: 50GB Virtual Disk detected</li>
+                <li>✅ Network: 1 Gbps Virtual NIC initialized</li>
+                <li>✅ BIOS: CloudVM BIOS v2.1 - Boot sequence complete</li>
+            </ul>
+            <p class="text-success"><i class="fas fa-check"></i> Boot sequence completed in 15.3 seconds</p>
+        </div>
+    `);
+}
+
+function showHardwareSpecs() {
+    showModalDialog('Virtual Hardware Specifications', `
+        <div class="hardware-specs">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6><i class="fas fa-microchip"></i> Processor</h6>
+                    <ul>
+                        <li>Type: CloudVM Virtual CPU</li>
+                        <li>Cores: 4 (2 threads per core)</li>
+                        <li>Speed: 2.8 GHz base, 3.5 GHz boost</li>
+                        <li>Cache: 8MB L3 cache</li>
+                        <li>Architecture: x86_64</li>
+                    </ul>
+                    
+                    <h6><i class="fas fa-memory"></i> Memory</h6>
+                    <ul>
+                        <li>Total: 4096 MB</li>
+                        <li>Available: 3456 MB</li>
+                        <li>Type: DDR4-2666</li>
+                        <li>ECC: Enabled</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6><i class="fas fa-hdd"></i> Storage</h6>
+                    <ul>
+                        <li>Primary: 50 GB Virtual Disk</li>
+                        <li>Interface: NVMe PCIe 3.0</li>
+                        <li>Read Speed: 3,200 MB/s</li>
+                        <li>Write Speed: 1,800 MB/s</li>
+                        <li>IOPS: 450,000 read / 350,000 write</li>
+                    </ul>
+                    
+                    <h6><i class="fas fa-network-wired"></i> Network</h6>
+                    <ul>
+                        <li>Adapter: CloudVM Virtual NIC</li>
+                        <li>Speed: 1 Gbps</li>
+                        <li>MAC: 52:54:00:12:34:56</li>
+                        <li>Driver: virtio-net</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    `);
+}
+
+function manageFileSystem() {
+    showModalDialog('File System Management', `
+        <div class="filesystem-manager">
+            <div class="row">
+                <div class="col-md-4">
+                    <h6>Format Disk</h6>
+                    <select class="form-select mb-2" id="fsType">
+                        <option value="NTFS">NTFS</option>
+                        <option value="EXT4">EXT4</option>
+                        <option value="FAT32">FAT32</option>
+                    </select>
+                    <button class="btn btn-primary btn-sm" onclick="formatDisk()">Format</button>
+                </div>
+                <div class="col-md-4">
+                    <h6>Defragmentation</h6>
+                    <p class="small">Fragmentation: 23%</p>
+                    <button class="btn btn-warning btn-sm" onclick="defragmentDisk()">Defragment</button>
+                </div>
+                <div class="col-md-4">
+                    <h6>File System Check</h6>
+                    <p class="small">Last check: 3 days ago</p>
+                    <button class="btn btn-success btn-sm" onclick="fsckDisk()">Check & Repair</button>
+                </div>
+            </div>
+            <div class="mt-4">
+                <h6>File System Information</h6>
+                <table class="table table-sm">
+                    <tr><td>Type</td><td>NTFS</td></tr>
+                    <tr><td>Total Size</td><td>50.0 GB</td></tr>
+                    <tr><td>Used Space</td><td>18.7 GB (37%)</td></tr>
+                    <tr><td>Free Space</td><td>31.3 GB (63%)</td></tr>
+                    <tr><td>Cluster Size</td><td>4096 bytes</td></tr>
+                </table>
+            </div>
+        </div>
+    `);
+}
+
+function showProcessManager() {
+    showModalDialog('Process Manager', `
+        <div class="process-manager">
+            <div class="d-flex justify-content-between mb-3">
+                <h6>Running Processes</h6>
+                <button class="btn btn-sm btn-primary" onclick="refreshProcesses()">Refresh</button>
+            </div>
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>PID</th>
+                        <th>Name</th>
+                        <th>User</th>
+                        <th>CPU%</th>
+                        <th>Memory</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1001</td>
+                        <td>systemd</td>
+                        <td>root</td>
+                        <td>0.1%</td>
+                        <td>25MB</td>
+                        <td><button class="btn btn-danger btn-xs">Kill</button></td>
+                    </tr>
+                    <tr>
+                        <td>1532</td>
+                        <td>apache2</td>
+                        <td>www-data</td>
+                        <td>2.3%</td>
+                        <td>45MB</td>
+                        <td><button class="btn btn-danger btn-xs">Kill</button></td>
+                    </tr>
+                    <tr>
+                        <td>2047</td>
+                        <td>mysql</td>
+                        <td>mysql</td>
+                        <td>1.8%</td>
+                        <td>156MB</td>
+                        <td><button class="btn btn-danger btn-xs">Kill</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    `);
+}
+
+// Advanced Networking Features
+function configureNetworkAdapter() {
+    showModalDialog('Network Adapter Configuration', `
+        <div class="network-config">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Interface Configuration</h6>
+                    <div class="mb-2">
+                        <label class="form-label">Interface Name</label>
+                        <input type="text" class="form-control" value="eth0" readonly>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">MAC Address</label>
+                        <input type="text" class="form-control" value="52:54:00:12:34:56" readonly>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">IP Address</label>
+                        <input type="text" class="form-control" value="192.168.1.150">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Subnet Mask</label>
+                        <input type="text" class="form-control" value="255.255.255.0">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>Network Statistics</h6>
+                    <table class="table table-sm">
+                        <tr><td>Status</td><td><span class="text-success">Connected</span></td></tr>
+                        <tr><td>Speed</td><td>1000 Mbps</td></tr>
+                        <tr><td>Duplex</td><td>Full</td></tr>
+                        <tr><td>Bytes Sent</td><td>2.3 GB</td></tr>
+                        <tr><td>Bytes Received</td><td>8.7 GB</td></tr>
+                        <tr><td>Packets Sent</td><td>1,234,567</td></tr>
+                        <tr><td>Packets Received</td><td>3,456,789</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `);
+}
+
+function manageDHCP() {
+    showModalDialog('DHCP Manager', `
+        <div class="dhcp-manager">
+            <h6>DHCP Server Configuration</h6>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">IP Pool Start</label>
+                    <input type="text" class="form-control" value="192.168.1.100">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">IP Pool End</label>
+                    <input type="text" class="form-control" value="192.168.1.200">
+                </div>
+            </div>
+            
+            <h6>Active Leases</h6>
+            <table class="table table-sm">
+                <thead>
+                    <tr><th>IP Address</th><th>MAC Address</th><th>Hostname</th><th>Lease Expires</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>192.168.1.101</td>
+                        <td>52:54:00:ab:cd:ef</td>
+                        <td>cloudvm-001</td>
+                        <td>23h 45m</td>
+                    </tr>
+                    <tr>
+                        <td>192.168.1.102</td>
+                        <td>52:54:00:12:34:56</td>
+                        <td>cloudvm-002</td>
+                        <td>22h 12m</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    `);
+}
+
+function networkDiscovery() {
+    showModalDialog('Network Discovery Tools', `
+        <div class="network-discovery">
+            <div class="row">
+                <div class="col-md-4">
+                    <h6>Ping Test</h6>
+                    <input type="text" class="form-control mb-2" placeholder="IP or hostname" value="8.8.8.8">
+                    <button class="btn btn-primary btn-sm" onclick="runPing()">Ping</button>
+                </div>
+                <div class="col-md-4">
+                    <h6>Traceroute</h6>
+                    <input type="text" class="form-control mb-2" placeholder="Destination" value="google.com">
+                    <button class="btn btn-primary btn-sm" onclick="runTraceroute()">Trace Route</button>
+                </div>
+                <div class="col-md-4">
+                    <h6>Port Scanner</h6>
+                    <input type="text" class="form-control mb-2" placeholder="Target IP" value="192.168.1.1">
+                    <button class="btn btn-primary btn-sm" onclick="scanPorts()">Scan Ports</button>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <h6>ARP Table</h6>
+                <table class="table table-sm">
+                    <thead>
+                        <tr><th>IP Address</th><th>MAC Address</th><th>Interface</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>192.168.1.1</td><td>aa:bb:cc:dd:ee:ff</td><td>eth0</td></tr>
+                        <tr><td>192.168.1.101</td><td>52:54:00:ab:cd:ef</td><td>eth0</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `);
+}
+
+function bandwidthControl() {
+    showModalDialog('Bandwidth Control', `
+        <div class="bandwidth-control">
+            <h6>Traffic Shaping Configuration</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <label class="form-label">Upload Limit</label>
+                    <select class="form-select">
+                        <option>Unlimited</option>
+                        <option>1 Mbps</option>
+                        <option>10 Mbps</option>
+                        <option>100 Mbps</option>
+                        <option>1 Gbps</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Download Limit</label>
+                    <select class="form-select">
+                        <option>Unlimited</option>
+                        <option>1 Mbps</option>
+                        <option>10 Mbps</option>
+                        <option>100 Mbps</option>
+                        <option selected>1 Gbps</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <h6>Network Usage (Real-time)</h6>
+                <div class="progress mb-2">
+                    <div class="progress-bar bg-success" style="width: 35%"></div>
+                </div>
+                <small>Upload: 2.5 Mbps | Download: 15.7 Mbps</small>
+            </div>
+        </div>
+    `);
+}
+
+// Enterprise Storage Features
+function configureRAID() {
+    showModalDialog('RAID Configuration', `
+        <div class="raid-config">
+            <h6>RAID Setup</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <label class="form-label">RAID Level</label>
+                    <select class="form-select mb-2">
+                        <option value="0">RAID 0 (Striping)</option>
+                        <option value="1" selected>RAID 1 (Mirroring)</option>
+                        <option value="5">RAID 5 (Distributed Parity)</option>
+                        <option value="10">RAID 10 (Striped Mirrors)</option>
+                    </select>
+                    
+                    <label class="form-label">Number of Disks</label>
+                    <input type="number" class="form-control" value="2" min="2" max="8">
+                </div>
+                <div class="col-md-6">
+                    <h6>Current RAID Status</h6>
+                    <table class="table table-sm">
+                        <tr><td>Level</td><td>RAID 1</td></tr>
+                        <tr><td>Disks</td><td>2 active</td></tr>
+                        <tr><td>Capacity</td><td>25 GB (50% efficiency)</td></tr>
+                        <tr><td>Status</td><td><span class="text-success">Healthy</span></td></tr>
+                        <tr><td>Sync</td><td>100% complete</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `);
+}
+
+function encryptDisk() {
+    showModalDialog('Disk Encryption', `
+        <div class="disk-encryption">
+            <h6>BitLocker/LUKS Encryption</h6>
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                Disk encryption protects your data with AES-256 encryption
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">Encryption Algorithm</label>
+                <select class="form-select">
+                    <option selected>AES-256-XTS</option>
+                    <option>AES-128-CBC</option>
+                    <option>ChaCha20-Poly1305</option>
+                </select>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-control" placeholder="Enter encryption password">
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">Confirm Password</label>
+                <input type="password" class="form-control" placeholder="Confirm password">
+            </div>
+            
+            <div class="alert alert-warning">
+                <strong>Warning:</strong> Encryption will take 30-120 minutes depending on disk size. VM will be unavailable during encryption.
+            </div>
+        </div>
+    `);
+}
+
+function manageSnapshots() {
+    showModalDialog('Snapshot Manager', `
+        <div class="snapshot-manager">
+            <div class="d-flex justify-content-between mb-3">
+                <h6>VM Snapshots</h6>
+                <button class="btn btn-success btn-sm">Create Snapshot</button>
+            </div>
+            
+            <table class="table">
+                <thead>
+                    <tr><th>Name</th><th>Date</th><th>Size</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Initial Setup</td>
+                        <td>2025-11-20 14:30</td>
+                        <td>1.2 GB</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary">Restore</button>
+                            <button class="btn btn-sm btn-danger">Delete</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>After Updates</td>
+                        <td>2025-11-22 09:15</td>
+                        <td>1.8 GB</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary">Restore</button>
+                            <button class="btn btn-sm btn-danger">Delete</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    `);
+}
+
+function backupManager() {
+    showModalDialog('Backup Center', `
+        <div class="backup-manager">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Backup Schedule</h6>
+                    <div class="mb-2">
+                        <label class="form-label">Frequency</label>
+                        <select class="form-select">
+                            <option>Daily</option>
+                            <option selected>Weekly</option>
+                            <option>Monthly</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Retention</label>
+                        <select class="form-select">
+                            <option>7 days</option>
+                            <option selected>30 days</option>
+                            <option>90 days</option>
+                            <option>1 year</option>
+                        </select>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" checked>
+                        <label class="form-check-label">Compression enabled</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>Recent Backups</h6>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>2025-11-25 02:00</span>
+                            <span class="text-success">✓ Success</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>2025-11-18 02:00</span>
+                            <span class="text-success">✓ Success</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>2025-11-11 02:00</span>
+                            <span class="text-danger">✗ Failed</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    `);
+}
+
+// System Administration Features
+function userManager() {
+    showModalDialog('User Management', `
+        <div class="user-manager">
+            <div class="d-flex justify-content-between mb-3">
+                <h6>User Accounts</h6>
+                <button class="btn btn-success btn-sm">Add User</button>
+            </div>
+            
+            <table class="table">
+                <thead>
+                    <tr><th>Username</th><th>Groups</th><th>Status</th><th>Last Login</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>admin</td>
+                        <td>sudo, wheel</td>
+                        <td><span class="badge bg-success">Active</span></td>
+                        <td>2025-11-25 08:30</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary">Edit</button>
+                            <button class="btn btn-sm btn-warning">Disable</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>user1</td>
+                        <td>users</td>
+                        <td><span class="badge bg-success">Active</span></td>
+                        <td>2025-11-24 16:45</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary">Edit</button>
+                            <button class="btn btn-sm btn-warning">Disable</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    `);
+}
+
+function securityCenter() {
+    showModalDialog('Security Center', `
+        <div class="security-center">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Firewall Status</h6>
+                    <div class="alert alert-success">
+                        <i class="fas fa-shield-alt"></i>
+                        Firewall is <strong>ACTIVE</strong>
+                    </div>
+                    <ul class="list-group">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>SSH (22)</span>
+                            <span class="text-success">Allow</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>HTTP (80)</span>
+                            <span class="text-success">Allow</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>HTTPS (443)</span>
+                            <span class="text-success">Allow</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6>Security Scan Results</h6>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Last Scan:</span>
+                            <span>2025-11-25 06:00</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-success" style="width: 95%"></div>
+                        </div>
+                        <small class="text-success">System Security: 95% (Excellent)</small>
+                    </div>
+                    
+                    <h6>Threat Detection</h6>
+                    <ul class="list-group">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Failed Logins (24h)</span>
+                            <span class="badge bg-warning">3</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Blocked IPs</span>
+                            <span class="badge bg-danger">12</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Malware Detected</span>
+                            <span class="badge bg-success">0</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    `);
+}
+
+function performanceMonitor() {
+    showModalDialog('Performance Monitor', `
+        <div class="performance-monitor">
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <h6>CPU Usage</h6>
+                        <div class="metric-value">23%</div>
+                        <div class="metric-trend text-success">↓ -5%</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <h6>Memory</h6>
+                        <div class="metric-value">67%</div>
+                        <div class="metric-trend text-warning">↑ +12%</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <h6>Disk I/O</h6>
+                        <div class="metric-value">45%</div>
+                        <div class="metric-trend text-info">→ Stable</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <h6>Network</h6>
+                        <div class="metric-value">12%</div>
+                        <div class="metric-trend text-success">↓ -8%</div>
+                    </div>
+                </div>
+            </div>
+            
+            <h6>System Alerts</h6>
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                Memory usage above 65% - Consider adding more RAM
+            </div>
+            
+            <h6>Performance History</h6>
+            <div class="chart-placeholder">
+                <div class="bg-light p-4 text-center">
+                    📊 Performance charts would be rendered here
+                </div>
+            </div>
+        </div>
+    `);
+}
+
+function packageManager() {
+    showModalDialog('Package Manager', `
+        <div class="package-manager">
+            <div class="d-flex justify-content-between mb-3">
+                <h6>Installed Packages</h6>
+                <button class="btn btn-primary btn-sm">Check Updates</button>
+            </div>
+            
+            <table class="table">
+                <thead>
+                    <tr><th>Package</th><th>Version</th><th>Status</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>apache2</td>
+                        <td>2.4.52</td>
+                        <td><span class="text-warning">Update Available</span></td>
+                        <td><button class="btn btn-sm btn-success">Update</button></td>
+                    </tr>
+                    <tr>
+                        <td>mysql-server</td>
+                        <td>8.0.32</td>
+                        <td><span class="text-success">Up to date</span></td>
+                        <td><button class="btn btn-sm btn-danger">Remove</button></td>
+                    </tr>
+                    <tr>
+                        <td>php</td>
+                        <td>8.1.15</td>
+                        <td><span class="text-warning">Update Available</span></td>
+                        <td><button class="btn btn-sm btn-success">Update</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    `);
+}
+
+// Helper function to show modal dialogs
+function showModalDialog(title, content) {
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.innerHTML = `
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">${title}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    ${content}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+    
+    // Remove modal from DOM when hidden
+    modal.addEventListener('hidden.bs.modal', () => {
+        document.body.removeChild(modal);
+    });
 }
 </script>
 

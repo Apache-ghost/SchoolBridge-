@@ -1,0 +1,495 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="clouddrive-container">
+    <div class="clouddrive-sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-network-wired"></i>
+                <span>Node Network</span>
+            </div>
+        </div>
+        
+        <div class="sidebar-nav">
+            <a href="/" class="nav-item">
+                <i class="fas fa-hdd"></i>
+                <span>CloudDrive</span>
+            </a>
+            <a href="/vms" class="nav-item">
+                <i class="fas fa-desktop"></i>
+                <span>VM Manager</span>
+            </a>
+            <a href="/vm-network" class="nav-item active">
+                <i class="fas fa-network-wired"></i>
+                <span>Network</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="clouddrive-main">
+        <div class="main-header">
+            <h1><i class="fas fa-network-wired"></i> Autonomous Node Network</h1>
+            <p>Manage autonomous VM nodes with file transfer, command execution, and network monitoring</p>
+        </div>
+
+        <div class="network-dashboard">
+            <!-- Network Status -->
+            <div class="network-status-card">
+                <h3><i class="fas fa-chart-line"></i> Network Status</h3>
+                <div id="network-status">
+                    <div class="status-item">
+                        <span class="label">Active Nodes:</span>
+                        <span class="value" id="active-nodes">0</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Total Traffic:</span>
+                        <span class="value" id="total-traffic">0 MB/s</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Network Health:</span>
+                        <span class="value status-good" id="network-health">Good</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Node Management -->
+            <div class="node-management-card">
+                <h3><i class="fas fa-server"></i> Node Management</h3>
+                <div class="node-actions">
+                    <button class="btn btn-primary" onclick="scanNodes()">
+                        <i class="fas fa-search"></i> Scan Network
+                    </button>
+                    <button class="btn btn-success" onclick="connectAllNodes()">
+                        <i class="fas fa-link"></i> Connect All VMs as Nodes
+                    </button>
+                    <button class="btn btn-info" onclick="refreshTraffic()">
+                        <i class="fas fa-sync"></i> Refresh Traffic
+                    </button>
+                </div>
+                
+                <div id="nodes-list" class="nodes-container">
+                    <p style="text-align: center; color: #666;">Loading nodes...</p>
+                </div>
+            </div>
+
+            <!-- File Transfer -->
+            <div class="file-transfer-card">
+                <h3><i class="fas fa-exchange-alt"></i> Inter-Node File Transfer</h3>
+                <div class="transfer-form">
+                    <select id="source-node" class="form-control">
+                        <option value="">Select Source Node...</option>
+                    </select>
+                    <select id="target-node" class="form-control">
+                        <option value="">Select Target Node...</option>
+                    </select>
+                    <input type="text" id="file-name" placeholder="File name..." class="form-control">
+                    <button class="btn btn-warning" onclick="initiateFileTransfer()">
+                        <i class="fas fa-paper-plane"></i> Send File
+                    </button>
+                </div>
+                
+                <div id="transfer-log" class="transfer-log">Welcome to Inter-Node File Transfer!
+Transfer logs will appear here...
+                </div>
+            </div>
+
+            <!-- Command Execution -->
+            <div class="command-execution-card">
+                <h3><i class="fas fa-terminal"></i> Remote Command Execution</h3>
+                <div class="command-form">
+                    <select id="command-node" class="form-control">
+                        <option value="">Select Node...</option>
+                    </select>
+                    <input type="text" id="command-input" placeholder="Enter command..." class="form-control">
+                    <button class="btn btn-danger" onclick="executeCommand()">
+                        <i class="fas fa-play"></i> Execute
+                    </button>
+                </div>
+                
+                <div id="command-output" class="command-output">Autonomous Node Command Interface Ready!
+Command outputs will appear here...
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.network-dashboard {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding: 20px;
+}
+
+.network-status-card,
+.node-management-card,
+.file-transfer-card,
+.command-execution-card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.status-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.status-good { color: #28a745; }
+.status-warning { color: #ffc107; }
+.status-danger { color: #dc3545; }
+
+.node-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.nodes-container {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.node-item {
+    padding: 10px;
+    margin: 5px 0;
+    background: #f8f9fa;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.node-status {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    color: white;
+}
+
+.status-running { background: #28a745; }
+.status-stopped { background: #dc3545; }
+
+.transfer-form,
+.command-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.transfer-log,
+.command-output {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    min-height: 150px;
+    max-height: 200px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 0.9em;
+    white-space: pre-wrap;
+}
+
+.form-control {
+    flex: 1;
+    min-width: 120px;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.btn {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.btn-primary { background: #007bff; color: white; }
+.btn-success { background: #28a745; color: white; }
+.btn-info { background: #17a2b8; color: white; }
+.btn-warning { background: #ffc107; color: black; }
+.btn-danger { background: #dc3545; color: white; }
+.btn-sm { padding: 5px 10px; font-size: 0.8em; }
+.btn-outline-primary { background: white; color: #007bff; border: 1px solid #007bff; }
+</style>
+
+<script>
+let networkData = {
+    nodes: [],
+    traffic: [],
+    status: {}
+};
+
+// Initialize the page
+document.addEventListener('DOMContentLoaded', function() {
+    loadNetworkStatus();
+    loadNodes();
+    setInterval(updateNetworkStatus, 5000);
+});
+
+function loadNetworkStatus() {
+    fetch('/api/vm/network-status')
+        .then(response => response.json())
+        .then(data => {
+            networkData.status = data;
+            updateNetworkDisplay();
+        })
+        .catch(error => {
+            console.error('Failed to load network status:', error);
+        });
+}
+
+function loadNodes() {
+    fetch('/api/network/nodes')
+        .then(response => response.json())
+        .then(data => {
+            networkData.nodes = data.nodes || [];
+            updateNodesDisplay();
+            populateNodeSelectors();
+        })
+        .catch(error => {
+            console.error('Failed to load nodes:', error);
+            networkData.nodes = [];
+            updateNodesDisplay();
+        });
+}
+
+function updateNetworkStatus() {
+    loadNetworkStatus();
+    loadTraffic();
+}
+
+function loadTraffic() {
+    fetch('/api/network/traffic')
+        .then(response => response.json())
+        .then(data => {
+            networkData.traffic = data.vm_traffic || [];
+            updateTrafficDisplay();
+        })
+        .catch(error => {
+            console.error('Failed to load traffic:', error);
+        });
+}
+
+function updateNetworkDisplay() {
+    document.getElementById('active-nodes').textContent = networkData.status.active_connections || 0;
+    
+    const totalTraffic = networkData.traffic.reduce((sum, vm) => sum + (vm.bandwidth_usage || 0), 0);
+    document.getElementById('total-traffic').textContent = totalTraffic.toFixed(1) + ' MB/s';
+    
+    const health = totalTraffic > 100 ? 'High Load' : totalTraffic > 50 ? 'Moderate' : 'Good';
+    const healthClass = totalTraffic > 100 ? 'status-danger' : totalTraffic > 50 ? 'status-warning' : 'status-good';
+    
+    const healthElement = document.getElementById('network-health');
+    healthElement.textContent = health;
+    healthElement.className = 'value ' + healthClass;
+}
+
+function updateNodesDisplay() {
+    const container = document.getElementById('nodes-list');
+    container.innerHTML = '';
+    
+    if (networkData.nodes.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #666;">No nodes found. Create and start some VMs first.</p>';
+        return;
+    }
+    
+    networkData.nodes.forEach(node => {
+        const nodeDiv = document.createElement('div');
+        nodeDiv.className = 'node-item';
+        
+        const statusClass = node.status === 'running' ? 'status-running' : 'status-stopped';
+        
+        nodeDiv.innerHTML = `
+            <div>
+                <strong>${node.name}</strong>
+                <br>
+                <small>${node.type} - ${node.os_type || 'Unknown OS'}</small>
+            </div>
+            <div>
+                <span class="node-status ${statusClass}">${node.status}</span>
+                ${node.status === 'running' ? `
+                    <button class="btn btn-sm btn-outline-primary" onclick="connectNodeToNetwork('${node.node_id}')">
+                        <i class="fas fa-link"></i>
+                    </button>
+                ` : ''}
+            </div>
+        `;
+        
+        container.appendChild(nodeDiv);
+    });
+}
+
+function populateNodeSelectors() {
+    const selectors = ['source-node', 'target-node', 'command-node'];
+    
+    selectors.forEach(selectorId => {
+        const selector = document.getElementById(selectorId);
+        selector.innerHTML = '<option value="">Select Node...</option>';
+        
+        networkData.nodes.filter(node => node.status === 'running').forEach(node => {
+            const option = document.createElement('option');
+            option.value = node.node_id;
+            option.textContent = node.name;
+            selector.appendChild(option);
+        });
+    });
+}
+
+function scanNodes() {
+    loadNodes();
+    showMessage('Network scan completed', 'info');
+}
+
+function connectAllNodes() {
+    const runningNodes = networkData.nodes.filter(node => node.status === 'running');
+    
+    if (runningNodes.length === 0) {
+        showMessage('No running nodes found to connect', 'error');
+        return;
+    }
+    
+    runningNodes.forEach(node => {
+        connectNodeToNetwork(node.node_id);
+    });
+    
+    showMessage(`Connected ${runningNodes.length} nodes to autonomous network`, 'success');
+}
+
+function connectNodeToNetwork(nodeId) {
+    fetch(`/api/vm/${nodeId}/node/connect`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showMessage(`Node ${nodeId.substring(0,8)} connected as autonomous node`, 'success');
+        } else {
+            showMessage(`Failed to connect node: ${data.error}`, 'error');
+        }
+    })
+    .catch(error => {
+        showMessage(`Connection error: ${error.message}`, 'error');
+    });
+}
+
+function refreshTraffic() {
+    loadTraffic();
+    showMessage('Traffic data refreshed', 'info');
+}
+
+function initiateFileTransfer() {
+    const sourceNode = document.getElementById('source-node').value;
+    const targetNode = document.getElementById('target-node').value;
+    const fileName = document.getElementById('file-name').value;
+    
+    if (!sourceNode || !targetNode || !fileName) {
+        showMessage('Please fill in all fields', 'error');
+        return;
+    }
+    
+    if (sourceNode === targetNode) {
+        showMessage('Source and target nodes must be different', 'error');
+        return;
+    }
+    
+    fetch(`/api/vm/${sourceNode}/file-transfer`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            target_vm: targetNode,
+            file_name: fileName,
+            action: 'send'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] File "${fileName}" sent from ${sourceNode.substring(0,8)} to ${targetNode.substring(0,8)} (Transfer ID: ${data.transfer_id})\n`;
+            document.getElementById('transfer-log').textContent += logEntry;
+            document.getElementById('file-name').value = '';
+            showMessage('File transfer initiated successfully', 'success');
+        } else {
+            showMessage(`Transfer failed: ${data.error}`, 'error');
+        }
+    })
+    .catch(error => {
+        showMessage(`Transfer error: ${error.message}`, 'error');
+    });
+}
+
+function executeCommand() {
+    const nodeId = document.getElementById('command-node').value;
+    const command = document.getElementById('command-input').value;
+    
+    if (!nodeId || !command) {
+        showMessage('Please select a node and enter a command', 'error');
+        return;
+    }
+    
+    fetch(`/api/vm/${nodeId}/execute-command`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            command: command,
+            args: []
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const timestamp = new Date().toLocaleTimeString();
+            const outputEntry = `[${timestamp}] ${nodeId.substring(0,8)}$ ${command}\n${data.result.output}\n\n`;
+            document.getElementById('command-output').textContent += outputEntry;
+            document.getElementById('command-input').value = '';
+            showMessage('Command executed successfully', 'success');
+        } else {
+            showMessage(`Command failed: ${data.error}`, 'error');
+        }
+    })
+    .catch(error => {
+        showMessage(`Execution error: ${error.message}`, 'error');
+    });
+}
+
+function showMessage(message, type) {
+    const messageDiv = document.createElement('div');
+    messageDiv.textContent = message;
+    messageDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        padding: 10px 15px;
+        border-radius: 5px;
+        color: white;
+        font-weight: bold;
+        max-width: 300px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    `;
+    
+    if (type === 'error') messageDiv.style.background = '#dc3545';
+    else if (type === 'success') messageDiv.style.background = '#28a745';
+    else messageDiv.style.background = '#17a2b8';
+    
+    document.body.appendChild(messageDiv);
+    
+    setTimeout(() => {
+        if (document.body.contains(messageDiv)) {
+            document.body.removeChild(messageDiv);
+        }
+    }, 3000);
+}
+</script>
+
+{% endblock %}

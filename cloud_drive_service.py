@@ -17,6 +17,8 @@ import uuid
 import threading
 import time
 from storage_api_client import get_storage_client
+from vm_hypervisor import VMHypervisor
+from vm_web_interface import VMWebInterface
 
 class SimpleObject:
     """Simple object to convert dict to object with dot notation"""
@@ -40,6 +42,10 @@ class CloudDriveService:
         
         # Initialize storage client for distributed storage
         self.storage_client = get_storage_client()
+        
+        # Initialize VM Hypervisor
+        self.vm_hypervisor = VMHypervisor()
+        self.vm_interface = VMWebInterface(self.app, self.vm_hypervisor)
         
         # Initialize storage directory
         os.makedirs(self.storage_path, exist_ok=True)
