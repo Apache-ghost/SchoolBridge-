@@ -729,7 +729,7 @@ class UserSecurityService(cloudsecurity_pb2_grpc.UserSecurityServiceServicer):
 def run():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     cloudsecurity_pb2_grpc.add_UserSecurityServiceServicer_to_server(UserSecurityService(), server)
-    server.add_insecure_port('[::]:51234')
+    server.add_insecure_port('0.0.0.0:51234')
     print('🚀 Starting Cloud Security Server on port 51234 ............', end='')
     server.start()
     print('[OK]')

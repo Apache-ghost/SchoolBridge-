@@ -3,7 +3,7 @@ import random
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from params import from_email, from_password
+from params import from_email, app_password
 
 def hash_password(password):
     return bcrypt.hashpw(password.encode('utf-8'), 
