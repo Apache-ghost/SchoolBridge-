@@ -20,6 +20,16 @@ vm-network-simulation/
 └── logs/                       # System logs
 ```
 
+<img width="1918" height="907" alt="verificationcodeemail" src="https://github.com/user-attachments/assets/bbf6bbed-66e9-4cfb-9dc5-45265dd389e3" />
+<img width="1402" height="948" alt="login" src="https://github.com/user-attachments/assets/e1c357b8-6848-4a13-b30d-30ad59b99dcf" />
+
+<img width="1897" height="972" alt="dashboard" src="https://github.com/user-attachments/assets/9a7bd24b-a312-41cc-8259-ad7e385a3c30" />
+<img width="956" height="753" alt="network" src="https://github.com/user-attachments/assets/39312c8b-ee4f-4526-ab67-7976204fe361" />
+<img width="840" height="870" alt="networkchunk" src="https://github.com/user-attachments/assets/add78417-1cfd-48a3-a634-27452304847f" />
+<img width="773" height="775" alt="bit stream" src="https://github.com/user-attachments/assets/4cd40385-7ca6-4f46-aae2-9b6ca1dff5bc" />
+
+
+
 ## Prerequisites
 
 - Python 3.8 or higher
