@@ -22,12 +22,19 @@ A comprehensive gRPC-based security service with user authentication, enrollment
 - **Expiration handling** (10 minutes)
 - **Attempt limiting** (max 5 attempts)
 - **Resend functionality**
+<img width="1557" height="978" alt="cloud security server" src="https://github.com/user-attachments/assets/0a198565-b9f1-476e-90e9-539a904fba8d" />
+<img width="1526" height="952" alt="client 1" src="https://github.com/user-attachments/assets/c8e84ab2-4716-4964-a045-8c38feb47517" />
+<img width="1538" height="946" alt="client2" src="https://github.com/user-attachments/assets/b059ca49-23c7-4967-90b3-834c9440b16c" />
+<img width="1420" height="952" alt="client3" src="https://github.com/user-attachments/assets/34ab2806-b672-4731-989e-f46464a4d19d" />
+<img width="1532" height="940" alt="cloudend" src="https://github.com/user-attachments/assets/bf8a3916-4a0e-4520-86b0-efd5bf7811a5" />
 
 ### 🔒 Security Features
 - **bcrypt password hashing**
 - **Session token management**
 - **Secure credential storage**
 - **Client information tracking**
+
+  
 
 ## 📁 Project Structure
 
