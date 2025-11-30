@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VM Cloud Storage - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .navbar {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 0 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+        }
+
+        .navbar-brand {
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+
+        .navbar-user {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .storage-indicator {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+        }
+
+        .storage-bar {
+            width: 100px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            margin: 5px 0;
+            overflow: hidden;
+        }
+
+        .storage-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #27ae60, #2ecc71);
+            border-radius: 2px;
+            transition: width 0.3s;
+        }
+
+        .user-menu {
+            position: relative;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: #3498db;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 50px;
+            right: 0;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            min-width: 180px;
+            display: none;
+            z-index: 1000;
+        }
+
+        .dropdown-menu a {
+            display: block;
+            padding: 12px 15px;
+            color: #34495e;
+            text-decoration: none;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .dropdown-menu a:hover {
+            background: #f8f9fa;
+        }
+
+        .dropdown-menu a:last-child {
+            border-bottom: none;
+            color: #e74c3c;
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* File Upload Area */
+        .upload-area {
+            background: white;
+            border: 3px dashed #bdc3c7;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .upload-area:hover,
+        .upload-area.dragover {
+            border-color: #3498db;
+            background: #f8f9fa;
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            color: #bdc3c7;
+            margin-bottom: 15px;
+        }
+
+        .upload-area:hover .upload-icon {
+            color: #3498db;
+        }
+
+        /* File Manager */
+        .file-manager {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .file-manager-header {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 1px solid #e1e8ed;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-manager-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .file-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            opacity: 0.9;
+        }
+
+        /* File Grid/List */
+        .file-view-toggle {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e1e8ed;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .view-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .view-btn {
+            padding: 8px 12px;
+            border: 1px solid #e1e8ed;
+            background: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .view-btn.active {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+
+        .file-grid {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .file-list {
+            padding: 0;
+        }
+
+        .file-item {
+            background: white;
+            border: 1px solid #e1e8ed;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .file-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border-color: #3498db;
+        }
+
+        .file-item.selected {
+            border-color: #3498db;
+            background: #f8f9fa;
+        }
+
+        .file-icon {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .file-name {
+            font-weight: 500;
+            color: #2c3e50;
+            margin-bottom: 5px;
+            word-break: break-word;
+        }
+
+        .file-size {
+            font-size: 0.85em;
+            color: #7f8c8d;
+        }
+
+        .file-date {
+            font-size: 0.8em;
+            color: #95a5a6;
+        }
+
+        /* List View */
+        .file-list-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            border-bottom: 1px solid #ecf0f1;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .file-list-item:hover {
+            background: #f8f9fa;
+        }
+
+        .file-list-item:last-child {
+            border-bottom: none;
+        }
+
+        .file-list-icon {
+            font-size: 1.5em;
+            margin-right: 15px;
+            width: 30px;
+        }
+
+        .file-list-info {
+            flex: 1;
+        }
+
+        .file-list-name {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .file-list-meta {
+            font-size: 0.85em;
+            color: #7f8c8d;
+        }
+
+        .file-list-size {
+            margin-left: 15px;
+            color: #95a5a6;
+            font-size: 0.9em;
+        }
+
+        /* Context Menu */
+        .context-menu {
+            position: absolute;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            padding: 5px 0;
+            min-width: 150px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .context-menu-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #34495e;
+        }
+
+        .context-menu-item:hover {
+            background: #f8f9fa;
+        }
+
+        .context-menu-item.danger {
+            color: #e74c3c;
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            padding: 30px;
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .modal-footer {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        /* Progress Bar */
+        .progress {
+            background: #ecf0f1;
+            border-radius: 10px;
+            height: 8px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2980b9);
+            border-radius: 10px;
+            transition: width 0.3s;
+            width: 0%;
+        }
+
+        /* Status Messages */
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+
+        .alert-success {
+            background: #d5f4e6;
+            color: #27ae60;
+            border: 1px solid #27ae60;
+        }
+
+        .alert-error {
+            background: #fadbd8;
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+        }
+
+        .alert-warning {
+            background: #fef9e7;
+            color: #f39c12;
+            border: 1px solid #f39c12;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #7f8c8d;
+        }
+
+        .empty-state-icon {
+            font-size: 4em;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .navbar-content {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .file-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 10px;
+                padding: 15px;
+            }
+
+            .container {
+                padding: 10px;
+            }
+        }
+
+        /* File Type Icons */
+        .icon-image { color: #e67e22; }
+        .icon-document { color: #3498db; }
+        .icon-spreadsheet { color: #27ae60; }
+        .icon-presentation { color: #e74c3c; }
+        .icon-archive { color: #9b59b6; }
+        .icon-video { color: #e91e63; }
+        .icon-audio { color: #ff9800; }
+        .icon-code { color: #34495e; }
+        .icon-file { color: #95a5a6; }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .results {
+            grid-column: 1 / -1;
+            margin-top: 20px;
+        }
+
+        .results-content {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e1e8ed;
+        }
+
+        .file-item {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #3498db;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .file-item h4 {
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .file-meta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+
+        .node-item {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #27ae60;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .node-item.offline {
+            border-left-color: #e74c3c;
+            opacity: 0.7;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #ecf0f1;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2980b9);
+            transition: width 0.3s;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .alert.success {
+            background: #d5f4e6;
+            color: #27ae60;
+            border: 1px solid #27ae60;
+        }
+
+        .alert.error {
+            background: #fadbd8;
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <div class="navbar-brand">
+                🌐 VM Cloud Storage
+            </div>
+            <div class="navbar-user">
+                <div class="storage-indicator">
+                    <div id="storage-text">Loading...</div>
+                    <div class="storage-bar">
+                        <div class="storage-fill" id="storage-fill"></div>
+                    </div>
+                </div>
+                <div class="user-menu">
+                    <div class="user-avatar" id="user-avatar" onclick="toggleUserMenu()">
+                        U
+                    </div>
+                    <div class="dropdown-menu" id="user-dropdown">
+                        <a href="#" onclick="showProfile()">👤 Profile</a>
+                        <a href="#" onclick="showSettings()">⚙️ Settings</a>
+                        <a href="#" onclick="logout()">🚪 Logout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Upload Area -->
+        <div class="upload-area" onclick="document.getElementById('file-input').click()" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+            <div class="upload-icon">📁</div>
+            <h3>Drag & drop files here or click to browse</h3>
+            <p>Supports all file types up to 100MB</p>
+            <input type="file" id="file-input" multiple style="display: none;" onchange="handleFileSelect(event)">
+        </div>
+
+        <!-- Status Messages -->
+        <div id="message-area"></div>
+
+        <div class="main-content">
+            <!-- File Upload Panel -->
+            <div class="panel">
+                <h2>⬆️ Upload File</h2>
+                <form id="upload-form">
+                    <div class="form-group">
+                        <label for="node-id">Node ID:</label>
+                        <select id="node-id" required>
+                            <option value="">Select a node...</option>
+                            <option value="web_api">Web API</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="file-input">Select File:</label>
+                        <input type="file" id="file-input" required>
+                    </div>
+                    <button type="submit" class="btn" id="upload-btn">
+                        Upload File
+                    </button>
+                </form>
+            </div>
+
+            <!-- File Management Panel -->
+            <div class="panel">
+                <h2>📁 File Management</h2>
+                <div class="form-group">
+                    <label for="filter-node">Filter by Node:</label>
+                    <select id="filter-node">
+                        <option value="">All visible files</option>
+                        <option value="web_api">Web API</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="loadFiles()">🔄 Refresh Files</button>
+            </div>
+
+            <!-- Node Management Panel -->
+            <div class="panel">
+                <h2>🖥️ Node Management</h2>
+                
+                <!-- Node Creation Form -->
+                <div class="form-group">
+                    <label for="nodeId">Node ID:</label>
+                    <input type="text" id="nodeId" name="node_id" placeholder="VM4">
+                </div>
+                <div class="form-group">
+                    <label for="nodeHost">Host:</label>
+                    <input type="text" id="nodeHost" name="host" value="localhost">
+                </div>
+                <div class="form-group">
+                    <label for="nodePort">Port:</label>
+                    <input type="number" id="nodePort" name="port" placeholder="8084">
+                </div>
+                <div class="form-group">
+                    <label for="cpuCores">CPU Cores:</label>
+                    <input type="number" id="cpuCores" name="cpu_cores" value="4" min="1" max="32">
+                </div>
+                <div class="form-group">
+                    <label for="ramGb">RAM (GB):</label>
+                    <input type="number" id="ramGb" name="ram_gb" value="8" min="1" max="128">
+                </div>
+                <div class="form-group">
+                    <label for="storageGb">Storage (GB):</label>
+                    <input type="number" id="storageGb" name="storage_gb" value="500" min="10" max="10000">
+                </div>
+                <button class="btn" onclick="createNode()">🚀 Create Node</button>
+                <button class="btn" onclick="loadNodes()" style="margin-top: 10px;">🔄 Refresh Nodes</button>
+            </div>
+
+            <!-- Quick Actions Panel -->
+            <div class="panel">
+                <h2>⚡ Quick Actions</h2>
+                <div class="form-group">
+                    <label for="file-id-input">File ID for Download:</label>
+                    <input type="text" id="file-id-input" placeholder="Enter file ID...">
+                </div>
+                <button class="btn" onclick="downloadFile()">⬇️ Download File</button>
+            </div>
+
+            <!-- Results Panel -->
+            <div class="panel results">
+                <h2 id="results-title">📋 Results</h2>
+                <div class="results-content" id="results-content">
+                    <p>Welcome to the VM Simulation Dashboard! Use the panels above to interact with the distributed file system.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    const API_BASE = 'http://localhost:8080/api';
+        let currentNodes = [];
+        let currentFiles = [];
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            checkApiStatus();
+            loadNodes();
+            loadFiles();
+            
+            // Set up form handlers
+            document.getElementById('upload-form').addEventListener('submit', handleFileUpload);
+            document.getElementById('filter-node').addEventListener('change', loadFiles);
+        });
+
+        // Check API status
+        async function checkApiStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/status`);
+                const data = await response.json();
+                
+                const statusEl = document.getElementById('api-status');
+                if (data.controller_connected) {
+                    statusEl.textContent = '✅ API Connected';
+                    statusEl.style.background = 'rgba(39, 174, 96, 0.2)';
+                } else {
+                    statusEl.textContent = '❌ Controller Offline';
+                    statusEl.style.background = 'rgba(231, 76, 60, 0.2)';
+                }
+            } catch (error) {
+                document.getElementById('api-status').textContent = '❌ API Offline';
+                document.getElementById('api-status').style.background = 'rgba(231, 76, 60, 0.2)';
+            }
+        }
+
+        // Load nodes
+        async function loadNodes() {
+            try {
+                showLoading('Loading nodes...');
+                const response = await fetch(`${API_BASE}/nodes`);
+                const data = await response.json();
+                
+                currentNodes = data.nodes || [];
+                updateNodeSelectors();
+                displayNodes(data);
+                
+                document.getElementById('node-count').textContent = `📊 Nodes: ${data.online_nodes}/${data.total_nodes}`;
+            } catch (error) {
+                showError('Failed to load nodes: ' + error.message);
+            }
+        }
+        
+        // Create node function
+        async function createNode() {
+            const nodeData = {
+                node_id: document.getElementById('nodeId').value,
+                host: document.getElementById('nodeHost').value,
+                port: parseInt(document.getElementById('nodePort').value),
+                cpu_cores: parseInt(document.getElementById('cpuCores').value),
+                cpu_speed: 2.5, // Default value
+                ram_gb: parseInt(document.getElementById('ramGb').value),
+                storage_gb: parseInt(document.getElementById('storageGb').value),
+                bandwidth_mbps: 100 // Default value
+            };
+            
+            if (!nodeData.node_id || !nodeData.host || !nodeData.port) {
+                showError('Please fill in all required fields (Node ID, Host, Port)');
+                return;
+            }
+            
+            try {
+                showLoading('Creating node...');
+                const response = await fetch(`${API_BASE}/nodes`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(nodeData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    if (result.auto_started) {
+                        showSuccess(`Node ${nodeData.node_id} created and started in new terminal! 🚀`);
+                    } else {
+                        showSuccess(`Node ${nodeData.node_id} created successfully! ${result.message}`);
+                    }
+                    // Clear form
+                    document.getElementById('nodeId').value = '';
+                    document.getElementById('nodePort').value = '';
+                    // Refresh nodes list after a short delay to allow node to start
+                    setTimeout(() => {
+                        loadNodes();
+                    }, 2000);
+                } else {
+                    showError(`Failed to create node: ${result.error}`);
+                }
+            } catch (error) {
+                console.error('Error creating node:', error);
+                showError('Error creating node: ' + error.message);
+            }
+        }
+
+        // Load files
+        async function loadFiles() {
+            try {
+                showLoading('Loading files...');
+                const nodeId = document.getElementById('filter-node').value || 'web_api';
+                const response = await fetch(`${API_BASE}/files?node_id=${nodeId}`);
+                const data = await response.json();
+                
+                currentFiles = data.files || [];
+                displayFiles(data);
+                
+                document.getElementById('file-count').textContent = `📁 Files: ${data.total_files}`;
+            } catch (error) {
+                showError('Failed to load files: ' + error.message);
+            }
+        }
+
+        // Update node selectors
+        function updateNodeSelectors() {
+            const selectors = ['node-id', 'filter-node'];
+            
+            selectors.forEach(selectorId => {
+                const select = document.getElementById(selectorId);
+                const currentValue = select.value;
+                
+                // Clear existing options except first
+                while (select.children.length > 1) {
+                    select.removeChild(select.lastChild);
+                }
+                
+                // Add node options
+                currentNodes.forEach(node => {
+                    const option = document.createElement('option');
+                    option.value = node.node_id;
+                    option.textContent = `${node.node_id} (${node.status})`;
+                    select.appendChild(option);
+                });
+                
+                // Restore selection if still valid
+                if (currentValue) {
+                    select.value = currentValue;
+                }
+            });
+        }
+
+        // Display nodes
+        function displayNodes(data) {
+            let html = `<h3>📊 Total Nodes: ${data.total_nodes} (${data.online_nodes} online, ${data.total_nodes - data.online_nodes} offline)</h3>`;
+            
+            if (data.nodes.length === 0) {
+                html += '<p>No nodes found. Create your first node using the form above!</p>';
+            } else {
+                data.nodes.forEach(node => {
+                    const isOnline = node.status === 'online';
+                    const statusIcon = isOnline ? '🟢' : '🔴';
+                    const statusClass = isOnline ? 'online' : 'offline';
+                    
+                    html += `
+                        <div class="node-item ${statusClass}">
+                            <div class="node-header">
+                                <h4>${statusIcon} ${node.node_id}</h4>
+                                <span class="status-badge status-${node.status}">${node.status.toUpperCase()}</span>
+                            </div>
+                            <div class="node-details">
+                                <div class="node-info">
+                                    <div><strong>🌐 Host:</strong> ${node.host}:${node.port}</div>
+                                    <div><strong>💾 Resources:</strong> ${node.cpu_cores || 'N/A'} cores, ${node.ram_gb || 'N/A'}GB RAM, ${node.storage_gb || 'N/A'}GB storage</div>
+                                    <div><strong>📡 Bandwidth:</strong> ${node.bandwidth_mbps || 'N/A'} Mbps</div>
+                                    <div><strong>🔗 MAC:</strong> ${node.mac_address || 'Auto-generated'}</div>
+                                </div>
+                                ${isOnline && node.resources ? `
+                                    <div class="resource-usage">
+                                        <div><strong>CPU Usage:</strong> ${node.resources.cpu_usage || 0}%</div>
+                                        <div><strong>Memory Usage:</strong> ${node.resources.memory_usage || 0}%</div>
+                                        <div><strong>Storage Usage:</strong> ${node.resources.storage_usage || 0}%</div>
+                                        <div><strong>Last Heartbeat:</strong> ${node.last_heartbeat || 'Never'}</div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                            <div class="node-actions">
+                                ${!isOnline ? `<button class="btn btn-small" onclick="startNode('${node.node_id}')">🚀 Start Node</button>` : ''}
+                                <button class="btn btn-small" onclick="viewNodeFiles('${node.node_id}')">📁 View Files</button>
+                                <button class="btn btn-small" onclick="showNodeDetails('${node.node_id}')">ℹ️ Details</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            showResults('Node Management', html);
+        }
+
+        // Display files
+        function displayFiles(data) {
+            let html = `<h3>Total Files: ${data.total_files} (${formatBytes(data.total_size)})</h3>`;
+            
+            if (data.files.length === 0) {
+                html += '<p>No files found.</p>';
+            } else {
+                data.files.forEach(file => {
+                    html += `
+                        <div class="file-item">
+                            <h4>${file.filename}</h4>
+                            <div class="file-meta">
+                                <div><strong>ID:</strong> ${file.file_id}</div>
+                                <div><strong>Size:</strong> ${formatBytes(file.size)}</div>
+                                <div><strong>Chunks:</strong> ${file.chunk_count}</div>
+                                <div><strong>Uploaded:</strong> ${file.upload_date}</div>
+                                <div><strong>By:</strong> ${file.uploading_node}</div>
+                                <div><strong>Replicas:</strong> ${file.online_replicas}/${file.replica_nodes.length}</div>
+                            </div>
+                            <button class="btn" onclick="downloadFileById('${file.file_id}')" style="margin-top: 10px; width: auto; padding: 8px 15px;">⬇️ Download</button>
+                        </div>
+                    `;
+                });
+            }
+            
+            showResults('Files', html);
+        }
+
+        // Handle file upload
+        async function handleFileUpload(event) {
+            event.preventDefault();
+            
+            const nodeId = document.getElementById('node-id').value;
+            const fileInput = document.getElementById('file-input');
+            const file = fileInput.files[0];
+            
+            if (!nodeId || !file) {
+                showError('Please select a node and file.');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('node_id', nodeId);
+            
+            const uploadBtn = document.getElementById('upload-btn');
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<span class="loading"></span> Uploading...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess(`File uploaded successfully! File ID: ${data.file_id}`);
+                    fileInput.value = '';
+                    loadFiles(); // Refresh file list
+                } else {
+                    showError('Upload failed: ' + data.message);
+                }
+            } catch (error) {
+                showError('Upload failed: ' + error.message);
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = 'Upload File';
+            }
+        }
+
+        // Download file by ID
+        async function downloadFile() {
+            const fileId = document.getElementById('file-id-input').value.trim();
+            if (!fileId) {
+                showError('Please enter a file ID.');
+                return;
+            }
+            downloadFileById(fileId);
+        }
+
+        // Download file by ID (helper)
+        async function downloadFileById(fileId) {
+            const nodeId = document.getElementById('filter-node').value || 'web_api';
+            
+            try {
+                showLoading('Downloading file...');
+                const url = `${API_BASE}/download/${fileId}?node_id=${nodeId}`;
+                
+                // Create a temporary link to trigger download
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = '';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showSuccess('Download started!');
+            } catch (error) {
+                showError('Download failed: ' + error.message);
+            }
+        }
+
+        // Utility functions
+        function showResults(title, content) {
+            document.getElementById('results-title').textContent = `📋 ${title}`;
+            document.getElementById('results-content').innerHTML = content;
+        }
+
+        function showLoading(message) {
+            showResults('Loading', `<div class="loading"></div> ${message}`);
+        }
+
+        function showSuccess(message) {
+            const alert = `<div class="alert success">${message}</div>`;
+            document.getElementById('results-content').innerHTML = alert + document.getElementById('results-content').innerHTML;
+        }
+
+        function showError(message) {
+            const alert = `<div class="alert error">${message}</div>`;
+            document.getElementById('results-content').innerHTML = alert + document.getElementById('results-content').innerHTML;
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Start node function
+        async function startNode(nodeId) {
+            try {
+                showLoading(`Starting node ${nodeId}...`);
+                const response = await fetch(`${API_BASE}/nodes/${nodeId}/start`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showSuccess(`Node ${nodeId} started in new terminal! 🚀 ${result.message || ''}`);
+                    // Refresh nodes list after a short delay to allow node to start
+                    setTimeout(() => {
+                        loadNodes();
+                    }, 2000);
+                } else {
+                    showError(`Failed to start node: ${result.error}`);
+                }
+            } catch (error) {
+                console.error('Error starting node:', error);
+                showError('Error starting node: ' + error.message);
+            }
+        }
+        
+        // View node files function
+        function viewNodeFiles(nodeId) {
+            document.getElementById('filter-node').value = nodeId;
+            loadFiles();
+            showSuccess(`Showing files for node: ${nodeId}`);
+        }
+        
+        // Show node details function
+        function showNodeDetails(nodeId) {
+            const node = currentNodes.find(n => n.node_id === nodeId);
+            if (node) {
+                const details = `
+                    <h3>📋 Node Details: ${node.node_id}</h3>
+                    <div class="node-item">
+                        <div class="node-details">
+                            <div><strong>🆔 Node ID:</strong> ${node.node_id}</div>
+                            <div><strong>🌐 Host:</strong> ${node.host}</div>
+                            <div><strong>🔌 Port:</strong> ${node.port}</div>
+                            <div><strong>📊 Status:</strong> ${node.status}</div>
+                            <div><strong>💻 CPU Cores:</strong> ${node.cpu_cores || 'N/A'}</div>
+                            <div><strong>🧠 RAM:</strong> ${node.ram_gb || 'N/A'} GB</div>
+                            <div><strong>💾 Storage:</strong> ${node.storage_gb || 'N/A'} GB</div>
+                            <div><strong>📡 Bandwidth:</strong> ${node.bandwidth_mbps || 'N/A'} Mbps</div>
+                            <div><strong>🔗 MAC Address:</strong> ${node.mac_address || 'Auto-generated'}</div>
+                            ${node.last_heartbeat ? `<div><strong>💓 Last Heartbeat:</strong> ${node.last_heartbeat}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+                showResults('Node Details', details);
+            } else {
+                showError('Node not found');
+            }
+        }
+        
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            checkApiStatus();
+            loadNodes();
+        }, 30000);
+    </script>
+</body>
+</html>

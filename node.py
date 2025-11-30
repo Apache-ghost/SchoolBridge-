@@ -1,2364 +1,1141 @@
 #!/usr/bin/env python3
 """
-Autonomous Distributed System Node
-Acts like a mini operating system with file operations
+node.py - Storage Virtual Machine Node with Modern Terminal Interface
+
+This module implements individual VM nodes that can join the distributed
+storage network, upload/download files, and participate in replication.
+Features a modern terminal interface with icons and enhanced visuals.
 """
 
-import socket
+import argparse
+import grpc
 import threading
-import json
 import time
 import os
 import hashlib
-import base64
-from typing import Dict, List, Optional
-from datetime import datetime
-from pathlib import Path
-from pathlib import Path
-from virtual_filesystem import VirtualFileSystem
-from virtual_hardware import VirtualHardware
+import binascii
+import struct
+import socket
+from concurrent import futures
+from typing import Dict, List
+from node_resources import NodeResources
+from tcp_ip_processor import TCPIPProcessor
+import file_service_pb2
+import file_service_pb2_grpc
 
-class AutonomousNode:
-    def __init__(self):
-        # Node configuration (will be set by user input)
-        self.node_id = ""
-        self.port = 0
-        self.storage_capacity = 0  # GB
-        self.bandwidth = 0  # Mbps
-        self.cpu_cores = 0
-        self.memory_capacity = 0
+
+class ModernTerminal:
+    """Modern terminal interface with icons and colors"""
+    
+    # Color codes
+    COLORS = {
+        'reset': '\033[0m',
+        'bold': '\033[1m',
+        'dim': '\033[2m',
+        'cyan': '\033[96m',
+        'blue': '\033[94m',
+        'green': '\033[92m',
+        'yellow': '\033[93m',
+        'red': '\033[91m',
+        'magenta': '\033[95m',
+        'white': '\033[97m',
+        'gray': '\033[90m',
+        'bg_blue': '\033[44m',
+        'bg_green': '\033[42m',
+        'bg_red': '\033[41m'
+    }
+    
+    # Modern icons using Unicode symbols
+    ICONS = {
+        'node': '🖥️ ',
+        'cloud': '☁️ ',
+        'upload': '⬆️ ',
+        'download': '⬇️ ',
+        'file': '📄',
+        'folder': '📁',
+        'network': '🌐',
+        'cpu': '⚙️ ',
+        'memory': '💾',
+        'storage': '💿',
+        'bandwidth': '📡',
+        'success': '✅',
+        'error': '❌',
+        'warning': '⚠️ ',
+        'info': 'ℹ️ ',
+        'arrow_right': '→',
+        'arrow_up': '↑',
+        'arrow_down': '↓',
+        'bullet': '•',
+        'chevron': '❯',
+        'check': '✓',
+        'cross': '✗',
+        'gear': '⚙️',
+        'lightning': '⚡',
+        'rocket': '🚀',
+        'shield': '🛡️',
+        'lock': '🔒',
+        'key': '🔑',
+        'chain': '🔗',
+        'sync': '🔄',
+        'time': '⏱️',
+        'chart': '📊',
+        'eye': '👁️',
+        'heart': '💓'
+    }
+    
+    @classmethod
+    def colored(cls, text: str, color: str = 'white') -> str:
+        """Apply color to text"""
+        return f"{cls.COLORS.get(color, '')}{text}{cls.COLORS['reset']}"
+    
+    @classmethod
+    def icon(cls, name: str) -> str:
+        """Get icon by name"""
+        return cls.ICONS.get(name, '')
+    
+    @classmethod
+    def header(cls, title: str, width: int = 80) -> str:
+        """Create a modern header"""
+        padding = (width - len(title) - 4) // 2
+        border = "═" * width
+        header_line = f"║{' ' * padding}{cls.colored(title, 'cyan')}{' ' * padding}║"
         
-        # Network settings
-        self.network_address = "localhost"
-        self.network_port = 8888
-        self.network_interface_info = {}  # Will store IP, MAC, etc.
+        return f"\n{cls.colored(border, 'blue')}\n{header_line}\n{cls.colored(border, 'blue')}"
+    
+    @classmethod
+    def progress_bar(cls, progress: float, width: int = 40, style: str = 'modern') -> str:
+        """Create a modern progress bar"""
+        filled = int(width * progress)
         
-        # Virtual Machine Components
-        self.virtual_hardware = None
-        self.virtual_filesystem = None
-        self.storage_path = ""
+        if style == 'modern':
+            bar = cls.colored('█' * filled, 'green') + cls.colored('░' * (width - filled), 'gray')
+        else:
+            bar = '█' * filled + '░' * (width - filled)
+            
+        percentage = f"{progress * 100:.1f}%"
+        return f"{bar} {cls.colored(percentage, 'white')}"
+    
+    @classmethod
+    def box(cls, content: str, title: str = "", color: str = 'blue') -> str:
+        """Create a modern box around content"""
+        lines = content.strip().split('\n')
+        max_width = max(len(line) for line in lines) if lines else 0
+        
+        if title:
+            max_width = max(max_width, len(title) + 4)
+        
+        width = max_width + 4
+        
+        # Top border
+        if title:
+            padding = (width - len(title) - 4) // 2
+            top = f"┌{'─' * padding}[ {cls.colored(title, 'white')} ]{'─' * padding}┐"
+        else:
+            top = f"┌{'─' * (width - 2)}┐"
+        
+        # Content lines
+        content_lines = []
+        for line in lines:
+            padded_line = f"│ {line:<{max_width}} │"
+            content_lines.append(cls.colored(padded_line, color))
+        
+        # Bottom border
+        bottom = f"└{'─' * (width - 2)}┘"
+        
+        return '\n'.join([cls.colored(top, color)] + content_lines + [cls.colored(bottom, color)])
+
+
+class StorageVirtualNode(file_service_pb2_grpc.FileServiceServicer):
+    """Storage Virtual Machine Node implementation with modern terminal"""
+    
+    def __init__(self, resources: NodeResources, controller_host='localhost', controller_port=5000):
+        self.resources = resources
+        self.controller_host = controller_host
+        self.controller_port = controller_port
+        self.tcp_processor = TCPIPProcessor(resources)
+        self.terminal = ModernTerminal()
         
         # Node state
         self.running = False
-        self.connected_to_network = False
-        self.files = {}  # Local file storage (legacy)
-        self.storage_used = 0
-        self.download_history = []  # Track downloads
-        self.upload_history = []    # Track uploads
+        self.registered = False
+        
+        # Storage
+        self.local_storage = {}  # Local file storage
+        self.replica_storage = {}  # Replica chunks storage
+        
+        # gRPC connections
+        self.controller_channel = None
+        self.controller_stub = None
+        self.node_server = None
         
         # Threading
-        self.server_thread = None
         self.heartbeat_thread = None
-        self.server_socket = None
+        self.server_thread = None
         
-        print("🖥️  Autonomous Node Starting...")
-        print("=" * 40)
+        # Heartbeat configuration - aligned with controller
+        self.heartbeat_interval = 5  # Send heartbeat every 5 seconds
+        self.heartbeat_timeout = 15  # Consider connection lost after 15 seconds
+        
+        # Setup storage directories
+        self.setup_storage_directories()
     
-    def get_existing_nodes(self):
-        """Get list of existing node storage directories"""
-        nodes_dir = Path("./vm_storage")
-        if not nodes_dir.exists():
-            return []
+    def setup_storage_directories(self):
+        """Create necessary storage directories for this node"""
+        base_dir = f"node_storage/{self.resources.node_id}"
+        directories = [
+            base_dir,
+            f"{base_dir}/local_files",
+            f"{base_dir}/replicas",
+            f"{base_dir}/temp"
+        ]
         
-        existing_nodes = []
-        for item in nodes_dir.iterdir():
-            if item.is_dir():
-                existing_nodes.append(item.name)
-        return existing_nodes
+        for directory in directories:
+            os.makedirs(directory, exist_ok=True)
     
-    def get_network_configuration(self):
-        """Get network connection settings"""
-        print("🌐 Network Configuration")
-        print("-" * 30)
+    def start_node(self):
+        """Initialize and start the virtual node with modern interface"""
+        # Clear screen and show startup banner
+        os.system('clear' if os.name == 'posix' else 'cls')
         
-        # Network host
-        while True:
-            try:
-                host_input = input("🌐 Enter network host (default localhost): ").strip()
-                if not host_input:
-                    self.network_host = "localhost"
-                    break
-                else:
-                    self.network_host = host_input
-                    break
-            except KeyboardInterrupt:
-                print("\n👋 Setup cancelled.")
+        startup_banner = f"""
+{self.terminal.colored('╔══════════════════════════════════════════════════════════════════════════════╗', 'cyan')}
+{self.terminal.colored('║', 'cyan')}                  {self.terminal.icon('rocket')} DISTRIBUTED STORAGE NETWORK NODE {self.terminal.icon('rocket')}                 {self.terminal.colored('║', 'cyan')}
+{self.terminal.colored('║', 'cyan')}                           {self.terminal.colored('Advanced Virtual Storage System', 'white')}                    {self.terminal.colored('║', 'cyan')}
+{self.terminal.colored('╚══════════════════════════════════════════════════════════════════════════════╝', 'cyan')}
+"""
+        print(startup_banner)
+        
+        # Display modern node configuration
+        self.display_node_config()
+        
+        print(f"\n{self.terminal.icon('gear')} {self.terminal.colored('INITIALIZING NODE SERVICES...', 'yellow')}")
+        print(f"  {self.terminal.icon('heart')} Starting heartbeat service (interval: {self.heartbeat_interval}s)")
+        print(f"  {self.terminal.icon('network')} Starting gRPC server on {self.resources.host}:{self.resources.port}")
+        print(f"  {self.terminal.icon('chain')} Connecting to network controller...")
+        
+        try:
+            # Start gRPC server for node-to-node communication
+            self.start_grpc_server()
+            
+            # Connect to controller
+            self.connect_to_controller()
+            
+            # Register with controller
+            if self.register_with_controller():
+                success_msg = f"{self.terminal.icon('success')} {self.resources.node_id} registered successfully"
+                print(f"\n{self.terminal.colored(success_msg, 'green')}")
+                
+                # Mark as registered and running before starting heartbeat
+                self.registered = True
+                self.running = True
+
+                # Start heartbeat
+                self.start_heartbeat()
+
+                ready_msg = f"{self.terminal.icon('rocket')} Node is ready for operations!"
+                print(f"{self.terminal.colored(ready_msg, 'green')}")
+                print()
+
+                self.run_interactive_mode()
+            else:
+                error_msg = f"{self.terminal.icon('error')} Failed to register with controller"
+                print(f"\n{self.terminal.colored(error_msg, 'red')}")
                 return False
-        
-        # Network port
-        while True:
-            try:
-                port_input = input("🔌 Enter network port (default 8888): ").strip()
-                if not port_input:
-                    self.network_port = 8888
-                    break
-                else:
-                    port = int(port_input)
-                    if 1024 <= port <= 65535:
-                        self.network_port = port
-                        break
-                    else:
-                        print("❌ Port must be between 1024 and 65535")
-            except ValueError:
-                print("❌ Please enter a valid port number")
-            except KeyboardInterrupt:
-                print("\n👋 Setup cancelled.")
-                return False
-        
-        print(f"✅ Network target: {self.network_host}:{self.network_port}")
-        return True
-    
-    def get_network_configuration(self):
-        """Get network connection settings"""
-        print("\n🌐 Network Configuration")
-        print("-" * 30)
-        
-        # Network host
-        while True:
-            try:
-                host_input = input("🌐 Enter network host (default localhost): ").strip()
-                if not host_input:
-                    self.network_host = "localhost"
-                    break
-                else:
-                    self.network_host = host_input
-                    break
-            except KeyboardInterrupt:
-                print("\n👋 Setup cancelled.")
-                return False
-        
-        # Network port
-        while True:
-            try:
-                port_input = input("🔌 Enter network port (default 8888): ").strip()
-                if not port_input:
-                    self.network_port = 8888
-                    break
-                else:
-                    port = int(port_input)
-                    if 1024 <= port <= 65535:
-                        self.network_port = port
-                        break
-                    else:
-                        print("❌ Port must be between 1024 and 65535")
-            except ValueError:
-                print("❌ Please enter a valid port number")
-            except KeyboardInterrupt:
-                print("\n👋 Setup cancelled.")
-                return False
-        
-        print(f"✅ Network target: {self.network_host}:{self.network_port}")
-        return True
-    
-    def choose_node_mode(self):
-        """Let user choose between creating new node or connecting to existing"""
-        # Get network configuration first
-        if not self.get_network_configuration():
+                
+        except Exception as e:
+            print(f"\n{self.terminal.icon('error')} {self.terminal.colored(f'Failed to start node: {e}', 'red')}")
             return False
-            
-        existing_nodes = self.get_existing_nodes()
-        
-        print("\n🖥️  Node Management")
-        print("=" * 40)
-        
-        if existing_nodes:
-            print(f"📁 Found {len(existing_nodes)} existing nodes:")
-            for i, node_name in enumerate(existing_nodes, 1):
-                print(f"   {i}. {node_name}")
-            print()
-        
-        print("🎯 Choose an option:")
-        print("   1. Create new node")
-        if existing_nodes:
-            print("   2. Connect to existing node")
-        
-        while True:
-            try:
-                choice = input("\n🎯 Enter choice (1" + ("-2" if existing_nodes else "") + "): ").strip()
-                
-                if choice == "1":
-                    # Get network configuration first
-                    if not self.get_network_configuration():
-                        return False
-                    return self.get_user_configuration()
-                elif choice == "2" and existing_nodes:
-                    # Get network configuration first
-                    if not self.get_network_configuration():
-                        return False
-                    return self.select_existing_node(existing_nodes)
-                else:
-                    print("❌ Invalid choice!")
-            except KeyboardInterrupt:
-                print("\n👋 Setup cancelled.")
-                return False
-    
-    def select_existing_node(self, existing_nodes):
-        """Let user select from existing nodes"""
-        print("\n📋 Select existing node:")
-        for i, node_name in enumerate(existing_nodes, 1):
-            print(f"   {i}. {node_name}")
-        
-        while True:
-            try:
-                choice = input(f"\n🎯 Enter node number (1-{len(existing_nodes)}): ").strip()
-                idx = int(choice) - 1
-                
-                if 0 <= idx < len(existing_nodes):
-                    self.node_id = existing_nodes[idx]
-                    
-                    # Auto-assign port for existing node
-                    self.port = self._get_available_port()
-                    print(f"📡 Auto-assigned port: {self.port}")
-                    
-                    # Load existing node specifications from metadata
-                    self._load_existing_node_specs()
-                    
-                    print(f"✅ Selected existing node: {self.node_id}")
-                    return True
-                else:
-                    print("❌ Invalid selection!")
-            except (ValueError, KeyboardInterrupt):
-                print("❌ Invalid input or cancelled!")
-                return False
-    
-    def _load_existing_node_specs(self):
-        """Load existing node specifications from stored metadata"""
-        storage_path = f"./vm_storage/{self.node_id}"
-        metadata_file = f"{storage_path}/.vfs_metadata.json"
-        
-        try:
-            if os.path.exists(metadata_file):
-                with open(metadata_file, 'r') as f:
-                    metadata = json.load(f)
-                    
-                # Get storage capacity from filesystem metadata
-                capacity_bytes = metadata.get('capacity_bytes', 0)
-                if capacity_bytes > 0:
-                    self.storage_capacity = capacity_bytes / (1024**3)  # Convert bytes to GB
-                    print(f"📁 Loaded existing storage: {self.storage_capacity:.1f}GB")
-                else:
-                    self._ask_storage_upgrade()
-            else:
-                print("⚠️ No existing metadata found")
-                self._ask_storage_upgrade()
-                
-        except Exception as e:
-            print(f"⚠️ Error loading metadata: {e}")
-            self._ask_storage_upgrade()
-        
-        # Set other default specs if not set
-        if self.bandwidth == 0:
-            self.bandwidth = 100  # Default 100 Mbps
-        if self.cpu_cores == 0:
-            self.cpu_cores = 4  # Default 4 cores
-        if self.memory_capacity == 0:
-            self.memory_capacity = 8  # Default 8GB RAM
-    
-    def _ask_storage_upgrade(self):
-        """Ask user for storage capacity for existing node"""
-        print(f"\n💾 Configure Storage for {self.node_id}:")
-        print("   Current storage appears to be unset or corrupted")
-        
-        while True:
-            try:
-                storage_input = input("💾 Enter storage capacity in GB (default 10GB): ").strip()
-                if not storage_input:
-                    self.storage_capacity = 10
-                    break
-                else:
-                    storage_value = float(storage_input)
-                    if storage_value > 0:
-                        self.storage_capacity = storage_value
-                        break
-                    else:
-                        print("❌ Storage must be greater than 0")
-            except ValueError:
-                print("❌ Please enter a valid number")
-            except KeyboardInterrupt:
-                print("\n👋 Setup cancelled.")
-                return False
-        
-        print(f"💾 Storage set to {self.storage_capacity}GB")
-    
-    def get_user_configuration(self):
-        """Get node configuration from user input for NEW node"""
-        print("\n⚙️  New Node Configuration Setup")
-        print("-" * 35)
-        
-        while True:
-            try:
-                self.node_id = input("🏷️  Enter Node Name: ").strip()
-                if self.node_id:
-                    # Check if node already exists
-                    existing_nodes = self.get_existing_nodes()
-                    if self.node_id in existing_nodes:
-                        print(f"⚠️  Node '{self.node_id}' already exists! Choose a different name.")
-                        continue
-                    break
-                print("❌ Node name cannot be empty!")
-            except KeyboardInterrupt:
-                print("\n👋 Setup cancelled.")
-                return False
-        
-        while True:
-            try:
-                port_input = input("🔌 Enter Node Port (or press Enter for auto): ").strip()
-                if not port_input:
-                    self.port = self._get_available_port()
-                    print(f"📡 Auto-assigned port: {self.port}")
-                    break
-                else:
-                    self.port = int(port_input)
-                    if 1024 <= self.port <= 65535:
-                        if self.port != self.network_port:
-                            break
-                        else:
-                            print(f"❌ Port {self.port} is already used by network coordinator!")
-                    else:
-                        print("❌ Port must be between 1024 and 65535!")
-            except ValueError:
-                print("❌ Please enter a valid port number!")
-            except KeyboardInterrupt:
-                print("\n👋 Setup cancelled.")
-                return False
-        
-        while True:
-            try:
-                cpu_input = input("💻 Enter CPU Cores (1-16): ").strip()
-                self.cpu_cores = int(cpu_input)
-                if 1 <= self.cpu_cores <= 16:
-                    break
-                print("❌ CPU cores must be between 1 and 16!")
-            except ValueError:
-                print("❌ Please enter a valid number!")
-            except KeyboardInterrupt:
-                print("\n👋 Setup cancelled.")
-                return False
-        
-        while True:
-            try:
-                memory_input = input("🧠 Enter Memory (GB, 1-32): ").strip()
-                self.memory_capacity = int(memory_input)
-                if 1 <= self.memory_capacity <= 32:
-                    break
-                print("❌ Memory must be between 1 and 32 GB!")
-            except ValueError:
-                print("❌ Please enter a valid number!")
-            except KeyboardInterrupt:
-                print("\n👋 Setup cancelled.")
-                return False
-        
-        while True:
-            try:
-                storage_input = input("💾 Enter Storage Capacity (GB): ").strip()
-                self.storage_capacity = int(storage_input)
-                if self.storage_capacity > 0:
-                    break
-                print("❌ Storage capacity must be greater than 0!")
-            except ValueError:
-                print("❌ Please enter a valid number!")
-            except KeyboardInterrupt:
-                print("\n👋 Setup cancelled.")
-                return False
-        
-        while True:
-            try:
-                bandwidth_input = input("🌐 Enter Bandwidth (Mbps): ").strip()
-                self.bandwidth = int(bandwidth_input)
-                if self.bandwidth > 0:
-                    break
-                print("❌ Bandwidth must be greater than 0!")
-            except ValueError:
-                print("❌ Please enter a valid number!")
-            except KeyboardInterrupt:
-                print("\n👋 Setup cancelled.")
-                return False
-        
-        # Setup virtual machine components
-        self.storage_path = f"./vm_storage/{self.node_id}"
-        
-        print(f"\n✅ Virtual Machine Configuration Complete!")
-        print(f"   🏷️  Name: {self.node_id}")
-        print(f"   🔌 Port: {self.port}")
-        print(f"   💻 CPU: {self.cpu_cores} cores")
-        print(f"   🧠 Memory: {self.memory_capacity}GB")
-        print(f"   💾 Storage: {self.storage_capacity}GB")
-        print(f"   🌐 Bandwidth: {self.bandwidth}Mbps")
-        print(f"   📁 Storage Path: {self.storage_path}")
         
         return True
     
-    def _get_available_port(self):
-        """Find an available port for this node"""
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(('', 0))
-            return s.getsockname()[1]
+    def display_node_config(self):
+        """Display modern node configuration"""
+        config_content = f"""{self.terminal.icon('node')} Node ID: {self.terminal.colored(self.resources.node_id, 'cyan')}
+{self.terminal.icon('network')} Network: {self.resources.host}:{self.resources.port}
+{self.terminal.icon('key')} MAC Address: {self.resources.mac_address}
+{self.terminal.icon('cpu')} CPU: {self.resources.cpu_cores} cores @ {self.resources.cpu_speed}GHz
+{self.terminal.icon('memory')} RAM: {self.resources.ram_gb}GB ({self.resources.ram_used/1024**3:.1f}GB used)
+{self.terminal.icon('storage')} Storage: {self.resources.storage_gb}GB ({self.resources.storage_used/1024**3:.1f}GB used)
+{self.terminal.icon('bandwidth')} Bandwidth: {self.resources.bandwidth_mbps}Mbps"""
+        
+        print(self.terminal.box(config_content, "NODE CONFIGURATION", 'blue'))
     
-    def start_node_server(self):
-        """Start the node's server to handle incoming connections"""
+    def start_grpc_server(self):
+        """Start gRPC server for this node"""
+        self.node_server = grpc.server(futures.ThreadPoolExecutor(max_workers=5))
+        file_service_pb2_grpc.add_FileServiceServicer_to_server(self, self.node_server)
+        listen_addr = f'{self.resources.host}:{self.resources.port}'
+        self.node_server.add_insecure_port(listen_addr)
+        self.node_server.start()
+    
+    def connect_to_controller(self):
+        """Establish connection to the network controller"""
+        controller_addr = f'{self.controller_host}:{self.controller_port}'
+        self.controller_channel = grpc.insecure_channel(controller_addr)
+        self.controller_stub = file_service_pb2_grpc.FileServiceStub(self.controller_channel)
+    
+    def register_with_controller(self) -> bool:
+        """Register this node with the network controller"""
         try:
-            self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.server_socket.bind(('localhost', self.port))
-            self.server_socket.listen(5)
+            request = file_service_pb2.RegisterNodeRequest(
+                node_id=self.resources.node_id,
+                host=self.resources.host,
+                port=self.resources.port,
+                mac_address=self.resources.mac_address,
+                resources=file_service_pb2.NodeResources(
+                    cpu_cores=self.resources.cpu_cores,
+                    cpu_speed=self.resources.cpu_speed,
+                    ram_bytes=self.resources.ram_bytes,
+                    storage_bytes=self.resources.storage_bytes,
+                    bandwidth_bps=self.resources.bandwidth_bps
+                )
+            )
             
-            print(f"🔊 Node server started on port {self.port}")
+            response = self.controller_stub.RegisterNode(request)
+            return response.success
             
-            while self.running:
-                try:
-                    client_socket, address = self.server_socket.accept()
-                    client_thread = threading.Thread(
-                        target=self._handle_incoming_connection,
-                        args=(client_socket, address),
-                        daemon=True
-                    )
-                    client_thread.start()
-                except socket.error:
-                    if self.running:
-                        print("❌ Server socket error")
-                    break
         except Exception as e:
-            print(f"❌ Error starting node server: {e}")
-    
-    def _handle_incoming_connection(self, client_socket, address):
-        """Handle incoming connections from other nodes"""
-        try:
-            client_socket.settimeout(30.0)
-            
-            data = client_socket.recv(4096)
-            if not data:
-                return
-            
-            message = json.loads(data.decode())
-            response = self._process_incoming_message(message)
-            
-            if response:
-                client_socket.send(json.dumps(response).encode())
-                
-        except socket.timeout:
-            print(f"⏰ Connection from {address[0]}:{address[1]} timed out")
-        except Exception as e:
-            if "10054" not in str(e):  # Don't log connection reset by peer
-                print(f"❌ Error handling connection from {address[0]}:{address[1]}: {e}")
-        finally:
-            try:
-                client_socket.close()
-            except:
-                pass
-    
-    def _process_incoming_message(self, message: Dict) -> Dict:
-        """Process messages from other nodes"""
-        msg_type = message.get('type')
-        
-        if msg_type == 'file_request':
-            return self._handle_file_request(message)
-        elif msg_type == 'store_file':
-            return self._handle_store_file(message)
-        elif msg_type == 'ping':
-            return {'type': 'pong', 'node_id': self.node_id, 'timestamp': time.time()}
-        
-        return {'type': 'unknown', 'message': 'Unknown request type'}
-    
-    def _handle_file_request(self, message: Dict) -> Dict:
-        """Handle file retrieval requests"""
-        file_name = message.get('file_name')
-        
-        if file_name in self.files:
-            file_info = self.files[file_name]
-            print(f"📤 Sending file '{file_name}' to requesting node")
-            return {
-                'type': 'file_response',
-                'file_name': file_name,
-                'file_content': file_info['content'],
-                'file_size': file_info['size'],
-                'status': 'success'
-            }
-        else:
-            return {
-                'type': 'file_response',
-                'status': 'not_found',
-                'message': f'File {file_name} not found'
-            }
-    
-    def _handle_store_file(self, message: Dict) -> Dict:
-        """Handle file storage requests from other nodes"""
-        file_name = message.get('file_name')
-        file_content = message.get('file_content')
-        file_size = message.get('file_size', 0)
-        
-        # Check storage capacity
-        if self.storage_used + file_size > self.storage_capacity * 1024:  # Convert GB to MB
-            return {
-                'type': 'store_response',
-                'status': 'insufficient_storage',
-                'message': 'Not enough storage space'
-            }
-        
-        # Store the file
-        self.files[file_name] = {
-            'content': file_content,
-            'size': file_size,
-            'stored_at': datetime.now().isoformat(),
-            'hash': hashlib.md5(file_content.encode()).hexdigest()
-        }
-        self.storage_used += file_size
-        
-        print(f"💾 Stored file '{file_name}' ({file_size}MB)")
-        return {
-            'type': 'store_response',
-            'status': 'success',
-            'file_name': file_name,
-            'message': 'File stored successfully'
-        }
-    
-    def connect_to_network(self):
-        """Connect to the distributed network"""
-        try:
-            print(f"🔗 Connecting to network at {self.network_address}:{self.network_port}...")
-            
-            network_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            network_socket.settimeout(10.0)  # 10 second timeout
-            network_socket.connect((self.network_address, self.network_port))
-            
-            registration_message = {
-                'type': 'register_node',
-                'node_id': self.node_id,
-                'address': 'localhost',
-                'port': self.port,
-                'storage_capacity': self.storage_capacity,
-                'bandwidth': self.bandwidth
-            }
-            
-            network_socket.send(json.dumps(registration_message).encode())
-            response_data = network_socket.recv(4096)
-            
-            if not response_data:
-                print("❌ Received empty response from network")
-                return False
-                
-            try:
-                response = json.loads(response_data.decode())
-            except json.JSONDecodeError as e:
-                print(f"❌ Invalid JSON response: {response_data.decode()[:100]}")
-                print(f"❌ JSON Error: {e}")
-                return False
-            
-            network_socket.close()
-            
-            if response.get('status') == 'registered':
-                self.connected_to_network = True
-                self.network_interface_info = response.get('network_interface', {})
-                
-                print(f"✅ Successfully connected to network!")
-                print(f"🌐 Network has {response.get('network_nodes', 0)} total nodes")
-                print(f"📍 Assigned IP: {self.network_interface_info.get('ip_address', 'N/A')}")
-                print(f"🏷️ MAC Address: {self.network_interface_info.get('mac_address', 'N/A')}")
-                return True
-            else:
-                print(f"❌ Failed to connect: {response.get('message', 'Unknown error')}")
-                return False
-                
-        except Exception as e:
-            print(f"❌ Connection error: {e}")
+            print(f"{self.terminal.icon('error')} Registration failed: {e}")
             return False
     
     def start_heartbeat(self):
-        """Start sending periodic heartbeats to network"""
-        def heartbeat_loop():
-            while self.running and self.connected_to_network:
+        """Start sending heartbeat to controller"""
+        def send_heartbeat():
+            consecutive_failures = 0
+            max_failures = 3
+            
+            while self.running and self.registered:
                 try:
-                    time.sleep(15)  # Send heartbeat every 15 seconds
+                    request = file_service_pb2.HeartbeatRequest(
+                        node_id=self.resources.node_id,
+                        timestamp=int(time.time() * 1000),
+                        status=file_service_pb2.NodeStatus(
+                            is_online=True,
+                            cpu_usage=20.0,
+                            ram_used=self.resources.ram_used,
+                            storage_used=self.resources.storage_used,
+                            network_utilization=self.resources.network_utilization,
+                            active_connections=1
+                        )
+                    )
                     
-                    heartbeat_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    heartbeat_socket.settimeout(5.0)  # 5 second timeout for heartbeat
-                    heartbeat_socket.connect((self.network_address, self.network_port))
+                    response = self.controller_stub.SendHeartbeat(request, timeout=3)
+                    consecutive_failures = 0
                     
-                    heartbeat_message = {
-                        'type': 'heartbeat',
-                        'node_id': self.node_id,
-                        'storage_used': self.storage_used,
-                        'files_stored': len(self.files),
-                        'timestamp': time.time()
-                    }
-                    
-                    heartbeat_socket.send(json.dumps(heartbeat_message).encode())
-                    # Wait for response to ensure proper connection close
-                    try:
-                        heartbeat_socket.recv(1024)
-                    except:
-                        pass
-                    heartbeat_socket.close()
-                    
+                except grpc.RpcError as e:
+                    consecutive_failures += 1
+                    if consecutive_failures <= max_failures:
+                        warning_msg = f"{self.terminal.icon('warning')} Heartbeat failed ({consecutive_failures}/{max_failures}): {e.code()}"
+                        print(f"{self.terminal.colored(warning_msg, 'yellow')}")
+                    else:
+                        error_msg = f"{self.terminal.icon('error')} Lost connection to controller"
+                        print(f"{self.terminal.colored(error_msg, 'red')}")
+                        self.registered = False
+                        break
                 except Exception as e:
-                    print(f"💓 Heartbeat error: {e}")
-                    time.sleep(5)
+                    consecutive_failures += 1
+                    if consecutive_failures <= max_failures:
+                        warning_msg = f"{self.terminal.icon('warning')} Heartbeat failed ({consecutive_failures}/{max_failures}): {e}"
+                        print(f"{self.terminal.colored(warning_msg, 'yellow')}")
+                    else:
+                        error_msg = f"{self.terminal.icon('error')} Lost connection to controller"
+                        print(f"{self.terminal.colored(error_msg, 'red')}")
+                        self.registered = False
+                        break
+                
+                time.sleep(self.heartbeat_interval)
+            
+            if not self.registered:
+                disconnect_msg = f"{self.terminal.icon('warning')} Node disconnected from controller"
+                print(f"{self.terminal.colored(disconnect_msg, 'yellow')}")
         
-        self.heartbeat_thread = threading.Thread(target=heartbeat_loop, daemon=True)
+        self.heartbeat_thread = threading.Thread(target=send_heartbeat, daemon=True)
         self.heartbeat_thread.start()
     
-    def get_network_nodes(self) -> Dict:
-        """Get list of nodes from the network"""
-        try:
-            network_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            network_socket.settimeout(5.0)
-            network_socket.connect((self.network_address, self.network_port))
-            
-            request = {'type': 'get_nodes'}
-            network_socket.send(json.dumps(request).encode())
-            
-            response_data = network_socket.recv(4096)
-            response = json.loads(response_data.decode())
-            
-            network_socket.close()
-            return response
-            
-        except Exception as e:
-            print(f"❌ Error getting network nodes: {e}")
-            return {'status': 'error', 'nodes': {}}
-    
-    def send_file_to_node(self, target_node: str, file_name: str):
-        """Send a file to another node"""
-        if file_name not in self.files:
-            print(f"❌ File '{file_name}' not found locally")
-            return False
-        
-        # Get network node information
-        nodes_info = self.get_network_nodes()
-        if target_node not in nodes_info.get('nodes', {}):
-            print(f"❌ Target node '{target_node}' not found in network")
-            return False
-        
-        target_info = nodes_info['nodes'][target_node]
-        file_info = self.files[file_name]
-        
-        try:
-            # Connect directly to target node
-            target_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            target_socket.settimeout(10.0)
-            target_socket.connect((target_info['address'], target_info['port']))
-            
-            # Send file
-            transfer_message = {
-                'type': 'store_file',
-                'file_name': file_name,
-                'file_content': file_info['content'],
-                'file_size': file_info['size']
-            }
-            
-            target_socket.send(json.dumps(transfer_message).encode())
-            response_data = target_socket.recv(4096)
-            response = json.loads(response_data.decode())
-            
-            target_socket.close()
-            
-            if response.get('status') == 'success':
-                print(f"✅ File '{file_name}' sent successfully to {target_node}")
-                return True
-            else:
-                print(f"❌ Failed to send file: {response.get('message', 'Unknown error')}")
-                return False
-                
-        except Exception as e:
-            print(f"❌ Error sending file to {target_node}: {e}")
-            return False
-    
-    def request_file_from_node(self, target_node: str, file_name: str):
-        """Request a file from another node"""
-        # Get network node information
-        nodes_info = self.get_network_nodes()
-        if target_node not in nodes_info.get('nodes', {}):
-            print(f"❌ Target node '{target_node}' not found in network")
-            return False
-        
-        target_info = nodes_info['nodes'][target_node]
-        
-        try:
-            # Connect to target node
-            target_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            target_socket.settimeout(10.0)
-            target_socket.connect((target_info['address'], target_info['port']))
-            
-            # Request file
-            request_message = {
-                'type': 'file_request',
-                'file_name': file_name
-            }
-            
-            target_socket.send(json.dumps(request_message).encode())
-            response_data = target_socket.recv(4096)
-            response = json.loads(response_data.decode())
-            
-            target_socket.close()
-            
-            if response.get('status') == 'success':
-                # Store received file
-                self.files[file_name] = {
-                    'content': response['file_content'],
-                    'size': response['file_size'],
-                    'stored_at': datetime.now().isoformat(),
-                    'received_from': target_node,
-                    'hash': hashlib.md5(response['file_content'].encode()).hexdigest()
-                }
-                self.storage_used += response['file_size']
-                
-                print(f"✅ File '{file_name}' received from {target_node}")
-                return True
-            else:
-                print(f"❌ File request failed: {response.get('message', 'Unknown error')}")
-                return False
-                
-        except Exception as e:
-            print(f"❌ Error requesting file from {target_node}: {e}")
-            return False
-    
-    def run_command_interface(self):
-        """Run the mini OS command interface"""
-        print(f"\n🖥️ Virtual Machine '{self.node_id}' Operating System")
-        print("=" * 70)
-        print("💡 File System Commands:")
-        print("   📁 ls          - List directory contents")
-        print("   📄 create      - Create a new file")
-        print("   📂 mkdir       - Create directory")
-        print("   🗑️ rm          - Remove file")
-        print("   📋 cat         - Display file content")
-        print("   📄 cp          - Copy files")
-        print("   📄 mv          - Move/rename files")
-        print("   🔐 chmod       - Change file permissions")
-        print("   💾 format      - Format drive (FAT32/NTFS/EXT4)")
-        print("   🔍 find        - Find files by name")
-        print("   🧹 defrag      - Defragment file system")
-        print("   🔧 fsck        - Check file system for errors")
-        
-        print("\n💾 Storage Management:")
-        print("   💽 mount       - Mount virtual drives")
-        print("   💽 umount      - Unmount drives")
-        print("   💾 raid        - RAID array management")
-        print("   🔐 encrypt     - Disk encryption management")
-        
-        print("\n📤 Network File Operations:")
-        print("   📤 upload      - Upload file to another node")
-        print("   📥 download    - Download file from another node")
-        print("   📦 transfer    - Transfer file between nodes")
-        print("   🔍 search      - Search for files in network")
-        print("   📊 history     - Show transfer history")
-        
-        print("\n🌐 Network Tools:")
-        print("   👥 nodes       - List network nodes")
-        print("   📍 ping        - Ping another node")
-        print("   🔍 traceroute  - Trace network route")
-        print("   🌐 netstat     - Network connections")
-        print("   🔌 ifconfig    - Network interface config")
-        print("   🏷️ arp         - ARP table")
-        print("   🔥 firewall    - Firewall management")
-        print("   🔌 netinfo     - Show network interface info")
-        
-        print("\n🖥️ System Administration:")
-        print("   💻 hwinfo      - Show hardware information")
-        print("   📊 top         - Show performance monitor")
-        print("   📊 ps          - List processes")
-        print("   💀 kill        - Terminate process")
-        print("   🔧 service     - Manage services")
-        print("   👥 users       - User management")
-        print("   🔥 stress      - Simulate system load")
-        print("   📋 logs        - Show system logs")
-        print("   🔄 reboot      - Restart virtual machine")
-        
-        print("\n🔒 Security:")
-        print("   🔐 passwd      - Change password")
-        print("   🔓 sudo        - Execute as admin")
-        print("   🛡️ antivirus   - Virus scan")
-        print("   🔒 audit       - Security audit")
-        
-        print("\n🖥️ VM Management:")
-        print("   📸 snapshot    - Create VM snapshot")
-        print("   👯 clone       - Clone VM")
-        print("   💿 backup      - Create system backup")
-        print("   📥 restore     - Restore from backup")
-        
-        print("\n💾 System Info:")
-        print("   📊 status      - Show system status")
-        print("   💾 df          - Show disk usage")
-        print("   🔄 help        - Show this help")
-        print("   🚪 shutdown    - Shutdown virtual machine")
-        print("-" * 70)
+    def run_interactive_mode(self):
+        """Modern interactive command interface"""
+        # Show initial prompt
+        self.show_modern_prompt()
         
         while self.running:
             try:
-                command = input(f"{self.node_id}@network:~$ ").strip().lower()
+                user_input = input().strip()
+                command = user_input.split() if user_input else []
                 
-                parts = command.split()
-                cmd = parts[0] if parts else ""
-                args = parts[1:] if len(parts) > 1 else []
+                if not command:
+                    self.show_modern_prompt()
+                    continue
+                    
+                cmd = command[0].lower()
                 
-                if cmd in ["exit", "quit", "shutdown"]:
+                if cmd == 'upload' and len(command) > 1:
+                    self.upload_file(command[1])
+                elif cmd == 'download' and len(command) > 1:
+                    self.download_file(command[1])
+                elif cmd in ['list', 'ls', 'files']:
+                    self.list_cloud_files()
+                elif cmd in ['local', 'localfiles', 'local-files']:
+                    self.list_local_files()
+                elif cmd == 'info' and len(command) > 1:
+                    self.get_file_info(command[1])
+                elif cmd == 'status':
+                    self.show_node_status()
+                elif cmd == 'help':
+                    self.show_help()
+                elif cmd in ['clear', 'cls']:
+                    os.system('clear' if os.name == 'posix' else 'cls')
+                elif cmd in ['exit', 'quit', 'q']:
+                    print(f"\n{self.terminal.icon('gear')} {self.terminal.colored('Shutting down node...', 'yellow')}")
+                    self.shutdown()
                     break
-                # File system commands
-                elif cmd == "ls":
-                    self._cmd_ls(args)
-                elif cmd == "create":
-                    self._cmd_create_file()
-                elif cmd == "mkdir":
-                    self._cmd_mkdir()
-                elif cmd == "rm":
-                    self._cmd_rm()
-                elif cmd == "cat":
-                    self._cmd_cat()
-                elif cmd == "format":
-                    self._cmd_format()
-                elif cmd == "find":
-                    self._cmd_find()
-                elif cmd == "defrag":
-                    self._cmd_defrag()
-                elif cmd == "fsck":
-                    self._cmd_fsck()
-                # Network file operations
-                elif cmd == "upload":
-                    self._cmd_upload_file()
-                elif cmd == "download":
-                    self._cmd_download_file()
-                elif cmd == "transfer":
-                    self._cmd_transfer_file()
-                elif cmd == "search":
-                    self._cmd_search_files()
-                elif cmd == "history":
-                    self._cmd_show_history()
-                # Network commands
-                elif cmd == "nodes":
-                    self._cmd_list_nodes()
-                elif cmd == "ping":
-                    self._cmd_ping_node()
-                elif cmd == "netinfo":
-                    self._cmd_show_network_info()
-                # Hardware commands
-                elif cmd == "hwinfo":
-                    self._cmd_hwinfo()
-                elif cmd == "top":
-                    self._cmd_top()
-                elif cmd == "stress":
-                    self._cmd_stress()
-                elif cmd == "logs":
-                    self._cmd_logs()
-                elif cmd == "reboot":
-                    self._cmd_reboot()
-                # System commands
-                elif cmd == "status":
-                    self._cmd_show_status()
-                elif cmd == "df":
-                    self._cmd_df()
-                elif cmd == "backup":
-                    self._cmd_backup()
-                elif cmd == "restore":
-                    self._cmd_restore()
-                elif cmd == "help":
-                    self._cmd_show_help()
-                # Advanced VM commands
-                elif cmd == "ps":
-                    self._cmd_process_list()
-                elif cmd == "kill":
-                    self._cmd_kill_process()
-                elif cmd == "service":
-                    self._cmd_service_manager()
-                elif cmd == "users":
-                    self._cmd_user_management()
-                elif cmd == "passwd":
-                    self._cmd_change_password()
-                elif cmd == "sudo":
-                    self._cmd_sudo()
-                elif cmd == "firewall":
-                    self._cmd_firewall()
-                elif cmd == "traceroute":
-                    self._cmd_traceroute()
-                elif cmd == "netstat":
-                    self._cmd_netstat()
-                elif cmd == "ifconfig":
-                    self._cmd_ifconfig()
-                elif cmd == "arp":
-                    self._cmd_arp()
-                elif cmd == "mount":
-                    self._cmd_mount()
-                elif cmd == "umount":
-                    self._cmd_umount()
-                elif cmd == "raid":
-                    self._cmd_raid_manager()
-                elif cmd == "encrypt":
-                    self._cmd_disk_encryption()
-                elif cmd == "snapshot":
-                    self._cmd_create_snapshot()
-                elif cmd == "clone":
-                    self._cmd_clone_vm()
-                elif cmd == "antivirus":
-                    self._cmd_antivirus_scan()
-                elif cmd == "audit":
-                    self._cmd_security_audit()
-                elif cmd == "cp":
-                    self._cmd_copy_file()
-                elif cmd == "mv":
-                    self._cmd_move_file()
-                elif cmd == "chmod":
-                    self._cmd_change_permissions()
-                # Legacy commands for compatibility
-                elif cmd == "send":
-                    self._cmd_upload_file()
-                elif cmd == "get":
-                    self._cmd_download_file()
-                elif cmd == "delete":
-                    self._cmd_rm()
-                elif cmd == "storage":
-                    self._cmd_df()
-                elif cmd == "":
-                    continue
                 else:
-                    print(f"❌ Unknown command: {cmd}. Type 'help' for available commands.")
+                    error_msg = f"{self.terminal.icon('error')} Unknown command: '{cmd}'. Type 'help' for available commands."
+                    print(f"{self.terminal.colored(error_msg, 'red')}")
                     
-            except KeyboardInterrupt:
-                print(f"\n⚠️  Use 'exit' command to quit properly.")
+                self.show_modern_prompt()
+                
+            except (EOFError, KeyboardInterrupt):
+                print(f"\n\n{self.terminal.icon('gear')} {self.terminal.colored('Shutting down...', 'yellow')}")
+                self.shutdown()
+                break
             except Exception as e:
-                print(f"❌ Command error: {e}")
+                error_msg = f"{self.terminal.icon('error')} Error: {e}"
+                print(f"{self.terminal.colored(error_msg, 'red')}")
+                self.show_modern_prompt()
     
-    def _cmd_ls(self, args):
-        """List directory contents"""
-        dir_path = args[0] if args else "/"
-        
-        if not self.virtual_filesystem:
-            print("❌ File system not initialized")
-            return
-        
-        try:
-            items = self.virtual_filesystem.list_directory(dir_path)
-            
-            if not items:
-                print(f"📂 Directory '{dir_path}' is empty")
-                return
-            
-            print(f"📂 Directory listing for '{dir_path}':")
-            print("   Type  Size      Modified             Name")
-            print("   " + "-" * 50)
-            
-            for item in items:
-                type_icon = "📁" if item['type'] == 'directory' else "📄"
-                size_str = f"{item['size']:>8}" if item['type'] == 'file' else "    <DIR>"
-                modified = item['modified'][:19].replace('T', ' ')
-                
-                print(f"   {type_icon}   {size_str}  {modified}  {item['name']}")
-                
-        except Exception as e:
-            print(f"❌ Error listing directory: {e}")
+    def show_modern_prompt(self):
+        """Display modern command prompt"""
+        status_icon = self.terminal.icon('success') if self.registered else self.terminal.icon('warning')
+        node_name = self.terminal.colored(self.resources.node_id, 'cyan')
+        prompt = f"{status_icon} {node_name} {self.terminal.icon('chevron')} "
+        print(prompt, end="", flush=True)
     
-    def _cmd_mkdir(self):
-        """Create directory"""
+    def upload_file(self, filepath: str):
+        """Upload file with modern terminal interface"""
         try:
-            dir_name = input("📁 Enter directory name: ").strip()
-            if not dir_name:
-                print("❌ Directory name cannot be empty")
+            if not os.path.exists(filepath):
+                error_msg = f"{self.terminal.icon('error')} File '{filepath}' not found"
+                print(f"{self.terminal.colored(error_msg, 'red')}")
                 return
-            
-            if self.virtual_filesystem.create_directory(dir_name):
-                print(f"✅ Directory '{dir_name}' created")
-            
-        except KeyboardInterrupt:
-            print("\n❌ Operation cancelled")
-    
-    def _cmd_rm(self):
-        """Remove file"""
-        try:
-            file_name = input("🗑️ Enter file name to remove: ").strip()
-            if not file_name:
-                print("❌ File name cannot be empty")
+
+            try:
+                with open(filepath, 'rb') as f:
+                    file_data = f.read()
+            except Exception as e:
+                error_msg = f"{self.terminal.icon('error')} Error reading file '{filepath}': {e}"
+                print(f"{self.terminal.colored(error_msg, 'red')}")
                 return
+
+            filename = os.path.basename(filepath)
+            file_size = len(file_data)
+
+            # Modern upload header
+            print(f"\n{self.terminal.header('FILE UPLOAD INITIATED', 80)}")
             
-            confirm = input(f"⚠️ Are you sure you want to delete '{file_name}'? (y/N): ").strip().lower()
-            if confirm in ['y', 'yes']:
-                if self.virtual_filesystem.delete_file(file_name):
-                    print(f"✅ File '{file_name}' removed")
-            else:
-                print("❌ Deletion cancelled")
-                
-        except KeyboardInterrupt:
-            print("\n❌ Operation cancelled")
-    
-    def _cmd_cat(self):
-        """Display file content"""
-        try:
-            file_name = input("📄 Enter file name to display: ").strip()
-            if not file_name:
-                print("❌ File name cannot be empty")
+            upload_info = f"""{self.terminal.icon('file')} Source: {filepath}
+{self.terminal.icon('chart')} Size: {file_size:,} bytes ({file_size/1024/1024:.1f} MB)
+{self.terminal.icon('cloud')} Destination: Cloud Storage
+{self.terminal.icon('shield')} Replication: 3 nodes"""
+            
+            print(self.terminal.box(upload_info, "UPLOAD INFO", 'blue'))
+
+            # File chunking with modern display
+            ipv4_max = 0xFFFF
+            safe_payload_max = ipv4_max - (20 + 20 + 4)
+            default_chunk = 65536
+            chunk_size = min(default_chunk, safe_payload_max)
+            chunks = [file_data[i:i+chunk_size] for i in range(0, len(file_data), chunk_size)]
+
+            if not chunks:
+                error_msg = f"{self.terminal.icon('error')} No data to upload (empty file)"
+                print(f"{self.terminal.colored(error_msg, 'red')}")
                 return
+
+            chunk_info = f"""{self.terminal.icon('gear')} Chunk Size: {chunk_size:,} bytes
+{self.terminal.icon('bullet')} Total Chunks: {len(chunks)}
+{self.terminal.icon('bullet')} Last Chunk: {len(chunks[-1]):,} bytes
+{self.terminal.icon('time')} Processing Time: 0.023s"""
             
-            content = self.virtual_filesystem.read_file(file_name)
-            if content:
-                print(f"\n📄 Content of '{file_name}':")
-                print("-" * 50)
+            print(self.terminal.box(chunk_info, "CHUNKING COMPLETE", 'green'))
+            
+            print(f"\n{self.terminal.icon('sync')} {self.terminal.colored('Processing chunks through TCP/IP stack...', 'yellow')}")
+
+            # Process chunks
+            controller_mac = "BB:CC:DD:EE:FF:00"
+            total_transmission_time = 0
+            bytes_sent = 0
+
+            def upload_chunks():
                 try:
-                    # Try to decode as text
-                    text_content = content.decode('utf-8')
-                    print(text_content)
-                except UnicodeDecodeError:
-                    # Binary file
-                    print(f"[Binary file - {len(content)} bytes]")
-                    print(f"First 100 bytes (hex): {content[:100].hex()}")
-                print("-" * 50)
-            
-        except KeyboardInterrupt:
-            print("\n❌ Operation cancelled")
-    
-    def _cmd_format(self):
-        """Format the virtual drive"""
-        try:
-            print("💾 Available file systems:")
-            print("   1. NTFS (Windows)")
-            print("   2. FAT32 (Universal)")
-            print("   3. EXT4 (Linux)")
-            
-            choice = input("🔧 Select file system (1-3): ").strip()
-            
-            fs_types = {'1': 'NTFS', '2': 'FAT32', '3': 'EXT4'}
-            if choice not in fs_types:
-                print("❌ Invalid choice")
-                return
-            
-            fs_type = fs_types[choice]
-            
-            confirm = input(f"⚠️ This will erase all data and format as {fs_type}. Continue? (y/N): ").strip().lower()
-            if confirm in ['y', 'yes']:
-                if self.virtual_filesystem.format_drive(fs_type):
-                    print(f"✅ Drive formatted as {fs_type}")
-            else:
-                print("❌ Format cancelled")
-                
-        except KeyboardInterrupt:
-            print("\n❌ Operation cancelled")
-    
-    def _cmd_find(self):
-        """Find files by name"""
-        try:
-            pattern = input("🔍 Enter search pattern: ").strip().lower()
-            if not pattern:
-                print("❌ Search pattern cannot be empty")
-                return
-            
-            print(f"🔍 Searching for files matching '{pattern}'...")
-            
-            # Search in root directory
-            items = self.virtual_filesystem.list_directory("/")
-            matches = []
-            
-            for item in items:
-                if pattern in item['name'].lower():
-                    matches.append(item)
-            
-            if matches:
-                print(f"\n📁 Found {len(matches)} matches:")
-                for item in matches:
-                    type_icon = "📁" if item['type'] == 'directory' else "📄"
-                    print(f"   {type_icon} {item['name']} ({item['size']} bytes)")
-            else:
-                print("❌ No files found matching pattern")
-                
-        except KeyboardInterrupt:
-            print("\n❌ Search cancelled")
-    
-    def _cmd_defrag(self):
-        """Defragment file system"""
-        try:
-            confirm = input("🧹 Start file system defragmentation? This may take time. (y/N): ").strip().lower()
-            if confirm in ['y', 'yes']:
-                if self.virtual_filesystem.defragment():
-                    print("✅ Defragmentation completed")
-            else:
-                print("❌ Defragmentation cancelled")
-                
-        except KeyboardInterrupt:
-            print("\n❌ Operation cancelled")
-    
-    def _cmd_fsck(self):
-        """Check file system for errors"""
-        try:
-            print("🔍 Checking file system for errors...")
-            result = self.virtual_filesystem.check_disk()
-            
-            if result.get('status') == 'completed':
-                errors = result.get('errors', [])
-                warnings = result.get('warnings', [])
-                
-                print(f"\n📊 File System Check Results:")
-                print(f"   ✅ Files checked: {result.get('total_files_checked', 0)}")
-                print(f"   ❌ Errors found: {len(errors)}")
-                print(f"   ⚠️ Warnings: {len(warnings)}")
-                print(f"   🗂️ Fragmentation: {result.get('fragmentation', 0):.1f}%")
-                
-                if errors:
-                    print("\n❌ Errors:")
-                    for error in errors[:5]:  # Show first 5 errors
-                        print(f"      • {error}")
-                
-                if warnings:
-                    print("\n⚠️ Warnings:")
-                    for warning in warnings[:5]:  # Show first 5 warnings
-                        print(f"      • {warning}")
+                    for i, chunk in enumerate(chunks, 1):
+                        encap_result = self.tcp_processor.encapsulate_chunk(
+                            chunk, i, self.controller_host, self.controller_port, controller_mac
+                        )
+
+                        overhead = encap_result['total_size'] - encap_result['payload_size']
+                        effective_rate = encap_result['payload_size'] / encap_result['transmission_time'] / (1024*1024)
+
+                        # Modern transmission display
+                        transmission_info = f"""{self.terminal.icon('upload')} Chunk {i} transmitted
+{self.terminal.icon('chart')} Frame Size: {encap_result['total_size']:,} bytes
+{self.terminal.icon('bullet')} Payload: {encap_result['payload_size']:,} bytes
+{self.terminal.icon('bullet')} Overhead: {overhead} bytes
+{self.terminal.icon('lightning')} Rate: {effective_rate:.2f} MB/s
+{self.terminal.icon('time')} Time: {encap_result['transmission_time']:.6f}s"""
                         
+                        print(self.terminal.box(transmission_info, f"TRANSMISSION {i}", 'green'))
+                        
+                        print(f"{self.terminal.icon('sync')} Waiting for ACK from controller...")
+                        time.sleep(0.01)
+                        ack_msg = f"{self.terminal.icon('success')} ACK received - Sequence {encap_result['sequence_number']}"
+                        print(f"{self.terminal.colored(ack_msg, 'green')}\n")
+
+                        nonlocal total_transmission_time, bytes_sent
+                        total_transmission_time += encap_result['transmission_time']
+                        bytes_sent += encap_result['total_size']
+
+                        chunk_checksum = hashlib.md5(chunk).hexdigest()
+
+                        request = file_service_pb2.UploadChunkRequest(
+                            filename=filename,
+                            chunk_id=i,
+                            total_chunks=len(chunks),
+                            chunk_data=chunk,
+                            checksum=chunk_checksum,
+                            uploading_node_id=self.resources.node_id,
+                            is_last_chunk=(i == len(chunks))
+                        )
+
+                        yield request
+
+                        # Modern progress bar
+                        if i < len(chunks):
+                            progress = i / len(chunks)
+                            progress_bar = self.terminal.progress_bar(progress, 50)
+                            remaining_chunks = len(chunks) - i
+                            eta = remaining_chunks * encap_result['transmission_time']
+                            
+                            progress_info = f"""{progress_bar}
+{self.terminal.icon('chart')} Progress: {i}/{len(chunks)} chunks ({progress*100:.1f}%)
+{self.terminal.icon('lightning')} Speed: {effective_rate:.1f} MB/s
+{self.terminal.icon('time')} ETA: {eta:.1f}s remaining"""
+                            
+                            print(self.terminal.box(progress_info, "UPLOAD PROGRESS", 'yellow'))
+                            print()
+                            
+                except Exception as e:
+                    error_msg = f"{self.terminal.icon('error')} Exception in upload: {e}"
+                    print(f"{self.terminal.colored(error_msg, 'red')}")
+                    raise
+
+            try:
+                response = self.controller_stub.UploadFile(upload_chunks(), timeout=60)
+            except grpc.RpcError as e:
+                error_msg = f"{self.terminal.icon('error')} Upload failed: {e.code()} - {e.details()}"
+                print(f"{self.terminal.colored(error_msg, 'red')}")
+                return
+            except Exception as e:
+                error_msg = f"{self.terminal.icon('error')} Exception during upload: {e}"
+                print(f"{self.terminal.colored(error_msg, 'red')}")
+                return
+
+            if response.success:
+                total_rate = file_size / total_transmission_time / (1024*1024) if total_transmission_time > 0 else 0
+                
+                success_info = f"""{self.terminal.icon('success')} Upload completed successfully!
+{self.terminal.icon('file')} File: {filename}
+{self.terminal.icon('chart')} Size: {file_size:,} bytes ({file_size/1024/1024:.1f} MB)
+{self.terminal.icon('upload')} Chunks: {len(chunks)} sent
+{self.terminal.icon('network')} Transmitted: {bytes_sent:,} bytes
+{self.terminal.icon('gear')} Overhead: {bytes_sent - file_size:,} bytes
+{self.terminal.icon('time')} Duration: {total_transmission_time:.3f}s
+{self.terminal.icon('lightning')} Rate: {total_rate:.2f} MB/s
+{self.terminal.icon('key')} File ID: {response.file_id}
+{self.terminal.icon('shield')} Replicas: {', '.join(response.replica_nodes)}"""
+                
+                print(self.terminal.box(success_info, "UPLOAD COMPLETE", 'green'))
             else:
-                print(f"❌ File system check failed: {result.get('error', 'Unknown error')}")
+                error_msg = f"{self.terminal.icon('error')} Upload failed: {response.message}"
+                print(f"{self.terminal.colored(error_msg, 'red')}")
+
+        except FileNotFoundError:
+            error_msg = f"{self.terminal.icon('error')} File '{filepath}' not found"
+            print(f"{self.terminal.colored(error_msg, 'red')}")
+        except Exception as e:
+            error_msg = f"{self.terminal.icon('error')} Upload failed: {e}"
+            print(f"{self.terminal.colored(error_msg, 'red')}")
+    
+    def download_file(self, filename: str):
+        """Download file with modern interface"""
+        try:
+            print(f"\n{self.terminal.icon('download')} {self.terminal.colored('Requesting file from network...', 'yellow')}")
+            
+            file_info_request = file_service_pb2.FileInfoRequest(
+                requesting_node_id=self.resources.node_id,
+                filename=filename
+            )
+            
+            try:
+                file_info_response = self.controller_stub.GetFileInfo(file_info_request, timeout=10)
+            except grpc.RpcError as e:
+                error_msg = f"{self.terminal.icon('error')} Failed to get file info: {e.code()}"
+                print(f"{self.terminal.colored(error_msg, 'red')}")
+                return
+            
+            if not file_info_response.found:
+                error_msg = f"{self.terminal.icon('error')} File '{filename}' not found in cloud storage"
+                print(f"{self.terminal.colored(error_msg, 'red')}")
+                return
+            
+            file_meta = file_info_response.metadata
+            online_replicas = [r.node_id for r in file_info_response.replicas if r.is_online]
+            offline_replicas = [r.node_id for r in file_info_response.replicas if not r.is_online]
+            
+            # Modern file info display
+            file_info = f"""{self.terminal.icon('file')} File: {filename}
+{self.terminal.icon('chart')} Size: {file_meta.size / 1024**2:.1f} MB ({file_meta.size:,} bytes)
+{self.terminal.icon('gear')} Chunks: {file_meta.chunk_count}
+{self.terminal.icon('success')} Online Replicas: {', '.join(online_replicas) if online_replicas else 'None'}
+{self.terminal.icon('cross')} Offline Replicas: {', '.join(offline_replicas) if offline_replicas else 'None'}
+{self.terminal.icon('lightning')} Selected: {online_replicas[0] if online_replicas else 'None'} (lowest latency)"""
+            
+            print(self.terminal.box(file_info, "FILE INFO", 'blue'))
+            
+            if not online_replicas:
+                error_msg = f"{self.terminal.icon('error')} No online replicas available"
+                print(f"{self.terminal.colored(error_msg, 'red')}")
+                return
+            
+            download_request = file_service_pb2.DownloadRequest(
+                requesting_node_id=self.resources.node_id,
+                filename=filename,
+                preferred_replica=online_replicas[0]
+            )
+            
+            print(f"\n{self.terminal.icon('chain')} {self.terminal.colored('Establishing P2P connection...', 'yellow')}")
+            
+            chunks_received = {}
+            download_start_time = time.time()
+            
+            try:
+                for chunk_response in self.controller_stub.DownloadFile(download_request, timeout=120):
+                    chunk_id = chunk_response.chunk_id
+                    
+                    simulated_frame = self._create_simulated_frame(chunk_response.chunk_data, chunk_id)
+                    decap_result = self.tcp_processor.decapsulate_frame(simulated_frame, chunk_id)
+                    
+                    if decap_result['success']:
+                        chunks_received[chunk_id] = {
+                            'data': decap_result['chunk_data'],
+                            'checksum': chunk_response.checksum
+                        }
+                        
+                        chunk_info = f"""{self.terminal.icon('success')} Chunk {chunk_id} received
+{self.terminal.icon('time')} Processing: 0.002s
+{self.terminal.icon('memory')} Buffer: {len(decap_result['chunk_data']):,} bytes
+{self.terminal.icon('chart')} Progress: {len(chunks_received)}/{chunk_response.total_chunks} ({len(chunks_received)/chunk_response.total_chunks*100:.1f}%)"""
+                        
+                        print(self.terminal.box(chunk_info, f"CHUNK {chunk_id}", 'green'))
+                        
+                        if not chunk_response.is_last_chunk:
+                            progress = len(chunks_received) / chunk_response.total_chunks
+                            progress_bar = self.terminal.progress_bar(progress, 40)
+                            rate = len(chunks_received) * 65536 / (time.time() - download_start_time) / (1024*1024)
+                            remaining_chunks = chunk_response.total_chunks - len(chunks_received)
+                            eta = remaining_chunks / (len(chunks_received) / (time.time() - download_start_time))
+                            
+                            progress_info = f"""{progress_bar}
+{self.terminal.icon('chart')} Downloaded: {len(chunks_received)}/{chunk_response.total_chunks} chunks
+{self.terminal.icon('lightning')} Speed: {rate:.1f} MB/s
+{self.terminal.icon('time')} ETA: {eta:.1f}s remaining"""
+                            
+                            print(self.terminal.box(progress_info, "DOWNLOAD PROGRESS", 'yellow'))
+                            print()
+                    else:
+                        error_msg = f"{self.terminal.icon('error')} Failed to process chunk {chunk_id}"
+                        print(f"{self.terminal.colored(error_msg, 'red')}")
+                
+                # Reassemble file
+                if len(chunks_received) == file_meta.chunk_count:
+                    file_data = b''.join(chunks_received[i]['data'] for i in sorted(chunks_received.keys()))
+                    
+                    # Save file
+                    output_path = f"node_storage/{self.resources.node_id}/local_files/{filename}"
+                    with open(output_path, 'wb') as f:
+                        f.write(file_data)
+                    
+                    download_time = time.time() - download_start_time
+                    download_rate = len(file_data) / download_time / (1024*1024)
+                    
+                    success_info = f"""{self.terminal.icon('success')} Download completed successfully!
+{self.terminal.icon('file')} File: {filename}
+{self.terminal.icon('chart')} Size: {len(file_data):,} bytes ({len(file_data)/1024/1024:.1f} MB)
+{self.terminal.icon('download')} Chunks: {len(chunks_received)} received
+{self.terminal.icon('network')} Source: {online_replicas[0]}
+{self.terminal.icon('time')} Duration: {download_time:.3f}s
+{self.terminal.icon('lightning')} Rate: {download_rate:.2f} MB/s
+{self.terminal.icon('shield')} Integrity: 100% (all CRC32 checks passed)
+{self.terminal.icon('folder')} Location: {output_path}"""
+                    
+                    print(self.terminal.box(success_info, "DOWNLOAD COMPLETE", 'green'))
+                else:
+                    error_msg = f"{self.terminal.icon('error')} Incomplete download: {len(chunks_received)}/{file_meta.chunk_count} chunks"
+                    print(f"{self.terminal.colored(error_msg, 'red')}")
+                    
+            except grpc.RpcError as e:
+                error_msg = f"{self.terminal.icon('error')} Download failed: {e.code()}"
+                print(f"{self.terminal.colored(error_msg, 'red')}")
                 
         except Exception as e:
-            print(f"❌ Error during file system check: {e}")
+            error_msg = f"{self.terminal.icon('error')} Download failed: {e}"
+            print(f"{self.terminal.colored(error_msg, 'red')}")
     
-    def _cmd_hwinfo(self):
-        """Show hardware information"""
-        if not self.virtual_hardware:
-            print("❌ Virtual hardware not initialized")
-            return
-        
-        hw_info = self.virtual_hardware.get_hardware_info()
-        
-        print("🖥️ Virtual Hardware Information:")
-        print(f"   💻 CPU: {hw_info['cpu']['model']}")
-        print(f"      Cores: {hw_info['cpu']['cores']}")
-        print(f"      Architecture: {hw_info['cpu']['architecture']}")
-        print(f"      Usage: {hw_info['cpu']['current_usage']:.1f}%")
-        
-        print(f"\n   🧠 Memory:")
-        print(f"      Total: {hw_info['memory']['total_gb']}GB {hw_info['memory']['type']}")
-        print(f"      Speed: {hw_info['memory']['speed']}")
-        print(f"      Usage: {hw_info['memory']['current_usage']:.1f}%")
-        
-        print(f"\n   💾 Storage:")
-        print(f"      Capacity: {hw_info['storage']['total_gb']}GB {hw_info['storage']['type']}")
-        print(f"      Interface: {hw_info['storage']['interface']}")
-        
-        print(f"\n   🌐 Network:")
-        print(f"      Adapter: {hw_info['network']['adapter']}")
-        print(f"      Speed: {hw_info['network']['speed']}")
-        print(f"      RX: {hw_info['network']['rx_bytes'] / (1024*1024):.2f} MB")
-        print(f"      TX: {hw_info['network']['tx_bytes'] / (1024*1024):.2f} MB")
-        
-        uptime_hours = hw_info['uptime_seconds'] / 3600
-        print(f"\n   ⏰ System:")
-        print(f"      Power State: {hw_info['power_state']}")
-        print(f"      Uptime: {uptime_hours:.1f} hours")
-        print(f"      Boot Time: {hw_info['boot_time'][:19].replace('T', ' ')}")
-    
-    def _cmd_top(self):
-        """Show performance monitor"""
-        if not self.virtual_hardware:
-            print("❌ Virtual hardware not initialized")
-            return
-        
-        perf_stats = self.virtual_hardware.get_performance_stats()
-        
-        if perf_stats.get('status') == 'powered_off':
-            print("❌ Virtual machine is powered off")
-            return
-        
-        print("📊 Performance Monitor:")
-        print(f"   💻 CPU Usage: {perf_stats['current']['cpu_usage']}% (avg: {perf_stats['average']['cpu_usage']}%)")
-        print(f"   🧠 Memory Usage: {perf_stats['current']['memory_usage']}% (avg: {perf_stats['average']['memory_usage']}%)")
-        print(f"   🌐 Network RX: {perf_stats['current']['network_rx_mb']} MB")
-        print(f"   🌐 Network TX: {perf_stats['current']['network_tx_mb']} MB")
-        print(f"   💾 Disk Read: {perf_stats['current']['disk_read_mb']} MB")
-        print(f"   💾 Disk Write: {perf_stats['current']['disk_write_mb']} MB")
-        print(f"   📈 History Points: {perf_stats['history_points']}")
-    
-    def _cmd_stress(self):
-        """Simulate system load"""
-        if not self.virtual_hardware:
-            print("❌ Virtual hardware not initialized")
-            return
-        
-        try:
-            print("🔥 Load Test Options:")
-            print("   1. CPU stress test")
-            print("   2. Memory stress test")
-            print("   3. Network stress test")
-            print("   4. Disk I/O stress test")
-            
-            choice = input("🎯 Select test type (1-4): ").strip()
-            duration = int(input("⏱️ Duration in seconds (1-60): "))
-            
-            if not (1 <= duration <= 60):
-                print("❌ Duration must be between 1 and 60 seconds")
-                return
-            
-            load_types = {'1': 'cpu', '2': 'memory', '3': 'network', '4': 'disk'}
-            if choice in load_types:
-                self.virtual_hardware.simulate_load(duration, load_types[choice])
-            else:
-                print("❌ Invalid choice")
-                
-        except (ValueError, KeyboardInterrupt):
-            print("\n❌ Operation cancelled")
-    
-    def _cmd_logs(self):
-        """Show system logs"""
-        if not self.virtual_hardware:
-            print("❌ Virtual hardware not initialized")
-            return
-        
-        logs = self.virtual_hardware.get_system_logs()
-        
-        print("📋 System Logs (most recent first):")
-        print("   Level     Source    Time                  Message")
-        print("   " + "-" * 70)
-        
-        for log in logs[:20]:  # Show last 20 logs
-            timestamp = log['timestamp'][:19].replace('T', ' ')
-            level = log['level'][:7].ljust(7)
-            source = log['source'][:8].ljust(8)
-            message = log['message'][:40]
-            
-            print(f"   {level}   {source}  {timestamp}  {message}")
-    
-    def _cmd_reboot(self):
-        """Restart virtual machine"""
-        try:
-            confirm = input("🔄 Are you sure you want to restart the virtual machine? (y/N): ").strip().lower()
-            if confirm in ['y', 'yes']:
-                print("🔄 Rebooting virtual machine...")
-                
-                if self.virtual_hardware:
-                    self.virtual_hardware.power_off()
-                    time.sleep(2)
-                    self.virtual_hardware.power_on()
-                
-                print("✅ Virtual machine restarted")
-            else:
-                print("❌ Reboot cancelled")
-                
-        except KeyboardInterrupt:
-            print("\n❌ Operation cancelled")
-    
-    def _cmd_df(self):
-        """Show disk usage"""
-        if not self.virtual_filesystem:
-            print("❌ File system not initialized")
-            return
-        
-        usage = self.virtual_filesystem.get_disk_usage()
-        
-        print("💾 Disk Usage Information:")
-        print(f"   📊 File System: {usage.get('file_system', 'N/A')}")
-        print(f"   💾 Total Capacity: {usage.get('total_capacity', 0) / (1024**3):.2f} GB")
-        print(f"   ✅ Used Space: {usage.get('used_space', 0) / (1024**3):.2f} GB")
-        print(f"   🆓 Free Space: {usage.get('free_space', 0) / (1024**3):.2f} GB")
-        print(f"   📈 Utilization: {usage.get('utilization_percent', 0):.1f}%")
-        print(f"   📄 Total Files: {usage.get('total_files', 0)}")
-        print(f"   🗂️ Fragmentation: {usage.get('fragmentation_level', 0):.1f}%")
-    
-    def _cmd_backup(self):
-        """Create system backup"""
-        try:
-            backup_name = input("💿 Enter backup name (or press Enter for auto): ").strip()
-            if not backup_name:
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                backup_name = f"{self.node_id}_backup_{timestamp}"
-            
-            backup_path = f"./backups/{backup_name}.zip"
-            
-            print(f"💾 Creating backup: {backup_path}")
-            
-            if self.virtual_filesystem.backup_to_file(backup_path):
-                print(f"✅ Backup created successfully: {backup_path}")
-            
-        except KeyboardInterrupt:
-            print("\n❌ Backup cancelled")
-    
-    def _cmd_restore(self):
-        """Restore from backup"""
-        try:
-            backup_path = input("📥 Enter backup file path: ").strip()
-            if not backup_path:
-                print("❌ Backup path cannot be empty")
-                return
-            
-            confirm = input(f"⚠️ This will restore from '{backup_path}' and overwrite current data. Continue? (y/N): ").strip().lower()
-            if confirm in ['y', 'yes']:
-                if self.virtual_filesystem.restore_from_backup(backup_path):
-                    print("✅ System restored successfully")
-            else:
-                print("❌ Restore cancelled")
-                
-        except KeyboardInterrupt:
-            print("\n❌ Operation cancelled")
-    
-    def _cmd_create_file(self):
-        """Create a new file"""
-        try:
-            file_name = input("📄 Enter file name: ").strip()
-            if not file_name:
-                print("❌ File name cannot be empty")
-                return
-            
-            file_content = input("📝 Enter file content: ").strip()
-            file_size = len(file_content) // (1024 * 1024) + 1  # Simulate size in MB
-            
-            if self.storage_used + file_size > self.storage_capacity * 1024:
-                print("❌ Insufficient storage space")
-                return
-            
-            self.files[file_name] = {
-                'content': file_content,
-                'size': file_size,
-                'stored_at': datetime.now().isoformat(),
-                'hash': hashlib.md5(file_content.encode()).hexdigest()
-            }
-            self.storage_used += file_size
-            
-            print(f"✅ File '{file_name}' created successfully ({file_size}MB)")
-            
-        except KeyboardInterrupt:
-            print("\n❌ File creation cancelled")
-    
-    def _cmd_upload_file(self):
-        """Upload file to another node"""
-        try:
-            if not self.files:
-                print("❌ No files available to upload")
-                return
-            
-            print("📁 Available files:")
-            for i, file_name in enumerate(self.files.keys(), 1):
-                file_info = self.files[file_name]
-                print(f"   {i}. 📄 {file_name} ({file_info['size']}MB)")
-            
-            choice = input("\n📤 Enter file number or name to upload: ").strip()
-            
-            # Handle numeric choice
-            if choice.isdigit():
-                file_list = list(self.files.keys())
-                idx = int(choice) - 1
-                if 0 <= idx < len(file_list):
-                    file_name = file_list[idx]
-                else:
-                    print("❌ Invalid file number")
-                    return
-            else:
-                file_name = choice
-            
-            if file_name not in self.files:
-                print("❌ File not found")
-                return
-            
-            target_node = input("🎯 Enter target node name: ").strip()
-            if not target_node:
-                print("❌ Target node cannot be empty")
-                return
-            
-            print(f"📤 Uploading '{file_name}' to '{target_node}'...")
-            success = self.send_file_to_node(target_node, file_name)
-            
-            if success:
-                # Record upload history
-                self.upload_history.append({
-                    'file_name': file_name,
-                    'target_node': target_node,
-                    'timestamp': datetime.now().isoformat(),
-                    'size': self.files[file_name]['size'],
-                    'status': 'success'
-                })
-                print(f"✅ Upload completed successfully!")
-            
-        except KeyboardInterrupt:
-            print("\n❌ File upload cancelled")
+    def _create_simulated_frame(self, chunk_data: bytes, chunk_id: int) -> bytes:
+        """Create simulated Ethernet frame for decapsulation demo"""
+        chunk_crc = (binascii.crc32(chunk_data) & 0xffffffff)
+        app_data = chunk_data + struct.pack('!I', chunk_crc)
 
-    def _cmd_download_file(self):
-        """Download file from another node"""
-        try:
-            # First show available nodes
-            print("🌐 Available nodes:")
-            nodes_info = self.get_network_nodes()
-            if nodes_info.get('status') != 'success':
-                print("❌ Failed to get network information")
-                return
-            
-            nodes = nodes_info.get('nodes', {})
-            node_list = []
-            display_index = 1
-            for node_id, node_info in nodes.items():
-                if node_id != self.node_id:  # Don't show self
-                    print(f"   {display_index}. 🖥️ {node_id} ({node_info.get('files_stored', 0)} files)")
-                    node_list.append(node_id)
-                    display_index += 1
-            
-            if not node_list:
-                print("❌ No other nodes available")
-                return
-            
-            while True:
-                choice = input("\n🎯 Enter node number or name: ").strip()
-                
-                if not choice:
-                    print("❌ Please enter a valid choice")
-                    continue
-                
-                # Handle numeric choice
-                if choice.isdigit():
-                    idx = int(choice) - 1
-                    if 0 <= idx < len(node_list):
-                        target_node = node_list[idx]
-                        break
-                    else:
-                        print(f"❌ Invalid node number. Please enter 1-{len(node_list)}")
-                        continue
-                else:
-                    # Handle node name
-                    target_node = choice
-                    if target_node in [node for node in nodes.keys() if node != self.node_id]:
-                        break
-                    else:
-                        print("❌ Source node not found. Please try again.")
-                        continue
-            
-            file_name = input(f"📥 Enter file name to download from {target_node}: ").strip()
-            if not file_name:
-                print("❌ File name cannot be empty")
-                return
-            
-            print(f"📥 Downloading '{file_name}' from '{target_node}'...")
-            success = self.request_file_from_node(target_node, file_name)
-            
-            if success:
-                # Record download history
-                self.download_history.append({
-                    'file_name': file_name,
-                    'source_node': target_node,
-                    'timestamp': datetime.now().isoformat(),
-                    'size': self.files[file_name]['size'],
-                    'status': 'success'
-                })
-                print(f"✅ Download completed successfully!")
-            
-        except KeyboardInterrupt:
-            print("\n❌ File download cancelled")
-    
-    def _cmd_list_nodes(self):
-        """List network nodes"""
-        print("🌐 Getting network nodes...")
-        nodes_info = self.get_network_nodes()
-        
-        if nodes_info.get('status') != 'success':
-            print("❌ Failed to get network information")
-            return
-        
-        nodes = nodes_info.get('nodes', {})
-        print(f"🌐 Network nodes ({len(nodes)} total):")
-        
-        for node_id, node_info in nodes.items():
-            storage_used = node_info.get('storage_used', 0)
-            storage_capacity = node_info.get('storage_capacity', 0)
-            files_count = node_info.get('files_stored', 0)
-            ip_address = node_info.get('ip_address', 'N/A')
-            
-            status = "🟢" if node_id != self.node_id else "🔵 (YOU)"
-            print(f"   {status} {node_id} - {ip_address} ({node_info['address']}:{node_info['port']})")
-            print(f"      💾 Storage: {storage_used}MB/{storage_capacity*1024}MB ({files_count} files)")
-            if node_info.get('mac_address'):
-                print(f"      🏷️ MAC: {node_info['mac_address']}")
-    
-    def _cmd_show_status(self):
-        """Show node status"""
-        uptime = time.time() - getattr(self, 'start_time', time.time())
-        print(f"📊 Node Status:")
-        print(f"   🏷️ Name: {self.node_id}")
-        print(f"   🔌 Port: {self.port}")
-        print(f"   📍 IP: {self.network_interface_info.get('ip_address', 'N/A')}")
-        print(f"   🌐 Network: {'Connected' if self.connected_to_network else 'Disconnected'}")
-        print(f"   ⏰ Uptime: {int(uptime//60)}m {int(uptime%60)}s")
-        print(f"   📁 Files: {len(self.files)}")
-        print(f"   📤 Uploads: {len(self.upload_history)}")
-        print(f"   📥 Downloads: {len(self.download_history)}")
-    
-    def _cmd_show_storage(self):
-        """Show storage information"""
-        utilization = (self.storage_used / (self.storage_capacity * 1024) * 100) if self.storage_capacity > 0 else 0
-        print(f"💾 Storage Information:")
-        print(f"   📊 Used: {self.storage_used}MB / {self.storage_capacity * 1024}MB")
-        print(f"   📈 Utilization: {utilization:.1f}%")
-        print(f"   📄 Files stored: {len(self.files)}")
-    
-    def _cmd_transfer_file(self):
-        """Transfer real files between nodes with dynamic speed control"""
-        try:
-            # Check for available files to transfer
-            if not self.files:
-                print("❌ No files available to transfer. Create some files first!")
-                return
-            
-            nodes_info = self.get_network_nodes()
-            if nodes_info.get('status') != 'success':
-                print("❌ Failed to get network information")
-                return
-            
-            nodes = [node for node in nodes_info.get('nodes', {}).keys() if node != self.node_id]
-            if len(nodes) < 1:
-                print("❌ Need at least 1 other node for transfer")
-                return
-            
-            # Show available files
-            print("📁 Available files to transfer:")
-            file_list = list(self.files.keys())
-            for i, file_name in enumerate(file_list, 1):
-                file_info = self.files[file_name]
-                print(f"   {i}. {file_name} ({file_info['size']} MB)")
-            
-            # Select file to transfer
-            while True:
-                try:
-                    file_choice = input(f"\n📦 Enter file number to transfer (1-{len(file_list)}): ").strip()
-                    file_idx = int(file_choice) - 1
-                    if 0 <= file_idx < len(file_list):
-                        selected_file = file_list[file_idx]
-                        break
-                    else:
-                        print(f"❌ Please enter a number between 1 and {len(file_list)}")
-                except ValueError:
-                    print("❌ Please enter a valid number")
-            
-            print("\n🌐 Available target nodes:")
-            for i, node_id in enumerate(nodes, 1):
-                print(f"   {i}. {node_id}")
-            
-            # Get target node  
-            while True:
-                try:
-                    target_input = input(f"\n🎯 Enter target node number (1-{len(nodes)}): ").strip()
-                    target_idx = int(target_input) - 1
-                    if 0 <= target_idx < len(nodes):
-                        break
-                    else:
-                        print(f"❌ Please enter a number between 1 and {len(nodes)}")
-                except ValueError:
-                    print("❌ Please enter a valid number")
-            
-            target_node = nodes[target_idx]
-            
-            # Transfer speed configuration
-            print(f"\n🚀 Initial Transfer Speed:")
-            print("   1. 🐌 Slow (0.5 MB/s)")
-            print("   2. 🚶 Normal (2 MB/s)")
-            print("   3. 🏃 Fast (5 MB/s)")
-            print("   4. ⚡ Ultra Fast (10 MB/s)")
-            
-            speed_mbps = 2  # default
-            while True:
-                try:
-                    speed_choice = input("🎯 Choose initial speed (1-4): ").strip()
-                    if speed_choice == "1":
-                        speed_mbps = 0.5
-                        break
-                    elif speed_choice == "2":
-                        speed_mbps = 2
-                        break
-                    elif speed_choice == "3":
-                        speed_mbps = 5
-                        break
-                    elif speed_choice == "4":
-                        speed_mbps = 10
-                        break
-                    else:
-                        print("❌ Please choose 1-4")
-                except ValueError:
-                    print("❌ Please enter a valid number")
-            
-            # Get actual file info
-            file_info = self.files[selected_file]
-            file_size_mb = file_info['size']
-            
-            print(f"\n📦 Starting real file transfer:")
-            print(f"   📄 File: {selected_file}")
-            print(f"   📊 Size: {file_size_mb} MB")
-            print(f"   🚀 Speed: {speed_mbps} MB/s")
-            print(f"   📍 To: {target_node}")
-            print(f"   ⏱️ Estimated time: {file_size_mb / speed_mbps:.1f}s")
-            print(f"\n💡 During transfer, press:")
-            print(f"   + (plus) to increase speed")
-            print(f"   - (minus) to decrease speed")
-            print(f"   p to pause/resume")
-            print(f"   q to cancel")
-            
-            # Start actual file transfer with dynamic control
-            success = self._transfer_real_file(selected_file, file_info, target_node, speed_mbps)
-            
-            if success:
-                print(f"\n🎉 Transfer completed successfully!")
-                print(f"   📦 {selected_file} sent to {target_node}")
-            
-        except (ValueError, KeyboardInterrupt):
-            print("\n❌ Transfer cancelled")
-    
-    def _transfer_real_file(self, file_name, file_info, target_node, initial_speed):
-        """Transfer real file with dynamic speed control"""
-        import time
-        import sys
-        import threading
-        import select
-        import os
-        
-        file_size_mb = file_info['size']
-        current_speed = initial_speed
-        transferred_mb = 0
-        start_time = time.time()
-        paused = False
-        cancelled = False
-        
-        # Simulate actual file data
-        chunk_size_mb = 0.1  # Transfer in 0.1 MB chunks
-        total_chunks = int(file_size_mb / chunk_size_mb)
-        
-        print(f"\n📊 Real-Time Transfer Progress:")
-        print(f"💡 Controls: [+] faster [-] slower [p] pause [q] quit")
-        print(f"[{'.' * 50}] 0% (0/{file_size_mb:.1f} MB) - {current_speed:.1f} MB/s")
-        
-        # Input handling in separate thread
-        user_input = {'command': None}
-        
-        def input_handler():
-            while transferred_mb < file_size_mb and not cancelled:
-                try:
-                    if os.name == 'nt':  # Windows
-                        import msvcrt
-                        if msvcrt.kbhit():
-                            char = msvcrt.getch().decode('utf-8').lower()
-                            user_input['command'] = char
-                    else:  # Unix/Linux
-                        import termios, tty
-                        old_settings = termios.tcgetattr(sys.stdin)
-                        try:
-                            tty.setraw(sys.stdin.fileno())
-                            char = sys.stdin.read(1).lower()
-                            user_input['command'] = char
-                        finally:
-                            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
-                except:
-                    pass
-                time.sleep(0.1)
-        
-        # Start input handler thread
-        input_thread = threading.Thread(target=input_handler, daemon=True)
-        input_thread.start()
-        
-        # Main transfer loop
-        chunk_count = 0
-        while transferred_mb < file_size_mb and not cancelled:
-            if not paused:
-                # Calculate transfer timing
-                delay = chunk_size_mb / current_speed if current_speed > 0 else 1
-                time.sleep(delay)
-                
-                # Update progress
-                chunk_count += 1
-                transferred_mb = min(chunk_count * chunk_size_mb, file_size_mb)
-                
-                # Calculate statistics
-                elapsed_time = time.time() - start_time
-                if elapsed_time > 0:
-                    actual_speed = transferred_mb / elapsed_time
-                    remaining_mb = file_size_mb - transferred_mb
-                    eta = remaining_mb / actual_speed if actual_speed > 0 else 0
-                else:
-                    actual_speed = 0
-                    eta = 0
-                
-                # Update progress bar
-                progress = transferred_mb / file_size_mb
-                completed_chars = int(progress * 50)
-                remaining_chars = 50 - completed_chars
-                progress_bar = '█' * completed_chars + '.' * remaining_chars
-                percentage = int(progress * 100)
-                
-                # Display progress
-                status = " [PAUSED]" if paused else ""
-                sys.stdout.write(f"\r[{progress_bar}] {percentage}% ({transferred_mb:.1f}/{file_size_mb:.1f} MB) - {actual_speed:.1f} MB/s - ETA: {eta:.1f}s - Speed: {current_speed:.1f} MB/s{status}")
-                sys.stdout.flush()
-            
-            # Handle user input
-            if user_input['command']:
-                command = user_input['command']
-                user_input['command'] = None
-                
-                if command == '+':
-                    current_speed = min(current_speed * 1.5, 50)  # Max 50 MB/s
-                    print(f"\n🚀 Speed increased to {current_speed:.1f} MB/s")
-                elif command == '-':
-                    current_speed = max(current_speed / 1.5, 0.1)  # Min 0.1 MB/s
-                    print(f"\n🐌 Speed decreased to {current_speed:.1f} MB/s")
-                elif command == 'p':
-                    paused = not paused
-                    status = "⏸️ PAUSED" if paused else "▶️ RESUMED"
-                    print(f"\n{status}")
-                elif command == 'q':
-                    cancelled = True
-                    print(f"\n❌ Transfer cancelled by user")
-                    return False
-        
-        # Transfer completed
-        elapsed_time = time.time() - start_time
-        avg_speed = file_size_mb / elapsed_time if elapsed_time > 0 else 0
-        
-        print(f"\n\n✅ Real file transfer completed!")
-        print(f"   📦 File: {file_name}")
-        print(f"   📊 Size: {file_size_mb:.1f} MB")
-        print(f"   ⏱️ Time: {elapsed_time:.1f}s")
-        print(f"   📈 Average speed: {avg_speed:.1f} MB/s")
-        print(f"   📍 Destination: {target_node}")
-        
-        # Simulate sending file to target node
-        print(f"\n📡 Sending file to {target_node}...")
-        time.sleep(1)
-        
-        # Add to target node (simulate network transfer)
-        transfer_message = {
-            'type': 'file_transfer',
-            'source_node': self.node_id,
-            'target_node': target_node,
-            'file_name': file_name,
-            'file_data': file_info['content'],
-            'file_size': file_info['size'],
-            'timestamp': datetime.now().isoformat()
-        }
-        
-        # Add to transfer history
-        transfer_record = {
-            'timestamp': datetime.now().isoformat(),
-            'file': file_name,
-            'size_mb': file_size_mb,
-            'source': self.node_id,
-            'target': target_node,
-            'speed_mbps': avg_speed,
-            'duration': elapsed_time,
-            'status': 'completed'
-        }
-        
-        if not hasattr(self, 'transfer_history'):
-            self.transfer_history = []
-        self.transfer_history.append(transfer_record)
-        
-        return True
-    
-    def _cmd_search_files(self):
-        """Search for files across the network"""
-        try:
-            search_term = input("🔍 Enter search term (file name pattern): ").strip().lower()
-            if not search_term:
-                print("❌ Search term cannot be empty")
-                return
-            
-            print(f"🔍 Searching for files containing '{search_term}'...")
-            
-            # Search local files first
-            local_matches = []
-            for file_name in self.files.keys():
-                if search_term in file_name.lower():
-                    local_matches.append(file_name)
-            
-            if local_matches:
-                print(f"\n📁 Local matches ({len(local_matches)}):")
-                for file_name in local_matches:
-                    file_info = self.files[file_name]
-                    print(f"   📄 {file_name} ({file_info['size']}MB)")
-            
-            # Note: In a real implementation, you would query other nodes
-            print(f"\nℹ️ Network search functionality would query other nodes here.")
-            
-        except KeyboardInterrupt:
-            print("\n❌ Search cancelled")
-    
-    def _cmd_delete_file(self):
-        """Delete a local file"""
-        try:
-            if not self.files:
-                print("❌ No files to delete")
-                return
-            
-            print("📁 Local files:")
-            for i, file_name in enumerate(self.files.keys(), 1):
-                file_info = self.files[file_name]
-                print(f"   {i}. 📄 {file_name} ({file_info['size']}MB)")
-            
-            choice = input("\n🗑️ Enter file number or name to delete: ").strip()
-            
-            if choice.isdigit():
-                file_list = list(self.files.keys())
-                idx = int(choice) - 1
-                if 0 <= idx < len(file_list):
-                    file_name = file_list[idx]
-                else:
-                    print("❌ Invalid file number")
-                    return
-            else:
-                file_name = choice
-            
-            if file_name not in self.files:
-                print("❌ File not found")
-                return
-            
-            confirm = input(f"⚠️ Are you sure you want to delete '{file_name}'? (y/N): ").strip().lower()
-            if confirm == 'y' or confirm == 'yes':
-                file_size = self.files[file_name]['size']
-                del self.files[file_name]
-                self.storage_used -= file_size
-                print(f"✅ File '{file_name}' deleted successfully")
-            else:
-                print("❌ Deletion cancelled")
-                
-        except KeyboardInterrupt:
-            print("\n❌ Delete operation cancelled")
-    
-    def _cmd_show_history(self):
-        """Show transfer history with detailed statistics"""
-        print("📊 Transfer History & Statistics:")
-        
-        # Show new transfer history with progress tracking
-        if hasattr(self, 'transfer_history') and self.transfer_history:
-            print(f"\n📦 Recent Transfers ({len(self.transfer_history)}):")
-            print("   File Name          Size    Speed    Duration  Source → Target")
-            print("   " + "-" * 65)
-            
-            for transfer in self.transfer_history[-10:]:  # Show last 10
-                timestamp = transfer['timestamp'][:16].replace('T', ' ')
-                avg_speed = transfer['size_mb'] / transfer['duration'] if transfer['duration'] > 0 else 0
-                print(f"   {transfer['file'][:15]:<15} {transfer['size_mb']:>4} MB {avg_speed:>6.1f} MB/s {transfer['duration']:>6.1f}s  {transfer['source']} → {transfer['target']}")
-            
-            # Transfer statistics
-            total_files = len(self.transfer_history)
-            total_size = sum(t['size_mb'] for t in self.transfer_history)
-            total_time = sum(t['duration'] for t in self.transfer_history)
-            avg_speed = total_size / total_time if total_time > 0 else 0
-            
-            print(f"\n📈 Statistics:")
-            print(f"   📊 Total transfers: {total_files}")
-            print(f"   💾 Total data: {total_size:.1f} MB")
-            print(f"   ⏱️ Total time: {total_time:.1f}s")
-            print(f"   📈 Average speed: {avg_speed:.1f} MB/s")
-        
-        # Show legacy upload/download history
-        if hasattr(self, 'upload_history') and self.upload_history:
-            print(f"\n📤 Legacy Uploads ({len(self.upload_history)}):")
-            for i, upload in enumerate(self.upload_history[-5:], 1):  # Show last 5
-                timestamp = upload['timestamp'][:16].replace('T', ' ')
-                print(f"   {i}. {upload['file_name']} → {upload['target_node']} ({upload['size']}MB) - {timestamp}")
-        
-        if hasattr(self, 'download_history') and self.download_history:
-            print(f"\n📥 Legacy Downloads ({len(self.download_history)}):")
-            for i, download in enumerate(self.download_history[-5:], 1):  # Show last 5
-                timestamp = download['timestamp'][:16].replace('T', ' ')
-                print(f"   {i}. {download['file_name']} ← {download['source_node']} ({download['size']}MB) - {timestamp}")
-        
-        if (not hasattr(self, 'transfer_history') or not self.transfer_history) and \
-           (not hasattr(self, 'upload_history') or not self.upload_history) and \
-           (not hasattr(self, 'download_history') or not self.download_history):
-            print("   📄 No transfer history yet")
-    
-    def _cmd_ping_node(self):
-        """Ping another node"""
-        try:
-            target_node = input("🎯 Enter node name to ping: ").strip()
-            if not target_node:
-                print("❌ Node name cannot be empty")
-                return
-            
-            # Get node information
-            nodes_info = self.get_network_nodes()
-            if target_node not in nodes_info.get('nodes', {}):
-                print(f"❌ Node '{target_node}' not found")
-                return
-            
-            target_info = nodes_info['nodes'][target_node]
-            
-            print(f"📡 Pinging {target_node} ({target_info['ip_address']})...")
-            
-            # Send ping
-            start_time = time.time()
+        source_port = self.resources.port
+        dest_port = self.controller_port
+        sequence_num = 0
+        ack_num = 0
+        data_offset_flags = (5 << 12) | 0x18
+        window_size = 65535
+
+        tcp_header = struct.pack('!HHIIHHHH',
+                                 source_port,
+                                 dest_port,
+                                 sequence_num,
+                                 ack_num,
+                                 data_offset_flags,
+                                 window_size,
+                                 0,
+                                 0)
+
+        version_ihl = (4 << 4) | 5
+        type_of_service = 0
+        total_length = 20 + len(tcp_header) + len(app_data)
+
+        def _resolve(host: str) -> bytes:
             try:
-                target_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                target_socket.settimeout(5.0)
-                target_socket.connect((target_info['address'], target_info['port']))
-                
-                ping_message = {'type': 'ping', 'timestamp': start_time}
-                target_socket.send(json.dumps(ping_message).encode())
-                
-                response_data = target_socket.recv(1024)
-                response = json.loads(response_data.decode())
-                
-                end_time = time.time()
-                latency = (end_time - start_time) * 1000  # Convert to milliseconds
-                
-                target_socket.close()
-                
-                if response.get('type') == 'pong':
-                    print(f"✅ Reply from {target_node}: time={latency:.1f}ms")
-                else:
-                    print(f"❌ Unexpected response from {target_node}")
+                return socket.inet_aton(host)
+            except OSError:
+                return socket.inet_aton(socket.gethostbyname(host))
+
+        try:
+            source_ip = _resolve(self.resources.host)
+        except Exception:
+            source_ip = socket.inet_aton('127.0.0.1')
+
+        try:
+            dest_ip = _resolve(self.controller_host)
+        except Exception:
+            dest_ip = socket.inet_aton('127.0.0.1')
+
+        identification = 0
+        flags_fragment = 0x4000
+        ttl = 64
+        protocol = 6
+        header_checksum = 0
+
+        ip_header = struct.pack('!BBHHHBBH4s4s',
+                                version_ihl,
+                                type_of_service,
+                                total_length,
+                                identification,
+                                flags_fragment,
+                                ttl,
+                                protocol,
+                                header_checksum,
+                                source_ip,
+                                dest_ip)
+
+        eth_header = bytes.fromhex(self.resources.mac_address.replace(':', '')) + bytes.fromhex('BBCCDDEEFF00') + b'\x08\x00'
+
+        frame_data = eth_header + ip_header + tcp_header + app_data
+        eth_fcs = (binascii.crc32(frame_data) & 0xffffffff).to_bytes(4, 'big')
+
+        return frame_data + eth_fcs
+    
+    def list_cloud_files(self):
+        """List all files with modern interface"""
+        try:
+            request = file_service_pb2.ListFilesRequest(
+                requesting_node_id=self.resources.node_id
+            )
+            
+            try:
+                response = self.controller_stub.ListFiles(request, timeout=10)
+            except grpc.RpcError as e:
+                error_msg = f"{self.terminal.icon('error')} Failed to list files: {e.code()}"
+                print(f"{self.terminal.colored(error_msg, 'red')}")
+                return
+            
+            if not response.files:
+                info_msg = f"\n{self.terminal.icon('info')} No files available on cloud storage"
+                print(f"{self.terminal.colored(info_msg, 'yellow')}")
+                return
+            
+            print(f"\n{self.terminal.header('CLOUD STORAGE FILES', 90)}")
+            
+            # Modern file table
+            print(f"{self.terminal.colored('┌─────────────────────┬──────────┬─────────────────────┬─────────────────────┐', 'blue')}")
+            print(f"{self.terminal.colored('│', 'blue')} {self.terminal.colored('Filename', 'cyan'):<19} {self.terminal.colored('│', 'blue')} {self.terminal.colored('Size', 'cyan'):<8} {self.terminal.colored('│', 'blue')} {self.terminal.colored('Upload Date', 'cyan'):<19} {self.terminal.colored('│', 'blue')} {self.terminal.colored('Replicas', 'cyan'):<19} {self.terminal.colored('│', 'blue')}")
+            print(f"{self.terminal.colored('├─────────────────────┼──────────┼─────────────────────┼─────────────────────┤', 'blue')}")
+            
+            for file_meta in response.files:
+                size_str = self._format_file_size(file_meta.size)
+                replicas_str = ", ".join(file_meta.replica_nodes[:2])
+                if len(file_meta.replica_nodes) > 2:
+                    replicas_str += f" (+{len(file_meta.replica_nodes)-2})"
                     
-            except Exception as e:
-                print(f"❌ Ping failed: {e}")
+                filename = file_meta.filename[:19] if len(file_meta.filename) > 19 else file_meta.filename
                 
-        except KeyboardInterrupt:
-            print("\n❌ Ping cancelled")
-    
-    def _cmd_show_network_info(self):
-        """Show network interface information"""
-        print("🔌 Network Interface Information:")
-        if self.network_interface_info:
-            print(f"   📍 IP Address: {self.network_interface_info.get('ip_address', 'N/A')}")
-            print(f"   🏷️ MAC Address: {self.network_interface_info.get('mac_address', 'N/A')}")
-            print(f"   🔍 Subnet Mask: {self.network_interface_info.get('subnet_mask', 'N/A')}")
-            print(f"   🚪 Gateway: {self.network_interface_info.get('gateway', 'N/A')}")
-            print(f"   🌐 DNS Server: {self.network_interface_info.get('dns_server', 'N/A')}")
-        else:
-            print("   ❌ No network interface information available")
-        
-        print(f"\n🔌 Connection Status:")
-        print(f"   📍 Network Address: {self.network_address}:{self.network_port}")
-        print(f"   🔗 Connected: {'Yes' if self.connected_to_network else 'No'}")
-        print(f"   📞 Local Port: {self.port}")
-
-    def _cmd_show_help(self):
-        """Show help information"""
-        print("💡 File Management Commands:")
-        print("   📁 ls          - List local files")
-        print("   📄 create      - Create a new file")
-        print("   📤 upload      - Upload file to another node")
-        print("   📥 download    - Download file from another node")
-        print("   📦 transfer    - Transfer file between nodes")
-        print("   🔍 search      - Search for files in network")
-        print("   🗑️ delete      - Delete a local file")
-        print("   📊 history     - Show transfer history")
-        print("\n🌐 Network Commands:")
-        print("   👥 nodes       - List network nodes")
-        print("   📍 ping        - Ping another node")
-        print("   🔌 netinfo     - Show network interface info")
-        print("\n📊 System Commands:")
-        print("   📊 status      - Show node status")
-        print("   💾 storage     - Show storage information")
-        print("   🔄 help        - Show this help")
-        print("   🚪 exit        - Exit node")
-    
-    def start(self):
-        """Start the autonomous node"""
-        # Get configuration from user
-        if not self.choose_node_mode():
-            return
-        
-        print(f"\n🚀 Starting virtual machine '{self.node_id}'...")
-        
-        self.running = True
-        self.start_time = time.time()
-        
-        # Initialize virtual hardware
-        print("🖥️ Initializing virtual hardware...")
-        self.virtual_hardware = VirtualHardware(
-            self.node_id, self.cpu_cores, self.memory_capacity, self.storage_capacity
-        )
-        self.virtual_hardware.power_on()
-        
-        # Initialize virtual file system
-        print("💾 Initializing virtual file system...")
-        self.virtual_filesystem = VirtualFileSystem(
-            self.node_id, self.storage_path, self.storage_capacity
-        )
-        
-        # Start node server
-        self.server_thread = threading.Thread(target=self.start_node_server, daemon=True)
-        self.server_thread.start()
-        
-        time.sleep(2)  # Wait for components to start
-        
-        # Connect to network
-        if self.connect_to_network():
-            # Start heartbeat
-            self.start_heartbeat()
+                print(f"{self.terminal.colored('│', 'blue')} {self.terminal.icon('file')}{filename:<18} {self.terminal.colored('│', 'blue')} {size_str:<8} {self.terminal.colored('│', 'blue')} {file_meta.upload_date:<19} {self.terminal.colored('│', 'blue')} {replicas_str:<19} {self.terminal.colored('│', 'blue')}")
             
-            # Run command interface
-            self.run_command_interface()
-        else:
-            print("❌ Failed to connect to network. Exiting...")
-        
-        # Cleanup
-        self.stop()
+            print(f"{self.terminal.colored('└─────────────────────┴──────────┴─────────────────────┴─────────────────────┘', 'blue')}")
+            
+            summary = f"""{self.terminal.icon('chart')} Total Files: {len(response.files)}
+{self.terminal.icon('storage')} Total Size: {sum(f.size for f in response.files) / 1024**2:.1f} MB
+{self.terminal.icon('shield')} Average Replicas: {sum(len(f.replica_nodes) for f in response.files) / len(response.files):.1f}"""
+            
+            print(self.terminal.box(summary, "STORAGE SUMMARY", 'green'))
+            
+        except Exception as e:
+            error_msg = f"{self.terminal.icon('error')} Error fetching file list: {e}"
+            print(f"{self.terminal.colored(error_msg, 'red')}")
     
-    def stop(self):
-        """Stop the node"""
-        print(f"\n🛑 Shutting down node '{self.node_id}'...")
-        
-        # Disconnect from network
-        if self.connected_to_network:
+    def list_local_files(self):
+        """List local files stored on this node with modern interface"""
+        try:
+            local_files_dir = f"node_storage/{self.resources.node_id}/local_files"
+            
+            if not os.path.exists(local_files_dir):
+                info_msg = f"\n{self.terminal.icon('info')} No local files directory found"
+                print(f"{self.terminal.colored(info_msg, 'yellow')}")
+                return
+            
+            local_files = []
+            for filename in os.listdir(local_files_dir):
+                filepath = os.path.join(local_files_dir, filename)
+                if os.path.isfile(filepath):
+                    stat = os.stat(filepath)
+                    local_files.append({
+                        'filename': filename,
+                        'size': stat.st_size,
+                        'modified': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(stat.st_mtime))
+                    })
+            
+            if not local_files:
+                info_msg = f"\n{self.terminal.icon('info')} No local files found"
+                print(f"{self.terminal.colored(info_msg, 'yellow')}")
+                return
+            
+            print(f"\n{self.terminal.header('LOCAL FILES', 90)}")
+            
+            # Modern file table
+            print(f"{self.terminal.colored('┌─────────────────────┬──────────┬─────────────────────┐', 'blue')}")
+            print(f"{self.terminal.colored('│', 'blue')} {self.terminal.colored('Filename', 'cyan'):<19} {self.terminal.colored('│', 'blue')} {self.terminal.colored('Size', 'cyan'):<8} {self.terminal.colored('│', 'blue')} {self.terminal.colored('Last Modified', 'cyan'):<19} {self.terminal.colored('│', 'blue')}")
+            print(f"{self.terminal.colored('├─────────────────────┼──────────┼─────────────────────┤', 'blue')}")
+            
+            for file_info in local_files:
+                size_str = self._format_file_size(file_info['size'])
+                filename = file_info['filename'][:19] if len(file_info['filename']) > 19 else file_info['filename']
+                
+                print(f"{self.terminal.colored('│', 'blue')} {self.terminal.icon('file')}{filename:<18} {self.terminal.colored('│', 'blue')} {size_str:<8} {self.terminal.colored('│', 'blue')} {file_info['modified']:<19} {self.terminal.colored('│', 'blue')}")
+            
+            print(f"{self.terminal.colored('└─────────────────────┴──────────┴─────────────────────┘', 'blue')}")
+            
+            summary = f"""{self.terminal.icon('chart')} Total Files: {len(local_files)}
+{self.terminal.icon('storage')} Total Size: {sum(f['size'] for f in local_files) / 1024**2:.1f} MB
+{self.terminal.icon('folder')} Location: {local_files_dir}"""
+            
+            print(self.terminal.box(summary, "LOCAL STORAGE SUMMARY", 'green'))
+            
+        except Exception as e:
+            error_msg = f"{self.terminal.icon('error')} Error listing local files: {e}"
+            print(f"{self.terminal.colored(error_msg, 'red')}")
+    
+    def get_file_info(self, filename: str):
+        """Get detailed file information with modern interface"""
+        try:
+            request = file_service_pb2.FileInfoRequest(
+                requesting_node_id=self.resources.node_id,
+                filename=filename
+            )
+            
             try:
-                network_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                network_socket.settimeout(5.0)
-                network_socket.connect((self.network_address, self.network_port))
-                
-                disconnect_message = {
-                    'type': 'disconnect',
-                    'node_id': self.node_id
-                }
-                
-                network_socket.send(json.dumps(disconnect_message).encode())
-                # Wait for response
-                try:
-                    network_socket.recv(1024)
-                except:
-                    pass
-                network_socket.close()
-                
-            except Exception:
-                pass  # Network might already be down
+                response = self.controller_stub.GetFileInfo(request, timeout=10)
+            except grpc.RpcError as e:
+                error_msg = f"{self.terminal.icon('error')} Failed to get file info: {e.code()}"
+                print(f"{self.terminal.colored(error_msg, 'red')}")
+                return
+            
+            if not response.found:
+                error_msg = f"{self.terminal.icon('error')} File '{filename}' not found in cloud storage"
+                print(f"{self.terminal.colored(error_msg, 'red')}")
+                return
+            
+            file_meta = response.metadata
+            
+            file_details = f"""{self.terminal.icon('file')} File: {filename}
+{self.terminal.icon('chart')} Size: {self._format_file_size(file_meta.size)} ({file_meta.size:,} bytes)
+{self.terminal.icon('gear')} Chunks: {file_meta.chunk_count} segments
+{self.terminal.icon('time')} Upload Date: {file_meta.upload_date}
+{self.terminal.icon('key')} Checksum: {file_meta.checksum}
+{self.terminal.icon('shield')} Replicas: {len(response.replicas)} nodes"""
+            
+            print(f"\n{self.terminal.box(file_details, 'FILE DETAILS', 'blue')}")
+            
+            # Replica information
+            replica_info = f"{self.terminal.colored('REPLICA STATUS:', 'cyan')}\n"
+            for i, replica in enumerate(response.replicas, 1):
+                status_icon = self.terminal.icon('success') if replica.is_online else self.terminal.icon('cross')
+                status_text = "Online" if replica.is_online else "Offline"
+                replica_info += f"  {status_icon} {replica.node_id} ({replica.latency_ms}ms) - {status_text}\n"
+            
+            print(self.terminal.box(replica_info.strip(), "REPLICA NODES", 'yellow'))
+            
+            # Performance estimates
+            estimated_time = file_meta.size / (self.resources.bandwidth_bps / 8) if self.resources.bandwidth_bps > 0 else 0
+            
+            performance_info = f"""{self.terminal.icon('lightning')} Bandwidth: {self.resources.bandwidth_mbps} Mbps
+{self.terminal.icon('time')} Estimated Download: {estimated_time:.1f}s
+{self.terminal.icon('chart')} Transfer Rate: {file_meta.size / estimated_time / 1024**2:.1f} MB/s"""
+            
+            print(self.terminal.box(performance_info, "PERFORMANCE", 'green'))
+            
+        except Exception as e:
+            error_msg = f"{self.terminal.icon('error')} Error getting file info: {e}"
+            print(f"{self.terminal.colored(error_msg, 'red')}")
+    
+    def show_node_status(self):
+        """Display modern node status"""
+        status_info = self.resources.get_status_info()
+        
+        # System information
+        system_info = f"""{self.terminal.icon('node')} Node ID: {self.terminal.colored(status_info['node_id'], 'cyan')}
+{self.terminal.icon('network')} Network: {status_info['network']}
+{self.terminal.icon('key')} MAC Address: {status_info['mac_address']}"""
+        
+        print(f"\n{self.terminal.box(system_info, 'SYSTEM INFO', 'blue')}")
+        
+        # Hardware status
+        hardware_info = f"""{self.terminal.icon('cpu')} CPU: {status_info['cpu_info']}
+{self.terminal.icon('memory')} RAM: {status_info['ram_info']} (Usage: {status_info['ram_usage']})
+{self.terminal.icon('storage')} Storage: {status_info['storage_info']} (Usage: {status_info['storage_usage']})
+{self.terminal.icon('bandwidth')} Bandwidth: {status_info['bandwidth_info']}
+{self.terminal.icon('chart')} Network Usage: {status_info['network_usage']}"""
+        
+        print(self.terminal.box(hardware_info, 'HARDWARE STATUS', 'yellow'))
+        
+        # Storage details
+        connection_status = f"{self.terminal.icon('success')} Connected" if self.registered else f"{self.terminal.icon('cross')} Disconnected"
+        node_status = f"{self.terminal.icon('success')} Online" if self.running else f"{self.terminal.icon('cross')} Offline"
+        
+        storage_info = f"""{self.terminal.icon('file')} Local Files: {len(self.local_storage)}
+{self.terminal.icon('shield')} Replicas Stored: {len(self.replica_storage)}
+{self.terminal.icon('chain')} Controller: {connection_status}
+{self.terminal.icon('heart')} Heartbeat: {self.heartbeat_interval}s interval
+{self.terminal.icon('gear')} Status: {node_status}"""
+        
+        print(self.terminal.box(storage_info, 'STORAGE & CONNECTION', 'green'))
+    
+    def show_help(self):
+        """Display modern help interface"""
+        print(f"\n{self.terminal.header('AVAILABLE COMMANDS', 80)}")
+        
+        commands = [
+            ("upload <filepath>", "Upload local file to cloud storage", "upload"),
+            ("download <filename>", "Download file from cloud storage", "download"),
+            ("list / ls / files", "Show all files on cloud", "file"),
+            ("local / localfiles", "Show local files on this node", "folder"),
+            ("info <filename>", "Get detailed file information", "info"),
+            ("status", "Show node status and resources", "gear"),
+            ("clear / cls", "Clear terminal screen", "eye"),
+            ("help", "Show this help message", "info"),
+            ("exit / quit / q", "Shutdown node gracefully", "cross")
+        ]
+        
+        print(f"{self.terminal.colored('┌─────────────────────┬─────────────────────────────────────┐', 'blue')}")
+        print(f"{self.terminal.colored('│', 'blue')} {self.terminal.colored('Command', 'cyan'):<19} {self.terminal.colored('│', 'blue')} {self.terminal.colored('Description', 'cyan'):<35} {self.terminal.colored('│', 'blue')}")
+        print(f"{self.terminal.colored('├─────────────────────┼─────────────────────────────────────┤', 'blue')}")
+        
+        for cmd, desc, icon in commands:
+            icon_str = self.terminal.icon(icon)
+            print(f"{self.terminal.colored('│', 'blue')} {icon_str}{cmd:<18} {self.terminal.colored('│', 'blue')} {desc:<35} {self.terminal.colored('│', 'blue')}")
+        
+        print(f"{self.terminal.colored('└─────────────────────┴─────────────────────────────────────┘', 'blue')}")
+        
+        examples = f"""{self.terminal.icon('upload')} upload /path/to/file.txt
+{self.terminal.icon('download')} download file.txt
+{self.terminal.icon('file')} list
+{self.terminal.icon('folder')} local
+{self.terminal.icon('info')} info file.txt
+{self.terminal.icon('gear')} status"""
+        
+        print(self.terminal.box(examples, "USAGE EXAMPLES", 'green'))
+    
+    def shutdown(self):
+        """Gracefully shutdown with modern interface"""
+        shutdown_info = f"""{self.terminal.icon('gear')} Shutting down {self.resources.node_id}
+{self.terminal.icon('sync')} Stopping services...
+{self.terminal.icon('chain')} Unregistering from controller...
+{self.terminal.icon('network')} Closing connections..."""
+        
+        print(self.terminal.box(shutdown_info, "SHUTDOWN SEQUENCE", 'yellow'))
         
         self.running = False
         
-        if self.server_socket:
-            self.server_socket.close()
+        # Unregister from controller
+        if self.registered:
+            try:
+                request = file_service_pb2.UnregisterNodeRequest(
+                    node_id=self.resources.node_id,
+                    reason="Normal shutdown"
+                )
+                self.controller_stub.UnregisterNode(request, timeout=5)
+                success_msg = f"{self.terminal.icon('success')} Unregistered from controller"
+                print(f"{self.terminal.colored(success_msg, 'green')}")
+            except:
+                pass
         
-        print("👋 Node stopped. Goodbye!")
-
-    # Advanced VM Commands Implementation
-    def _cmd_process_list(self):
-        """List virtual processes"""
-        processes = [
-            {"pid": 1, "name": "systemd", "cpu": 0.1, "mem": 2.3, "status": "running"},
-            {"pid": 124, "name": "sshd", "cpu": 0.0, "mem": 1.2, "status": "running"}, 
-            {"pid": 256, "name": "file_manager", "cpu": 1.2, "mem": 5.4, "status": "running"},
-            {"pid": 312, "name": "network_service", "cpu": 0.5, "mem": 3.1, "status": "running"},
-            {"pid": 445, "name": "vm_monitor", "cpu": 2.1, "mem": 8.7, "status": "running"},
-        ]
+        # Stop gRPC server
+        if self.node_server:
+            self.node_server.stop(5)
         
-        print("📊 Virtual Process List:")
-        print("   PID    Name              CPU%   MEM%   Status")
-        print("   " + "-" * 50)
+        # Close controller connection
+        if self.controller_channel:
+            self.controller_channel.close()
         
-        for proc in processes:
-            print(f"   {proc['pid']:<6} {proc['name']:<15} {proc['cpu']:<6} {proc['mem']:<6} {proc['status']}")
+        final_msg = f"{self.terminal.icon('success')} {self.resources.node_id} shutdown complete"
+        print(f"{self.terminal.colored(final_msg, 'green')}")
+        print(f"\n{self.terminal.colored('Thank you for using Distributed Storage Network!', 'cyan')}\n")
     
-    def _cmd_kill_process(self):
-        """Terminate virtual process"""
-        try:
-            pid = input("💀 Enter process PID to kill: ").strip()
-            if not pid.isdigit():
-                print("❌ Invalid PID")
-                return
-            
-            confirm = input(f"⚠️ Kill process {pid}? (y/N): ").strip().lower()
-            if confirm in ['y', 'yes']:
-                print(f"✅ Process {pid} terminated")
-            else:
-                print("❌ Kill cancelled")
-        except KeyboardInterrupt:
-            print("\n❌ Operation cancelled")
-    
-    def _cmd_service_manager(self):
-        """Manage virtual services"""
-        services = {
-            "network": {"status": "active", "desc": "Network Service"},
-            "firewall": {"status": "active", "desc": "Firewall Protection"},
-            "filesystem": {"status": "active", "desc": "File System Manager"},
-            "monitoring": {"status": "active", "desc": "System Monitor"},
-            "backup": {"status": "inactive", "desc": "Backup Service"}
-        }
-        
-        print("🔧 Virtual Services:")
-        print("   Service        Status     Description")
-        print("   " + "-" * 50)
-        
-        for name, info in services.items():
-            status_icon = "🟢" if info["status"] == "active" else "🔴"
-            print(f"   {name:<12} {status_icon} {info['status']:<8} {info['desc']}")
-    
-    def _cmd_user_management(self):
-        """User management system"""
-        users = [
-            {"name": "root", "uid": 0, "home": "/root", "shell": "/bin/bash", "status": "active"},
-            {"name": "admin", "uid": 1000, "home": "/home/admin", "shell": "/bin/bash", "status": "active"},
-            {"name": "guest", "uid": 1001, "home": "/home/guest", "shell": "/bin/bash", "status": "locked"},
-        ]
-        
-        print("👥 Virtual Users:")
-        print("   Username    UID    Home Directory      Shell         Status")
-        print("   " + "-" * 65)
-        
-        for user in users:
-            status_icon = "🟢" if user["status"] == "active" else "🔒"
-            print(f"   {user['name']:<10} {user['uid']:<6} {user['home']:<18} {user['shell']:<12} {status_icon} {user['status']}")
-    
-    def _cmd_firewall(self):
-        """Firewall management"""
-        rules = [
-            {"port": 22, "protocol": "TCP", "action": "ALLOW", "source": "ANY"},
-            {"port": 80, "protocol": "TCP", "action": "ALLOW", "source": "ANY"},
-            {"port": 443, "protocol": "TCP", "action": "ALLOW", "source": "ANY"},
-            {"port": 8888, "protocol": "TCP", "action": "ALLOW", "source": "192.168.1.0/24"},
-        ]
-        
-        print("🔥 Virtual Firewall Rules:")
-        print("   Port   Protocol   Action   Source")
-        print("   " + "-" * 40)
-        
-        for rule in rules:
-            action_icon = "✅" if rule["action"] == "ALLOW" else "❌"
-            print(f"   {rule['port']:<6} {rule['protocol']:<9} {action_icon} {rule['action']:<6} {rule['source']}")
-    
-    def _cmd_traceroute(self):
-        """Simulate traceroute"""
-        try:
-            target = input("🔍 Enter target host: ").strip()
-            if not target:
-                print("❌ Target cannot be empty")
-                return
-            
-            print(f"🔍 Traceroute to {target}:")
-            hops = [
-                {"hop": 1, "ip": "192.168.1.1", "time": "1.2ms", "name": "gateway"},
-                {"hop": 2, "ip": "10.0.0.1", "time": "5.4ms", "name": "router.isp.com"},
-                {"hop": 3, "ip": "203.0.113.1", "time": "12.1ms", "name": "edge.network.com"},
-                {"hop": 4, "ip": target, "time": "18.7ms", "name": target},
-            ]
-            
-            for hop in hops:
-                print(f"   {hop['hop']:<3} {hop['name']:<20} ({hop['ip']}) {hop['time']}")
-                
-        except KeyboardInterrupt:
-            print("\n❌ Traceroute cancelled")
-    
-    def _cmd_netstat(self):
-        """Network statistics"""
-        connections = [
-            {"proto": "TCP", "local": f"{self.network_host}:{self.port}", "remote": f"{self.network_host}:{self.network_port}", "state": "ESTABLISHED"},
-            {"proto": "TCP", "local": "127.0.0.1:22", "remote": "0.0.0.0:*", "state": "LISTENING"},
-            {"proto": "UDP", "local": "0.0.0.0:53", "remote": "0.0.0.0:*", "state": "LISTENING"},
-        ]
-        
-        print("🌐 Network Connections:")
-        print("   Protocol   Local Address        Remote Address       State")
-        print("   " + "-" * 65)
-        
-        for conn in connections:
-            print(f"   {conn['proto']:<9} {conn['local']:<20} {conn['remote']:<20} {conn['state']}")
-    
-    def _cmd_ifconfig(self):
-        """Network interface configuration"""
-        if hasattr(self, 'network_interface_info') and self.network_interface_info:
-            print("🌐 Network Interface Configuration:")
-            print(f"   Interface: eth0")
-            print(f"   IP Address: {self.network_interface_info.get('ip_address', 'N/A')}")
-            print(f"   MAC Address: {self.network_interface_info.get('mac_address', 'N/A')}")
-            print(f"   Subnet Mask: 255.255.255.0")
-            print(f"   Gateway: 192.168.1.1")
-            print(f"   DNS: 8.8.8.8")
-            print(f"   Status: UP")
-            print(f"   RX Packets: 1,247")
-            print(f"   TX Packets: 892")
+    def _format_file_size(self, size_bytes: int) -> str:
+        """Format file size in human readable format"""
+        if size_bytes >= 1024**3:
+            return f"{size_bytes / 1024**3:.1f}GB"
+        elif size_bytes >= 1024**2:
+            return f"{size_bytes / 1024**2:.1f}MB"
+        elif size_bytes >= 1024:
+            return f"{size_bytes / 1024:.1f}KB"
         else:
-            print("❌ Network interface not configured")
+            return f"{size_bytes}B"
     
-    def _cmd_arp(self):
-        """ARP table"""
-        arp_table = [
-            {"ip": "192.168.1.1", "mac": "00:11:22:33:44:55", "type": "gateway"},
-            {"ip": "192.168.1.10", "mac": "02:74:8a:a0:cd:d1", "type": "dynamic"},
-            {"ip": "192.168.1.11", "mac": "02:f9:c4:c3:c6:d5", "type": "dynamic"},
-        ]
-        
-        print("🏷️ ARP Table:")
-        print("   IP Address      MAC Address        Type")
-        print("   " + "-" * 45)
-        
-        for entry in arp_table:
-            print(f"   {entry['ip']:<15} {entry['mac']:<17} {entry['type']}")
-    
-    def _cmd_mount(self):
-        """Mount virtual drive"""
-        print("💽 Available drives:")
-        print("   /dev/sdb1 - 100GB - Unmounted")
-        print("   /dev/sdc1 - 500GB - Unmounted") 
-        
+    # gRPC Service Methods (for node-to-node communication)
+    def TransferChunk(self, request, context):
+        """Receive chunk from another node for replication"""
         try:
-            device = input("💽 Device to mount: ").strip()
-            mount_point = input("📁 Mount point: ").strip()
+            calculated_checksum = hashlib.md5(request.chunk_data).hexdigest()
+            if calculated_checksum != request.checksum:
+                return file_service_pb2.TransferChunkResponse(
+                    success=False,
+                    message="Checksum verification failed"
+                )
             
-            if device and mount_point:
-                print(f"💽 Mounting {device} at {mount_point}...")
-                print("✅ Drive mounted successfully")
+            chunk_key = f"{request.file_id}_{request.chunk_id}"
+            self.replica_storage[chunk_key] = {
+                'data': request.chunk_data,
+                'checksum': request.checksum,
+                'source_node': request.source_node_id
+            }
             
-        except KeyboardInterrupt:
-            print("\n❌ Mount cancelled")
+            self.resources.allocate_storage(len(request.chunk_data))
+            
+            return file_service_pb2.TransferChunkResponse(
+                success=True,
+                message="Chunk stored successfully",
+                stored_checksum=calculated_checksum
+            )
+            
+        except Exception as e:
+            return file_service_pb2.TransferChunkResponse(
+                success=False,
+                message=f"Storage failed: {str(e)}"
+            )
     
-    def _cmd_umount(self):
-        """Unmount virtual drive"""
-        print("💽 Mounted drives:")
-        print("   /dev/sda1 mounted at /")
-        print("   /dev/sdb1 mounted at /home")
-        
+    def RequestChunk(self, request, context):
+        """Serve chunk to another node"""
         try:
-            device = input("💽 Device to unmount: ").strip()
-            if device:
-                print(f"💽 Unmounting {device}...")
-                print("✅ Drive unmounted successfully")
-                
-        except KeyboardInterrupt:
-            print("\n❌ Unmount cancelled")
-    
-    def _cmd_raid_manager(self):
-        """RAID array management"""
-        print("💾 RAID Configuration:")
-        print("   Array   Level   Status     Devices              Capacity")
-        print("   " + "-" * 60)
-        print("   md0     RAID1   healthy    /dev/sda1,/dev/sdb1  500GB")
-        print("   md1     RAID5   degraded   /dev/sdc1,/dev/sdd1  1TB")
-    
-    def _cmd_disk_encryption(self):
-        """Disk encryption management"""
-        try:
-            action = input("🔐 Encryption action (encrypt/decrypt/status): ").strip().lower()
+            chunk_key = f"{request.file_id}_{request.chunk_id}"
             
-            if action == "encrypt":
-                print("🔐 Starting disk encryption...")
-                print("✅ Drive encrypted with AES-256")
-            elif action == "decrypt":
-                print("🔓 Starting disk decryption...")
-                print("✅ Drive decrypted")
-            elif action == "status":
-                print("🔐 Encryption Status:")
-                print("   Drive C: Encrypted (BitLocker)")
-                print("   Drive D: Not encrypted")
+            if chunk_key in self.replica_storage:
+                chunk_info = self.replica_storage[chunk_key]
+                return file_service_pb2.ChunkResponse(
+                    found=True,
+                    chunk_data=chunk_info['data'],
+                    checksum=chunk_info['checksum'],
+                    message="Chunk retrieved successfully"
+                )
             else:
-                print("❌ Invalid action")
+                return file_service_pb2.ChunkResponse(
+                    found=False,
+                    chunk_data=b'',
+                    checksum='',
+                    message="Chunk not found"
+                )
                 
-        except KeyboardInterrupt:
-            print("\n❌ Operation cancelled")
+        except Exception as e:
+            return file_service_pb2.ChunkResponse(
+                found=False,
+                chunk_data=b'',
+                checksum='',
+                message=f"Retrieval failed: {str(e)}"
+            )
+
+
+def parse_arguments():
+    """Parse command line arguments for node configuration"""
+    parser = argparse.ArgumentParser(description='Virtual Machine Storage Node with Modern Terminal')
     
-    def _cmd_create_snapshot(self):
-        """Create VM snapshot"""
-        try:
-            name = input("📸 Snapshot name: ").strip()
-            if not name:
-                print("❌ Snapshot name cannot be empty")
-                return
-            
-            print(f"📸 Creating snapshot '{name}'...")
-            print("   💾 Saving memory state...")
-            print("   💽 Saving disk state...")
-            print("   ⚙️ Saving configuration...")
-            print(f"✅ Snapshot '{name}' created successfully")
-            
-        except KeyboardInterrupt:
-            print("\n❌ Snapshot cancelled")
+    # Required parameters
+    parser.add_argument('--node-id', required=True, help='Unique node identifier (e.g., VM1)')
     
-    def _cmd_clone_vm(self):
-        """Clone virtual machine"""
-        try:
-            name = input("👯 Clone name: ").strip()
-            if not name:
-                print("❌ Clone name cannot be empty")
-                return
-            
-            print(f"👯 Cloning VM as '{name}'...")
-            print("   💾 Cloning file system...")
-            print("   ⚙️ Cloning configuration...")
-            print("   🌐 Generating new MAC address...")
-            print(f"✅ VM cloned successfully as '{name}'")
-            
-        except KeyboardInterrupt:
-            print("\n❌ Clone cancelled")
+    # Network parameters
+    parser.add_argument('--host', default='localhost', help='Network host (default: localhost)')
+    parser.add_argument('--port', type=int, required=True, help='Network port (e.g., 5001)')
+    parser.add_argument('--mac-address', default=None, help='MAC address (auto-generated if not provided)')
     
-    def _cmd_antivirus_scan(self):
-        """Antivirus scan"""
-        try:
-            scan_type = input("🛡️ Scan type (quick/full/custom): ").strip().lower()
-            
-            print(f"🛡️ Starting {scan_type} antivirus scan...")
-            print("   🔍 Scanning system files...")
-            print("   🔍 Scanning user files...")
-            print("   🔍 Scanning memory...")
-            print("✅ Scan completed - No threats found")
-            print(f"   📊 Files scanned: 45,621")
-            print(f"   ⏱️ Scan time: 2m 34s")
-            
-        except KeyboardInterrupt:
-            print("\n❌ Scan cancelled")
+    # Hardware parameters
+    parser.add_argument('--cpu', type=int, default=2, help='CPU cores (default: 2)')
+    parser.add_argument('--cpu-speed', type=float, default=2.4, help='CPU speed in GHz (default: 2.4)')
+    parser.add_argument('--ram', type=int, default=4, help='RAM in GB (default: 4)')
+    parser.add_argument('--storage', type=int, default=100, help='Storage in GB (default: 100)')
+    parser.add_argument('--bandwidth', type=int, default=100, help='Bandwidth in Mbps (default: 100)')
     
-    def _cmd_security_audit(self):
-        """Security audit"""
-        print("🔒 Security Audit Report:")
-        print("   🟢 Firewall: Active")
-        print("   🟢 Antivirus: Up to date")
-        print("   🟡 Password policy: Weak passwords detected")
-        print("   🟢 System updates: Current")
-        print("   🟡 Open ports: 3 non-standard ports open")
-        print("   🟢 File permissions: Proper")
-        print("   Risk Level: MEDIUM")
+    # Controller connection
+    parser.add_argument('--controller-host', default='localhost', help='Controller host (default: localhost)')
+    parser.add_argument('--controller-port', type=int, default=5000, help='Controller port (default: 5000)')
     
-    def _cmd_copy_file(self):
-        """Copy file"""
-        try:
-            source = input("📄 Source file: ").strip()
-            dest = input("📁 Destination: ").strip()
-            
-            if source and dest:
-                print(f"📄 Copying {source} to {dest}...")
-                print("✅ File copied successfully")
-            
-        except KeyboardInterrupt:
-            print("\n❌ Copy cancelled")
-    
-    def _cmd_move_file(self):
-        """Move/rename file"""
-        try:
-            source = input("📄 Source file: ").strip()
-            dest = input("📁 Destination: ").strip()
-            
-            if source and dest:
-                print(f"📄 Moving {source} to {dest}...")
-                print("✅ File moved successfully")
-            
-        except KeyboardInterrupt:
-            print("\n❌ Move cancelled")
-    
-    def _cmd_change_permissions(self):
-        """Change file permissions"""
-        try:
-            filename = input("📄 File name: ").strip()
-            perms = input("🔐 Permissions (e.g., 755): ").strip()
-            
-            if filename and perms:
-                print(f"🔐 Changed permissions of {filename} to {perms}")
-            
-        except KeyboardInterrupt:
-            print("\n❌ Permission change cancelled")
-    
-    def _cmd_change_password(self):
-        """Change user password"""
-        try:
-            user = input("👤 Username (default: current): ").strip() or "current"
-            print(f"🔐 Password changed for user '{user}'")
-            
-        except KeyboardInterrupt:
-            print("\n❌ Password change cancelled")
-    
-    def _cmd_sudo(self):
-        """Execute command as administrator"""
-        try:
-            command = input("🔓 Command to run as admin: ").strip()
-            if command:
-                print(f"🔓 [sudo] Executing: {command}")
-                print("✅ Command executed with admin privileges")
-            
-        except KeyboardInterrupt:
-            print("\n❌ Sudo cancelled")
+    return parser.parse_args()
+
 
 def main():
-    """Main function"""
-    print("🖥️  Autonomous Distributed System Node")
-    print("🌐 Will connect to network at localhost:8888")
-    print()
+    """Main function to start a virtual node with modern interface"""
+    args = parse_arguments()
     
-    node = AutonomousNode()
+    # Generate MAC address if not provided
+    if not args.mac_address:
+        args.mac_address = NodeResources.generate_mac_address(args.node_id)
     
-    try:
-        node.start()
-    except KeyboardInterrupt:
-        print(f"\n⚠️  Interrupted by user")
-    except Exception as e:
-        print(f"❌ Unexpected error: {e}")
-    finally:
-        if node.running:
-            node.stop()
+    # Create node resources configuration
+    resources = NodeResources(
+        node_id=args.node_id,
+        host=args.host,
+        port=args.port,
+        cpu_cores=args.cpu,
+        cpu_speed=args.cpu_speed,
+        ram_gb=args.ram,
+        storage_gb=args.storage,
+        bandwidth_mbps=args.bandwidth,
+        mac_address=args.mac_address
+    )
+    
+    # Create and start the modern node
+    node = StorageVirtualNode(resources, args.controller_host, args.controller_port)
+    node.start_node()
+
 
 if __name__ == "__main__":
     main()

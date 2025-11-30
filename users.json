@@ -1,0 +1,15 @@
+{
+  "guiddel016@gmail.com": {
+    "user_id": "user_1764073119_e23d1c03",
+    "username": "jenkins",
+    "email": "guiddel016@gmail.com",
+    "phone": "677880739",
+    "password_hash": "13f389df5251d9631e1cddc368b4e3836193a0f7c96e7d15f48213edd02ae7f35ce22e5171172626c6af634968387925",
+    "storage_allocated_gb": 2,
+    "storage_used_bytes": 0,
+    "created_at": "2025-11-25T13:18:39.641849",
+    "last_login": "2025-11-30T02:38:15.723587",
+    "is_active": true,
+    "files": []
+  }
+}
