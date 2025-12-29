@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1544,11 +1544,11 @@
     <div class="top-header">
         <div class="header-left">
             <div class="logo-section">
-                <div class="logo">☁️</div>
+                <div class="logo">&#9729;&#65039;</div>
                 <div class="logo-text">GUI Storage</div>
             </div>
             <div class="search-bar">
-                <span>🔍</span>
+                <span>🔍</span>
                 <input type="text" placeholder="Search in Drive" id="searchInput">
             </div>
         </div>
@@ -1571,7 +1571,7 @@
             </button>
 
             <div class="nav-item active" onclick="switchView('myfiles')">
-                <span class="nav-icon">📁</span>
+                <span class="nav-icon">📝</span>
                 <span>My Files</span>
             </div>
             <div class="nav-item" onclick="switchView('recent')">
@@ -1613,7 +1613,7 @@
                         <div class="quick-action-text">Upgrade Storage</div>
                     </div>
                     <div class="quick-action" onclick="closeWelcome();">
-                        <div class="quick-action-icon">📁</div>
+                        <div class="quick-action-icon">📝</div>
                         <div class="quick-action-text">Browse Files</div>
                     </div>
                 </div>
@@ -1624,10 +1624,10 @@
                 <div class="content-title" id="contentTitle">My Files</div>
                 <div class="view-controls">
                     <button class="view-btn active" onclick="toggleView('grid')">
-                        <span>🔲 Grid</span>
+                        <span>🔍² Grid</span>
                     </button>
                     <button class="view-btn" onclick="toggleView('list')">
-                        <span>☰ List</span>
+                        <span>â˜° List</span>
                     </button>
                 </div>
             </div>
@@ -1651,7 +1651,7 @@
 
             <!-- Empty State -->
             <div class="empty-state" id="emptyState" style="display: none;">
-                <div class="empty-icon">📂</div>
+                <div class="empty-icon">📝‚</div>
                 <div class="empty-title">No files yet</div>
                 <div class="empty-subtitle">Upload your first file to get started!</div>
                 <button class="btn-primary" style="margin-top: 16px;" onclick="triggerUpload()">Upload Files</button>
@@ -1726,29 +1726,59 @@
         // Authentication
         async function checkAuth() {
             try {
+                // Give the browser time to set cookies from the redirect
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                const sessionToken = localStorage.getItem('session_token');
+                const headers = {
+                    'Cache-Control': 'no-cache'
+                };
+                if (sessionToken) {
+                    headers['Authorization'] = `Bearer ${sessionToken}`;
+                }
+                
                 const response = await fetch(`${API_BASE}/profile`, {
-                    credentials: 'include'
+                    credentials: 'include',
+                    headers: headers
                 });
                 if (!response.ok) {
+                    console.log('Auth check failed, redirecting to login');
+                    localStorage.removeItem('session_token');
                     window.location.href = '/login';
+                    return;
                 }
+                console.log('Auth check successful');
             } catch (error) {
+                console.error('Auth error:', error);
+                localStorage.removeItem('session_token');
                 window.location.href = '/login';
             }
         }
 
         async function loadProfile() {
             try {
+                const sessionToken = localStorage.getItem('session_token');
+                const headers = {
+                    'Cache-Control': 'no-cache'
+                };
+                if (sessionToken) {
+                    headers['Authorization'] = `Bearer ${sessionToken}`;
+                }
+                
                 const response = await fetch(`${API_BASE}/profile`, {
-                    credentials: 'include'
+                    credentials: 'include',
+                    headers: headers
                 });
                 if (response.ok) {
                     currentUser = await response.json();
                     const initial = currentUser.username ? currentUser.username[0].toUpperCase() : 'U';
                     document.getElementById('userAvatar').textContent = initial;
+                    console.log('Profile loaded:', currentUser.email);
+                } else {
+                    console.error('Failed to load profile');
                 }
             } catch (error) {
-                console.error('Failed to load profile:', error);
+                console.error('Error loading profile:', error);
             }
         }
 
@@ -1916,36 +1946,43 @@
                         try {
                             const result = JSON.parse(xhr.responseText);
                             if (result.success) {
-                                updateUploadUI(fileId, 100, '✅ Upload completed!', '');
+                                updateUploadUI(fileId, 100, 'âœ… Upload completed!', '');
                                 resolve(result);
                             } else {
-                                updateUploadUI(fileId, 100, '❌ Upload failed', '');
+                                updateUploadUI(fileId, 100, 'âŒ Upload failed', '');
                                 reject(new Error(result.error || 'Upload failed'));
                             }
                         } catch (e) {
-                            updateUploadUI(fileId, 100, '❌ Upload failed', '');
+                            updateUploadUI(fileId, 100, 'âŒ Upload failed', '');
                             reject(e);
                         }
                     } else {
-                        updateUploadUI(fileId, 100, '❌ Upload failed', '');
+                        updateUploadUI(fileId, 100, 'âŒ Upload failed', '');
                         reject(new Error(`HTTP ${xhr.status}`));
                     }
                 });
 
                 // Handle errors
                 xhr.addEventListener('error', () => {
-                    updateUploadUI(fileId, 100, '❌ Network error', '');
+                    updateUploadUI(fileId, 100, 'âŒ Network error', '');
                     reject(new Error('Network error'));
                 });
 
                 xhr.addEventListener('abort', () => {
-                    updateUploadUI(fileId, 100, '❌ Upload cancelled', '');
+                    updateUploadUI(fileId, 100, 'âŒ Upload cancelled', '');
                     reject(new Error('Upload cancelled'));
                 });
 
                 // Send request
                 xhr.open('POST', `${API_BASE}/upload`);
                 xhr.withCredentials = true;
+                
+                // Add authorization header
+                const sessionToken = localStorage.getItem('session_token');
+                if (sessionToken) {
+                    xhr.setRequestHeader('Authorization', `Bearer ${sessionToken}`);
+                }
+                
                 xhr.send(formData);
             });
         }
@@ -2030,7 +2067,7 @@
             const ext = filename.split('.').pop().toLowerCase();
             const icons = {
                 'pdf': '📄',
-                'doc': '📝', 'docx': '📝',
+                'doc': '📝', 'docx': '📝',
                 'xls': '📊', 'xlsx': '📊',
                 'ppt': '📊', 'pptx': '📊',
                 'jpg': '🖼️', 'jpeg': '🖼️', 'png': '🖼️', 'gif': '🖼️',
@@ -2072,30 +2109,46 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    alert(`✅ File "${filename}" deleted successfully!`);
+                    alert(`âœ… File "${filename}" deleted successfully!`);
                     loadFiles();
                     checkStorageStatus();
                 } else {
-                    alert(`❌ Failed to delete file: ${result.error || 'Unknown error'}`);
+                    alert(`âŒ Failed to delete file: ${result.error || 'Unknown error'}`);
                 }
             } catch (error) {
                 console.error('Delete error:', error);
-                alert('❌ Failed to delete file. Please try again.');
+                alert('âŒ Failed to delete file. Please try again.');
             }
         }
 
         // Storage Status
         async function checkStorageStatus() {
             try {
+                const sessionToken = localStorage.getItem('session_token');
+                const headers = { credentials: 'include' };
+                if (sessionToken) {
+                    headers['Authorization'] = `Bearer ${sessionToken}`;
+                }
+                
                 const response = await fetch(`${API_BASE}/payment/storage-status`, {
-                    credentials: 'include'
+                    credentials: 'include',
+                    headers: headers
                 });
+                
+                if (!response.ok) {
+                    console.error('Storage status fetch failed:', response.status);
+                    return;
+                }
+                
                 const data = await response.json();
 
                 if (data.success) {
-                    const usedGB = (data.used_storage / (1024 * 1024 * 1024)).toFixed(2);
-                    const allocatedGB = (data.allocated_storage / (1024 * 1024 * 1024)).toFixed(0);
-                    const percentage = data.usage_percentage;
+                    const usedStorage = data.used_storage || 0;
+                    const allocatedStorage = data.allocated_storage || (2 * 1024 * 1024 * 1024); // Default 2GB
+                    
+                    const usedGB = (usedStorage / (1024 * 1024 * 1024)).toFixed(2);
+                    const allocatedGB = (allocatedStorage / (1024 * 1024 * 1024)).toFixed(0);
+                    const percentage = allocatedStorage > 0 ? (usedStorage / allocatedStorage * 100) : 0;
 
                     document.getElementById('storageText').textContent = `${usedGB} GB of ${allocatedGB} GB used`;
                     document.getElementById('storageInfo').textContent = `${allocatedGB} GB`;
@@ -2116,6 +2169,8 @@
                     } else {
                         document.getElementById('storageBarFill').style.background = 'linear-gradient(90deg, #1a73e8 0%, #4285f4 100%)';
                     }
+                } else {
+                    console.error('Storage status error:', data);
                 }
             } catch (error) {
                 console.error('Failed to check storage status:', error);
@@ -2183,7 +2238,7 @@
 
         async function processPayment() {
             if (!selectedPlan) {
-                alert('⚠️ Please select a plan first');
+                alert('âš ï¸ Please select a plan first');
                 return;
             }
 
@@ -2201,7 +2256,7 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    const message = `✅ Payment successful!\n\n` +
+                    const message = `âœ… Payment successful!\n\n` +
                                   `Plan: ${result.plan_name}\n` +
                                   `Storage Added: ${result.storage_added}\n` +
                                   `Previous Storage: ${result.previous_storage}\n` +
@@ -2213,11 +2268,11 @@
                         checkStorageStatus();
                     }, 1000);
                 } else {
-                    alert(`❌ Payment failed: ${result.error || 'Unknown error'}`);
+                    alert(`âŒ Payment failed: ${result.error || 'Unknown error'}`);
                 }
             } catch (error) {
                 console.error('Payment error:', error);
-                alert('❌ Payment processing failed. Please try again.');
+                alert('âŒ Payment processing failed. Please try again.');
             }
         }
 
@@ -2238,6 +2293,35 @@
                 window.location.href = '/login';
             }
         }
+        
+        // Fix emoji encoding issues
+        window.addEventListener('load', function() {
+            document.body.innerHTML = document.body.innerHTML
+                .replace(/â˜ï¸/g, '☁️')
+                .replace(/ðŸ"/g, '🔍')
+                .replace(/ðŸ'¾/g, '💾')
+                .replace(/➕/g, '➕')
+                .replace(/ðŸ"/g, '📁')
+                .replace(/ðŸ•'/g, '🕒')
+                .replace(/ðŸ"¤/g, '📤')
+                .replace(/📤/g, '📤')
+                .replace(/ðŸ'Ž/g, '💎')
+                .replace(/🎉/g, '🎉')
+                .replace(/ðŸ"²/g, '🔲')
+                .replace(/🔍²/g, '🔲')
+                .replace(/â˜°/g, '☰')
+                .replace(/ðŸ"‚/g, '📂')
+                .replace(/ðŸ"„/g, '📄')
+                .replace(/📄/g, '📄')
+                .replace(/ðŸ"Š/g, '📊')
+                .replace(/ðŸ"/g, '📝')
+                .replace(/ðŸ–¼ï¸/g, '🖼️')
+                .replace(/âœ"/g, '✓')
+                .replace(/âœ…/g, '✅')
+                .replace(/âŒ/g, '❌');
+        });
     </script>
 </body>
 </html>
+
+

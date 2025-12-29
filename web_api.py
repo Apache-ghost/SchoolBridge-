@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 """
-<<<<<<< HEAD
 web_api.py - Flask Web API for GUI Storage
-=======
-web_api.py - Flask Web API for VM Simulation
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
 
 This module provides a REST API interface for the VM simulation system,
 allowing web-based interaction with the distributed file system.
@@ -16,20 +12,15 @@ import grpc
 import hashlib
 import tempfile
 import socket
-<<<<<<< HEAD
 import time
 import secrets
 from datetime import datetime, timedelta
-=======
-from datetime import datetime
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
 from flask import Flask, request, jsonify, send_file, render_template_string, session, redirect, url_for
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import file_service_pb2
 import file_service_pb2_grpc
 from user_manager import UserManager
-<<<<<<< HEAD
 from payment_system import PaymentSystem
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
@@ -48,31 +39,37 @@ CORS(app, supports_credentials=True, origins=['http://localhost:8080', 'http://1
 # Initialize user manager and payment system
 user_manager = UserManager()
 payment_system = PaymentSystem()
-=======
-
-app = Flask(__name__, static_folder='static', static_url_path='/static')
-app.secret_key = 'vm-simulation-secret-key-change-in-production'
-CORS(app)  # Enable CORS for all routes
-
-# Initialize user manager
-user_manager = UserManager()
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
 
 # Configuration
 CONTROLLER_HOST = 'localhost'
 CONTROLLER_PORT = 5000
 UPLOAD_FOLDER = 'web_uploads'
-<<<<<<< HEAD
 MAX_FILE_SIZE = 1 * 1024 * 1024 * 1024  # 1GB
 
 # Upload progress tracking
 upload_progress_store = {}
-=======
-MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
 
 # Ensure upload directory exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def get_session_token():
+    """Get session token from multiple sources"""
+    # Try Flask session first
+    token = session.get('session_token')
+    if token:
+        return token
+    
+    # Try cookies
+    token = request.cookies.get('session_token')
+    if token:
+        return token
+    
+    # Try Authorization header
+    auth_header = request.headers.get('Authorization')
+    if auth_header and auth_header.startswith('Bearer '):
+        return auth_header[7:]
+    
+    return None
 
 def check_node_online(host, port, timeout=2):
     """Check if a node is online by testing port connectivity"""
@@ -159,22 +156,26 @@ def verify_otp_page():
 
 @app.route('/dashboard')
 def dashboard():
-<<<<<<< HEAD
     """Client Portal - File management dashboard"""
-    # Check if user is logged in
-    session_token = session.get('session_token')
-    if not session_token or not user_manager.get_user_from_session(session_token):
+    # Check if user is logged in - check both session and cookie
+    session_token = session.get('session_token') or request.cookies.get('session_token')
+    
+    if not session_token:
+        print("❌ Dashboard access denied: No session token")
         return redirect('/login')
+    
+    user = user_manager.get_user_from_session(session_token)
+    if not user:
+        print(f"❌ Dashboard access denied: Invalid session token {session_token[:20]}...")
+        return redirect('/login')
+    
+    print(f"✅ Dashboard accessed by: {user['email']}")
     
     try:
         with open('static/client_portal.html', 'r', encoding='utf-8') as f:
             return f.read()
     except FileNotFoundError:
         return "Client portal not found. Please ensure static/client_portal.html exists.", 404
-=======
-    """Dashboard redirect to main page"""
-    return redirect('/')
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
 
 @app.route('/files')
 def files_page():
@@ -215,7 +216,6 @@ def upload_page():
 @app.route('/')
 def index():
     """Main page - serve the dashboard"""
-<<<<<<< HEAD
     # Auto-login the permanent user if no session exists
     if 'session_token' not in session:
         permanent_user_email = 'guegouo.guiddel@ictuniversity.edu.cm'
@@ -224,8 +224,6 @@ def index():
             session['session_token'] = existing_sessions[0]
             session.permanent = True
 
-=======
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
     try:
         with open('static/index.html', 'r', encoding='utf-8') as f:
             return f.read()
@@ -396,7 +394,6 @@ def register_user():
 
 @app.route('/api/login', methods=['POST'])
 def login_user():
-<<<<<<< HEAD
     """Authenticate user with email and password (OTP optional for development)"""
     try:
         data = request.get_json()
@@ -417,15 +414,22 @@ def login_user():
                 return jsonify(auth_result), 401
 
             # Set session
+            session.clear()  # Clear any existing session data
             session['session_token'] = auth_result['session_token']
+            session['user_email'] = email
             session.permanent = True  # Make session permanent
+            
+            print(f"✅ Login successful for {email}, session_token: {auth_result['session_token'][:20]}...")
 
-            return jsonify({
+            response = jsonify({
                 'success': True,
                 'message': 'Login successful',
                 'user': auth_result['user'],
                 'session_token': auth_result['session_token']
             })
+            response.set_cookie('session_token', auth_result['session_token'], 
+                              max_age=365*24*60*60*10, httponly=True, samesite='Lax')
+            return response
 
         # OTP-based login (optional for production)
         otp_code = data.get('otp_code', '').strip()
@@ -484,50 +488,6 @@ def login_user():
 
     except Exception as e:
         print(f"Login error: {str(e)}")
-=======
-    """Login user with OTP verification"""
-    try:
-        data = request.get_json()
-        email = data.get('email', '').strip()
-        password = data.get('password', '')
-        otp_code = data.get('otp_code', '').strip()
-        
-        # First verify password
-        temp_result = user_manager.authenticate_user(email, password)
-        
-        if not temp_result['success']:
-            return jsonify(temp_result), 401
-        
-        # If password is correct but no OTP provided, request OTP
-        if not otp_code:
-            otp_result = user_manager.send_login_otp(email)
-            if otp_result['success']:
-                return jsonify({
-                    'success': False,
-                    'require_otp': True,
-                    'message': 'Please check your email for the verification code'
-                }), 202  # Accepted but requires additional step
-            else:
-                return jsonify(otp_result), 500
-        
-        # Verify OTP if provided
-        otp_result = user_manager.verify_otp(email, otp_code, 'login')
-        if not otp_result['success']:
-            return jsonify(otp_result), 401
-        
-        # Both password and OTP verified - complete login
-        result = user_manager.authenticate_user(email, password)
-        
-        if result['success']:
-            # Set session cookie
-            session['session_token'] = result['session_token']
-            session['email'] = email
-            return jsonify(result)
-        else:
-            return jsonify(result), 401
-    
-    except Exception as e:
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
         return jsonify({'success': False, 'message': f'Login failed: {str(e)}'}), 500
 
 @app.route('/api/send-registration-otp', methods=['POST'])
@@ -552,11 +512,7 @@ def send_registration_otp():
 
 @app.route('/api/verify-registration-otp', methods=['POST'])
 def verify_registration_otp():
-<<<<<<< HEAD
     """Verify OTP for registration and complete user registration"""
-=======
-    """Verify OTP for registration"""
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
     try:
         data = request.get_json()
         email = data.get('email', '').strip()
@@ -565,7 +521,6 @@ def verify_registration_otp():
         if not email or not otp_code:
             return jsonify({'success': False, 'message': 'Email and OTP code are required'}), 400
         
-<<<<<<< HEAD
         # Verify OTP first
         otp_result = user_manager.verify_otp(email, otp_code, 'registration')
         
@@ -606,12 +561,6 @@ def verify_registration_otp():
                 'user_id': result.get('user_id'),
                 'storage_allocated': result.get('storage_allocated', 2)
             }), 201
-=======
-        result = user_manager.verify_otp(email, otp_code, 'registration')
-        
-        if result['success']:
-            return jsonify(result)
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
         else:
             return jsonify(result), 400
     
@@ -661,22 +610,19 @@ def logout_user():
 def get_user_profile():
     """Get current user profile"""
     try:
-        session_token = session.get('session_token')
+        session_token = get_session_token()
+        
         if not session_token:
+            print("❌ No session token found")
             return jsonify({'error': 'Not authenticated'}), 401
-<<<<<<< HEAD
 
         user = user_manager.get_user_from_session(session_token)
         if not user:
+            print(f"❌ Invalid session token: {session_token[:20]}...")
             return jsonify({'error': 'Invalid session'}), 401
+        
+        print(f"✅ Profile accessed by: {user['email']}")
 
-=======
-        
-        user = user_manager.get_user_from_session(session_token)
-        if not user:
-            return jsonify({'error': 'Invalid session'}), 401
-        
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
         return jsonify({
             'username': user['username'],
             'email': user['email'],
@@ -684,12 +630,12 @@ def get_user_profile():
             'storage_used_bytes': user['storage_used_bytes'],
             'storage_used_percent': (user['storage_used_bytes'] / (user['storage_allocated_gb'] * 1024 * 1024 * 1024)) * 100,
             'created_at': user['created_at'],
-<<<<<<< HEAD
             'last_login': user['last_login'],
             'is_admin': user.get('is_admin', False)
         })
 
     except Exception as e:
+        print(f"❌ Profile error: {str(e)}")
         return jsonify({'error': f'Failed to get profile: {str(e)}'}), 500
 
 @app.route('/api/upload-progress/<upload_id>')
@@ -768,14 +714,6 @@ def upgrade_storage():
         return jsonify({'error': f'Upgrade failed: {str(e)}'}), 500
 
 # ... (rest of the code remains the same)
-=======
-            'last_login': user['last_login']
-        })
-    
-    except Exception as e:
-        return jsonify({'error': f'Failed to get profile: {str(e)}'}), 500
-
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
 @app.route('/api/user/files')
 def get_user_files():
     """Get current user's files"""
@@ -803,7 +741,7 @@ def get_user_files():
 
 def require_auth():
     """Helper function to check authentication"""
-    session_token = session.get('session_token')
+    session_token = get_session_token()
     if not session_token:
         return None
     
@@ -978,7 +916,6 @@ def upload_file():
 
         storage_limit = user['storage_allocated_gb'] * 1024 * 1024 * 1024
         if user['storage_used_bytes'] + file_size > storage_limit:
-<<<<<<< HEAD
             required_space_gb = (user['storage_used_bytes'] + file_size) / (1024 * 1024 * 1024)
             additional_gb_needed = max(1, int(required_space_gb - user['storage_allocated_gb']) + 1)
             return jsonify({
@@ -989,9 +926,6 @@ def upload_file():
                 'additional_gb_needed': additional_gb_needed,
                 'message': f'Your {user["storage_allocated_gb"]}GB storage is full. Upgrade your storage to continue uploading.'
             }), 402  # Payment required
-=======
-            return jsonify({'error': f'Storage quota exceeded. You have {user["storage_allocated_gb"]}GB allocated.'}), 400
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
         if file_size > MAX_FILE_SIZE:
             return jsonify({'error': f'File too large. Max size: {MAX_FILE_SIZE} bytes'}), 400
 
@@ -1003,7 +937,6 @@ def upload_file():
 
         filename = secure_filename(file.filename)
         save_path = os.path.join(user_folder, filename)
-<<<<<<< HEAD
 
         # Generate upload ID for progress tracking
         timestamp = int(datetime.now().timestamp())
@@ -1112,27 +1045,6 @@ def upload_file():
             'upload_id': upload_id,
             'upload_progress': upload_stats
         })
-=======
-        file.save(save_path)
-
-        # Save metadata to Firestore
-        from firebase_admin_init import db
-        file_doc = {
-            'filename': filename,
-            'folder': folder,
-            'owner': user['username'],
-            'size': file_size,
-            'upload_date': datetime.now().isoformat(),
-            'storage_path': save_path
-        }
-        db.collection('files').add(file_doc)
-
-        # Update user storage usage
-        from user_manager import user_manager
-        user_manager.update_user_storage(user['username'], file_size, 'add')
-
-        return jsonify({'success': True, 'message': f'File "{filename}" uploaded successfully!', 'file': file_doc})
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
     except Exception as e:
         return jsonify({'error': f'Upload failed: {str(e)}'}), 500
 
@@ -1187,11 +1099,7 @@ def create_node():
             json.dump(node_config, f, indent=2)
         
         # Automatically start the node in a new terminal after creation
-<<<<<<< HEAD
         node_command = f'py node.py --node-id {data["node_id"]} --host {data["host"]} --port {data["port"]} --cpu {data["cpu_cores"]} --cpu-speed {data["cpu_speed"]} --ram {data["ram_gb"]} --storage {data["storage_gb"]} --bandwidth {data["bandwidth_mbps"]}'
-=======
-        node_command = f'python node.py --node-id {data["node_id"]} --host {data["host"]} --port {data["port"]} --cpu {data["cpu_cores"]} --cpu-speed {data["cpu_speed"]} --ram {data["ram_gb"]} --storage {data["storage_gb"]} --bandwidth {data["bandwidth_mbps"]}'
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
         
         import subprocess
         try:
@@ -1250,11 +1158,7 @@ def start_node(node_id):
             json.dump(node_config, f, indent=2)
         
         # Construct the command to start the node
-<<<<<<< HEAD
         node_command = f'py node.py --node-id {node_id} --host {node_config["host"]} --port {node_config["port"]} --cpu {node_config["cpu_cores"]} --cpu-speed {node_config["cpu_speed"]} --ram {node_config["ram_gb"]} --storage {node_config["storage_gb"]} --bandwidth {node_config["bandwidth_mbps"]}'
-=======
-        node_command = f'python node.py --node-id {node_id} --host {node_config["host"]} --port {node_config["port"]} --cpu {node_config["cpu_cores"]} --cpu-speed {node_config["cpu_speed"]} --ram {node_config["ram_gb"]} --storage {node_config["storage_gb"]} --bandwidth {node_config["bandwidth_mbps"]}'
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
         
         # Start the node in a new PowerShell terminal
         import subprocess
@@ -1330,7 +1234,6 @@ def download_file(file_id):
     except Exception as e:
         return jsonify({'error': f'Download failed: {str(e)}'}), 500
 
-<<<<<<< HEAD
 @app.route('/api/download/<filename>', methods=['GET'])
 def download_file_by_name(filename):
     """Download a file from cloud storage by filename (web interface)"""
@@ -1787,12 +1690,4 @@ if __name__ == '__main__':
     print(f"Controller: {CONTROLLER_HOST}:{CONTROLLER_PORT}")
     print(f"Web API: http://localhost:8080")
     print(f"Upload folder: {UPLOAD_FOLDER}")
-=======
-if __name__ == '__main__':
-    print("Starting VM Simulation Web API...")
-    print(f"Controller: {CONTROLLER_HOST}:{CONTROLLER_PORT}")
-    print(f"Web API: http://localhost:8080")
-    print(f"Upload folder: {UPLOAD_FOLDER}")
-    
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
     app.run(host='0.0.0.0', port=8080, debug=True)

@@ -5,11 +5,7 @@ import warnings
 
 import file_service_pb2 as file__service__pb2
 
-<<<<<<< HEAD
 GRPC_GENERATED_VERSION = '1.76.0'
-=======
-GRPC_GENERATED_VERSION = '1.74.0'
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -22,11 +18,7 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-<<<<<<< HEAD
         + ' but the generated code in file_service_pb2_grpc.py depends on'
-=======
-        + f' but the generated code in file_service_pb2_grpc.py depends on'
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'

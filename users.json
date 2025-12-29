@@ -4,7 +4,6 @@
     "username": "jenkins",
     "email": "guiddel016@gmail.com",
     "phone": "677880739",
-<<<<<<< HEAD
     "password_hash": "f1a04314376cfc3cb768cb3b970ab7eb73d5c7adb774153be9695eb0f66469f5c787af86c11799e69e3f65047061d9f2",
     "storage_allocated_gb": 2,
     "storage_used_bytes": 496430954,
@@ -34,12 +33,12 @@
     "username": "ghost",
     "email": "guegouo.guiddel@ictuniversity.edu.cm",
     "phone": "677880736",
-    "password_hash": "8b764a0931ecdcec18726926d3d0453da012176f26925353e3ade90aa7b59b5f00bf9cfe054c35418061ab48dd75eeb2",
+    "password_hash": "e0e7d22e0b23265671a53053faa70e34a796f94b13c8998135c43f0ab35603dd918e088387c8a57591b6861bcaa7bc03",
     "storage_allocated_gb": 100,
-    "storage_used_bytes": 732988,
+    "storage_used_bytes": 748041,
     "verified": true,
     "created_at": "2025-12-04T18:33:09.736409",
-    "last_login": "2025-12-15T11:09:11.964190",
+    "last_login": "2025-12-29T17:09:28.949344",
     "is_active": true,
     "is_admin": true,
     "files": []
@@ -87,14 +86,6 @@
     "last_login": null,
     "is_active": true,
     "is_admin": true,
-=======
-    "password_hash": "13f389df5251d9631e1cddc368b4e3836193a0f7c96e7d15f48213edd02ae7f35ce22e5171172626c6af634968387925",
-    "storage_allocated_gb": 2,
-    "storage_used_bytes": 0,
-    "created_at": "2025-11-25T13:18:39.641849",
-    "last_login": "2025-11-30T02:38:15.723587",
-    "is_active": true,
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
     "files": []
   }
 }

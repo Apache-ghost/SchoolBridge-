@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -628,17 +628,17 @@
     <div class="top-header">
         <div class="header-left">
             <div class="logo-section">
-                <div class="logo">☁️</div>
+                <div class="logo">â˜ï¸</div>
                 <div class="logo-text">GUI Storage</div>
             </div>
             <div class="search-bar">
-                <span>🔍</span>
+                <span>ðŸ”</span>
                 <input type="text" placeholder="Search in Drive" id="searchInput">
             </div>
         </div>
         <div class="header-right">
             <div class="storage-badge" id="storageBadge" onclick="openPaymentModal()">
-                <span>💾</span>
+                <span>ðŸ’¾</span>
                 <span id="storageInfo">2 GB</span>
             </div>
             <div class="user-menu" onclick="toggleUserMenu()" id="userAvatar">U</div>
@@ -650,25 +650,25 @@
         <!-- Sidebar -->
         <div class="sidebar">
             <button class="new-button" onclick="triggerUpload()">
-                <span style="font-size: 20px;">➕</span>
+                <span style="font-size: 20px;">âž•</span>
                 <span>New</span>
             </button>
             <input type="file" id="fileInput" multiple style="display: none;" onchange="handleFileSelect(event)">
 
             <div class="nav-item active" onclick="switchView('myfiles')">
-                <span class="nav-icon">📁</span>
+                <span class="nav-icon">ðŸ“</span>
                 <span>My Files</span>
             </div>
             <div class="nav-item" onclick="switchView('recent')">
-                <span class="nav-icon">🕒</span>
+                <span class="nav-icon">ðŸ•’</span>
                 <span>Recent</span>
             </div>
             <div class="nav-item" onclick="switchView('upload')">
-                <span class="nav-icon">📤</span>
+                <span class="nav-icon">ðŸ“¤</span>
                 <span>Upload</span>
             </div>
             <div class="nav-item" onclick="openPaymentModal()">
-                <span class="nav-icon">💎</span>
+                <span class="nav-icon">ðŸ’Ž</span>
                 <span>Upgrade</span>
             </div>
 
@@ -686,19 +686,19 @@
             <!-- Welcome Guide (shown on first visit) -->
             <div class="welcome-guide" id="welcomeGuide">
                 <span class="modal-close" onclick="closeWelcome()">&times;</span>
-                <div class="welcome-title">Welcome to GUI Storage! 🎉</div>
+                <div class="welcome-title">Welcome to GUI Storage! ðŸŽ‰</div>
                 <div class="welcome-subtitle">Your personal cloud storage solution. Get started with these quick actions:</div>
                 <div class="quick-actions">
                     <div class="quick-action" onclick="closeWelcome(); triggerUpload();">
-                        <div class="quick-action-icon">📤</div>
+                        <div class="quick-action-icon">ðŸ“¤</div>
                         <div class="quick-action-text">Upload Files</div>
                     </div>
                     <div class="quick-action" onclick="closeWelcome(); openPaymentModal();">
-                        <div class="quick-action-icon">💎</div>
+                        <div class="quick-action-icon">ðŸ’Ž</div>
                         <div class="quick-action-text">Upgrade Storage</div>
                     </div>
                     <div class="quick-action" onclick="closeWelcome();">
-                        <div class="quick-action-icon">📁</div>
+                        <div class="quick-action-icon">ðŸ“</div>
                         <div class="quick-action-text">Browse Files</div>
                     </div>
                 </div>
@@ -709,10 +709,10 @@
                 <div class="content-title" id="contentTitle">My Files</div>
                 <div class="view-controls">
                     <button class="view-btn active" onclick="toggleView('grid')">
-                        <span>🔲 Grid</span>
+                        <span>ðŸ”² Grid</span>
                     </button>
                     <button class="view-btn" onclick="toggleView('list')">
-                        <span>☰ List</span>
+                        <span>â˜° List</span>
                     </button>
                 </div>
             </div>
@@ -723,7 +723,7 @@
                  ondragover="handleDragOver(event)"
                  ondragleave="handleDragLeave(event)"
                  onclick="triggerUpload()">
-                <div style="font-size: 64px; margin-bottom: 16px;">📤</div>
+                <div style="font-size: 64px; margin-bottom: 16px;">ðŸ“¤</div>
                 <div style="font-size: 18px; margin-bottom: 8px; color: #202124;">Drag files here or click to upload</div>
                 <div style="font-size: 14px; color: #5f6368;">Maximum file size: 1 GB</div>
             </div>
@@ -736,7 +736,7 @@
 
             <!-- Empty State -->
             <div class="empty-state" id="emptyState" style="display: none;">
-                <div class="empty-icon">📂</div>
+                <div class="empty-icon">ðŸ“‚</div>
                 <div class="empty-title">No files yet</div>
                 <div class="empty-subtitle">Upload your first file to get started!</div>
                 <button class="btn-primary" style="margin-top: 16px;" onclick="triggerUpload()">Upload Files</button>
@@ -749,7 +749,7 @@
         <div class="modal-content payment-modal-content">
             <div class="modal-header">
                 <span class="modal-close" onclick="closePaymentModal()">&times;</span>
-                <div>💎 Upgrade Your Storage</div>
+                <div>ðŸ’Ž Upgrade Your Storage</div>
                 <div style="font-size: 14px; color: #5f6368; margin-top: 8px;">Choose a plan that fits your needs</div>
             </div>
             <div class="plans-grid" id="paymentPlans"></div>
@@ -981,17 +981,17 @@
         function getFileIcon(filename) {
             const ext = filename.split('.').pop().toLowerCase();
             const icons = {
-                'pdf': '📄',
-                'doc': '📝', 'docx': '📝',
-                'xls': '📊', 'xlsx': '📊',
-                'ppt': '📊', 'pptx': '📊',
-                'jpg': '🖼️', 'jpeg': '🖼️', 'png': '🖼️', 'gif': '🖼️',
-                'mp4': '🎥', 'avi': '🎥', 'mov': '🎥',
-                'mp3': '🎵', 'wav': '🎵',
-                'zip': '📦', 'rar': '📦',
-                'txt': '📃'
+                'pdf': 'ðŸ“„',
+                'doc': 'ðŸ“', 'docx': 'ðŸ“',
+                'xls': 'ðŸ“Š', 'xlsx': 'ðŸ“Š',
+                'ppt': 'ðŸ“Š', 'pptx': 'ðŸ“Š',
+                'jpg': 'ðŸ–¼ï¸', 'jpeg': 'ðŸ–¼ï¸', 'png': 'ðŸ–¼ï¸', 'gif': 'ðŸ–¼ï¸',
+                'mp4': 'ðŸŽ¥', 'avi': 'ðŸŽ¥', 'mov': 'ðŸŽ¥',
+                'mp3': 'ðŸŽµ', 'wav': 'ðŸŽµ',
+                'zip': 'ðŸ“¦', 'rar': 'ðŸ“¦',
+                'txt': 'ðŸ“ƒ'
             };
-            return icons[ext] || '📄';
+            return icons[ext] || 'ðŸ“„';
         }
 
         function formatFileSize(bytes) {
@@ -1076,7 +1076,7 @@
                             </div>
                             <div class="plan-storage">${plan.storage}</div>
                             <ul class="plan-features">
-                                ${plan.features.map(f => `<li>✓ ${f}</li>`).join('')}
+                                ${plan.features.map(f => `<li>âœ“ ${f}</li>`).join('')}
                             </ul>
                             ${plan.id === 'basic' ? '<div class="current-badge">Current Plan</div>' : ''}
                         </div>
@@ -1109,7 +1109,7 @@
 
         async function processPayment() {
             if (!selectedPlan) {
-                alert('⚠️ Please select a plan first');
+                alert('âš ï¸ Please select a plan first');
                 return;
             }
 
@@ -1127,17 +1127,17 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    alert(`✅ Payment successful! Your storage has been upgraded to ${result.plan_name}\n\nYour new storage limit: ${result.new_storage}`);
+                    alert(`âœ… Payment successful! Your storage has been upgraded to ${result.plan_name}\n\nYour new storage limit: ${result.new_storage}`);
                     closePaymentModal();
                     setTimeout(() => {
                         checkStorageStatus();
                     }, 1000);
                 } else {
-                    alert(`❌ Payment failed: ${result.error || 'Unknown error'}`);
+                    alert(`âŒ Payment failed: ${result.error || 'Unknown error'}`);
                 }
             } catch (error) {
                 console.error('Payment error:', error);
-                alert('❌ Payment processing failed. Please try again.');
+                alert('âŒ Payment processing failed. Please try again.');
             }
         }
 
@@ -1161,3 +1161,4 @@
     </script>
 </body>
 </html>
+

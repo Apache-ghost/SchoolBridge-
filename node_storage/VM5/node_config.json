@@ -1,4 +1,4 @@
-{
+﻿{
   "node_id": "VM5",
   "host": "localhost",
   "port": 5005,
@@ -10,9 +10,4 @@
   "mac_address": "7c:49:80:e0:3d:b3",
   "created_at": "2025-08-26T07:51:58.257080",
   "status": "starting",
-<<<<<<< HEAD
-  "start_requested_at": "2025-12-04T19:29:40.718952"
-=======
-  "start_requested_at": "2025-11-26T19:52:56.476061"
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
 }

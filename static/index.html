@@ -1,13 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<<<<<<< HEAD
-    <title>GUI Storage - Dashboard</title>
-=======
-    <title>VM Cloud Storage - Dashboard</title>
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
     <style>
         * {
             margin: 0;
@@ -547,17 +542,6 @@
     <nav class="navbar">
         <div class="navbar-content">
             <div class="navbar-brand">
-<<<<<<< HEAD
-                🖥️ GUI Storage
-            </div>
-            <div class="navbar-user">
-                <div class="storage-indicator" onclick="openPaymentModal()" style="cursor: pointer;" title="Click to upgrade storage">
-=======
-                🌐 VM Cloud Storage
-            </div>
-            <div class="navbar-user">
-                <div class="storage-indicator">
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
                     <div id="storage-text">Loading...</div>
                     <div class="storage-bar">
                         <div class="storage-fill" id="storage-fill"></div>
@@ -568,13 +552,9 @@
                         U
                     </div>
                     <div class="dropdown-menu" id="user-dropdown">
-                        <a href="#" onclick="showProfile()">👤 Profile</a>
-<<<<<<< HEAD
-                        <a href="#" onclick="openPaymentModal(); event.stopPropagation();">💎 Upgrade Storage</a>
-=======
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
-                        <a href="#" onclick="showSettings()">⚙️ Settings</a>
-                        <a href="#" onclick="logout()">🚪 Logout</a>
+                        <a href="#" onclick="showProfile()">ðŸ‘¤ Profile</a>
+                        <a href="#" onclick="showSettings()">âš™ï¸ Settings</a>
+                        <a href="#" onclick="logout()">ðŸšª Logout</a>
                     </div>
                 </div>
             </div>
@@ -589,10 +569,10 @@
         <!-- Tab Navigation -->
         <div class="tab-nav">
             <div class="tab-buttons">
-                <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
-                <button class="tab-btn" onclick="switchTab('files')">📁 My Files</button>
-                <button class="tab-btn" onclick="switchTab('upload')">⬆️ Upload</button>
-                <button class="tab-btn" onclick="switchTab('nodes')">🖥️ Nodes</button>
+                <button class="tab-btn active" onclick="switchTab('dashboard')">ðŸ“Š Dashboard</button>
+                <button class="tab-btn" onclick="switchTab('files')">ðŸ“ My Files</button>
+                <button class="tab-btn" onclick="switchTab('upload')">â¬†ï¸ Upload</button>
+                <button class="tab-btn" onclick="switchTab('nodes')">ðŸ–¥ï¸ Nodes</button>
             </div>
         </div>
 
@@ -600,59 +580,29 @@
         <div id="dashboard-tab" class="tab-content active">
             <div class="card">
                 <div class="card-title">
-<<<<<<< HEAD
-                    🏠 Welcome to GUI Storage
-=======
-                    🏠 Welcome to VM Cloud Storage
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
                 </div>
                 <p>Your personal cloud storage with 2GB of space. Upload files, manage VM nodes, and access your data from anywhere.</p>
             </div>
 
-<<<<<<< HEAD
-            <!-- Storage Upgrade Card -->
-            <div id="upgrade-card" class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; display: none;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <h3 style="margin-bottom: 10px;">💎 Need More Space?</h3>
-                        <p id="upgrade-message" style="margin-bottom: 15px; opacity: 0.9;">Your storage is almost full! Upgrade now to continue uploading.</p>
-                        <button onclick="openPaymentModal()" class="btn" style="background: white; color: #667eea; font-weight: 600;">
-                            Upgrade Storage →
-                        </button>
-                    </div>
-                    <div style="font-size: 4em;">📦</div>
-                </div>
-            </div>
-
-=======
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-icon">📁</div>
+                    <div class="stat-icon">ðŸ“</div>
                     <div class="stat-number" id="total-files">0</div>
                     <div class="stat-label">Total Files</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">💾</div>
+                    <div class="stat-icon">ðŸ’¾</div>
                     <div class="stat-number" id="storage-used">0 MB</div>
                     <div class="stat-label">Storage Used</div>
                 </div>
-<<<<<<< HEAD
-                <div class="stat-card" onclick="openPaymentModal()" style="cursor: pointer; border: 2px solid #3498db;" title="Click to upgrade">
-                    <div class="stat-icon">💎</div>
-                    <div class="stat-number" id="storage-allocated">2 GB</div>
-                    <div class="stat-label">Storage Plan</div>
-                </div>
-=======
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
                 <div class="stat-card">
-                    <div class="stat-icon">🖥️</div>
+                    <div class="stat-icon">ðŸ–¥ï¸</div>
                     <div class="stat-number" id="total-nodes">0</div>
                     <div class="stat-label">Active Nodes</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">🔄</div>
-                    <div class="stat-number" id="api-status">●</div>
+                    <div class="stat-icon">ðŸ”„</div>
+                    <div class="stat-number" id="api-status">â—</div>
                     <div class="stat-label">API Status</div>
                 </div>
             </div>
@@ -662,13 +612,13 @@
         <div id="files-tab" class="tab-content">
             <div class="card">
                 <div class="card-title">
-                    📁 My Files
-                    <button class="btn" onclick="loadUserFiles()" style="margin-left: auto;">🔄 Refresh</button>
+                    ðŸ“ My Files
+                    <button class="btn" onclick="loadUserFiles()" style="margin-left: auto;">ðŸ”„ Refresh</button>
                 </div>
                 <div id="files-loading">Loading your files...</div>
                 <div id="files-grid" class="file-grid"></div>
                 <div id="files-empty" style="display: none; text-align: center; padding: 40px; color: #7f8c8d;">
-                    <div style="font-size: 3em; margin-bottom: 15px;">📁</div>
+                    <div style="font-size: 3em; margin-bottom: 15px;">ðŸ“</div>
                     <h3>No files yet</h3>
                     <p>Upload your first file to get started!</p>
                 </div>
@@ -679,13 +629,13 @@
         <div id="upload-tab" class="tab-content">
             <div class="card">
                 <div class="card-title">
-                    ⬆️ Upload Files
+                    â¬†ï¸ Upload Files
                 </div>
                 
                 <!-- Upload Area -->
                 <div class="upload-area" onclick="document.getElementById('file-input').click()" 
                      ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-                    <div class="upload-icon">📁</div>
+                    <div class="upload-icon">ðŸ“</div>
                     <h3>Drag & drop files here or click to browse</h3>
                     <p>Supports all file types up to 100MB</p>
                     <input type="file" id="file-input" multiple style="display: none;" onchange="handleFileSelect(event)">
@@ -707,7 +657,7 @@
                 <!-- Create Node -->
                 <div class="card">
                     <div class="card-title">
-                        🚀 Create New Node
+                        ðŸš€ Create New Node
                     </div>
                     <form id="node-form">
                         <div class="form-group">
@@ -734,15 +684,15 @@
                             <label for="storageGb">Storage (GB):</label>
                             <input type="number" id="storageGb" name="storage_gb" value="500" min="10" max="10000">
                         </div>
-                        <button type="submit" class="btn btn-success">🚀 Create & Start Node</button>
+                        <button type="submit" class="btn btn-success">ðŸš€ Create & Start Node</button>
                     </form>
                 </div>
 
                 <!-- Node Status -->
                 <div class="card">
                     <div class="card-title">
-                        📊 Node Status
-                        <button class="btn" onclick="loadNodes()" style="margin-left: auto;">🔄 Refresh</button>
+                        ðŸ“Š Node Status
+                        <button class="btn" onclick="loadNodes()" style="margin-left: auto;">ðŸ”„ Refresh</button>
                     </div>
                     <div id="nodes-loading">Loading nodes...</div>
                     <div id="nodes-summary"></div>
@@ -752,11 +702,11 @@
             <!-- Active Nodes Grid -->
             <div class="card">
                 <div class="card-title">
-                    🖥️ Active Nodes
+                    ðŸ–¥ï¸ Active Nodes
                 </div>
                 <div id="nodes-grid" class="node-grid"></div>
                 <div id="nodes-empty" style="display: none; text-align: center; padding: 40px; color: #7f8c8d;">
-                    <div style="font-size: 3em; margin-bottom: 15px;">🖥️</div>
+                    <div style="font-size: 3em; margin-bottom: 15px;">ðŸ–¥ï¸</div>
                     <h3>No nodes created yet</h3>
                     <p>Create your first VM node to get started!</p>
                 </div>
@@ -775,10 +725,6 @@
             checkAuthentication();
             loadUserProfile();
             loadDashboardStats();
-<<<<<<< HEAD
-            checkStorageStatus(); // Check storage and show upgrade prompts if needed
-=======
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
             
             // Set up node form handler
             document.getElementById('node-form').addEventListener('submit', handleNodeCreate);
@@ -848,10 +794,10 @@
                 
                 const statusEl = document.getElementById('api-status');
                 if (statusData.controller_connected) {
-                    statusEl.textContent = '🟢';
+                    statusEl.textContent = 'ðŸŸ¢';
                     statusEl.parentElement.querySelector('.stat-label').textContent = 'Online';
                 } else {
-                    statusEl.textContent = '🔴';
+                    statusEl.textContent = 'ðŸ”´';
                     statusEl.parentElement.querySelector('.stat-label').textContent = 'Offline';
                 }
 
@@ -947,11 +893,6 @@
                     if (result.success) {
                         showMessage(`File "${file.name}" uploaded successfully!`, 'success');
                     } else {
-<<<<<<< HEAD
-                        showMessage(`Failed to upload "${file.name}": ${result.error || result.message || 'Unknown error'}`, 'error');
-=======
-                        showMessage(`Failed to upload "${file.name}": ${result.message}`, 'error');
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
                     }
                 } catch (error) {
                     showMessage(`Failed to upload "${file.name}": ${error.message}`, 'error');
@@ -1040,17 +981,17 @@
         // Get file icon based on type
         function getFileIcon(fileType) {
             const icons = {
-                'image': '🖼️',
-                'document': '📄',
-                'spreadsheet': '📊',
-                'presentation': '📑',
-                'archive': '📦',
-                'video': '🎥',
-                'audio': '🎵',
-                'code': '💻',
-                'file': '📄'
+                'image': 'ðŸ–¼ï¸',
+                'document': 'ðŸ“„',
+                'spreadsheet': 'ðŸ“Š',
+                'presentation': 'ðŸ“‘',
+                'archive': 'ðŸ“¦',
+                'video': 'ðŸŽ¥',
+                'audio': 'ðŸŽµ',
+                'code': 'ðŸ’»',
+                'file': 'ðŸ“„'
             };
-            return icons[fileType] || '📄';
+            return icons[fileType] || 'ðŸ“„';
         }
 
         // Format file size
@@ -1214,8 +1155,8 @@
                             </div>
                             <div class="node-actions">
                                 ${node.status === 'offline' ? 
-                                    `<button class="node-btn btn-success" onclick="startNode('${node.node_id}')">▶️ Start</button>` :
-                                    `<button class="node-btn btn-warning" onclick="showMessage('Node is already running', 'info')">⏸️ Running</button>`
+                                    `<button class="node-btn btn-success" onclick="startNode('${node.node_id}')">â–¶ï¸ Start</button>` :
+                                    `<button class="node-btn btn-warning" onclick="showMessage('Node is already running', 'info')">â¸ï¸ Running</button>`
                                 }
                             </div>
                         </div>
@@ -1300,308 +1241,5 @@
                 dropdown.style.display = 'none';
             }
         });
-<<<<<<< HEAD
-
-        // ========== PAYMENT SYSTEM ==========
-        let selectedPlan = null;
-
-        function openPaymentModal() {
-            document.getElementById('payment-modal').style.display = 'block';
-            displayPaymentPlans();
-        }
-
-        function closePaymentModal() {
-            document.getElementById('payment-modal').style.display = 'none';
-            selectedPlan = null;
-        }
-
-        async function displayPaymentPlans() {
-            try {
-                const response = await fetch(`${API_BASE}/payment/plans`, {
-                    credentials: 'include'
-                });
-                const data = await response.json();
-                
-                if (data.success) {
-                    const plansContainer = document.getElementById('payment-plans');
-                    plansContainer.innerHTML = data.plans.map(plan => `
-                        <div class="plan-card ${plan.id === 'basic' ? 'current-plan' : ''}" onclick="selectPlan('${plan.id}')">
-                            <div class="plan-header">
-                                <h3>${plan.name}</h3>
-                                <div class="plan-price">${plan.price}</div>
-                            </div>
-                            <div class="plan-storage">${plan.storage}</div>
-                            <ul class="plan-features">
-                                ${plan.features.map(f => `<li>✓ ${f}</li>`).join('')}
-                            </ul>
-                            ${plan.id === 'basic' ? '<div class="current-badge">Current Plan</div>' : ''}
-                        </div>
-                    `).join('');
-                }
-            } catch (error) {
-                showMessage('Failed to load payment plans', 'error');
-            }
-        }
-
-        function selectPlan(planId) {
-            if (planId === 'basic') return;
-            
-            selectedPlan = planId;
-            document.querySelectorAll('.plan-card').forEach(card => {
-                card.classList.remove('selected');
-            });
-            event.currentTarget.classList.add('selected');
-            
-            document.getElementById('selected-plan-info').style.display = 'block';
-            document.getElementById('selected-plan-name').textContent = 
-                event.currentTarget.querySelector('h3').textContent;
-        }
-
-        async function processPayment() {
-            if (!selectedPlan) {
-                showMessage('Please select a plan', 'error');
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_BASE}/payment/process`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({
-                        plan_id: selectedPlan,
-                        payment_method: 'simulated'
-                    })
-                });
-
-                const result = await response.json();
-                
-                if (result.success) {
-                    showMessage(`✅ Payment successful! Your storage has been upgraded to ${result.plan_name}`, 'success');
-                    closePaymentModal();
-                    // Refresh storage display
-                    setTimeout(() => {
-                        checkStorageStatus();
-                        loadStats();
-                    }, 1000);
-                } else {
-                    showMessage(`Payment failed: ${result.error}`, 'error');
-                }
-            } catch (error) {
-                showMessage('Payment processing failed', 'error');
-            }
-        }
-
-        async function checkStorageStatus() {
-            try {
-                const response = await fetch(`${API_BASE}/payment/storage-status`, {
-                    credentials: 'include'
-                });
-                const data = await response.json();
-                
-                if (data.success) {
-                    // Update storage plan display
-                    const planElement = document.getElementById('storage-allocated');
-                    if (planElement) {
-                        const storageGB = (data.allocated_storage / (1024 * 1024 * 1024)).toFixed(0);
-                        planElement.textContent = `${storageGB} GB`;
-                    }
-
-                    // Show upgrade prompt if storage is getting full
-                    const usagePercent = data.usage_percentage;
-                    const upgradeCard = document.getElementById('upgrade-card');
-                    const upgradeMessage = document.getElementById('upgrade-message');
-                    
-                    if (usagePercent >= 90) {
-                        upgradeCard.style.display = 'block';
-                        upgradeCard.style.background = 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
-                        upgradeMessage.textContent = '🚨 Storage is almost full! Upgrade now to continue uploading.';
-                    } else if (usagePercent >= 75) {
-                        upgradeCard.style.display = 'block';
-                        upgradeCard.style.background = 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)';
-                        upgradeMessage.textContent = '⚠️ You\'re running low on storage. Consider upgrading soon.';
-                    } else {
-                        upgradeCard.style.display = 'none';
-                    }
-
-                    // Update storage indicator color in navbar
-                    const storageIndicator = document.querySelector('.storage-indicator');
-                    if (storageIndicator) {
-                        storageIndicator.classList.remove('storage-warning', 'storage-danger');
-                        if (usagePercent >= 90) {
-                            storageIndicator.classList.add('storage-danger');
-                        } else if (usagePercent >= 75) {
-                            storageIndicator.classList.add('storage-warning');
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error('Failed to check storage status:', error);
-            }
-        }
-
-        // Check storage status periodically
-        setInterval(checkStorageStatus, 30000); // Every 30 seconds
-    </script>
-
-    <!-- Payment Modal -->
-    <div id="payment-modal" class="modal">
-        <div class="modal-content" style="max-width: 900px;">
-            <span class="close" onclick="closePaymentModal()">&times;</span>
-            <h2>💎 Upgrade Your Storage</h2>
-            <p style="margin-bottom: 30px;">Choose a plan that fits your needs</p>
-            
-            <div id="payment-plans" class="plans-grid"></div>
-            
-            <div id="selected-plan-info" style="display: none; margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
-                <h3>Selected Plan: <span id="selected-plan-name"></span></h3>
-                <p style="margin: 10px 0;">Payment Method: Simulated Payment (Demo Mode)</p>
-                <button onclick="processPayment()" class="btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 16px; padding: 12px 30px;">
-                    Complete Purchase
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <style>
-        /* Payment Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 10000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(5px);
-        }
-
-        .modal-content {
-            background-color: #fff;
-            margin: 5% auto;
-            padding: 30px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 600px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-            animation: slideIn 0.3s ease-out;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateY(-50px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            line-height: 20px;
-        }
-
-        .close:hover {
-            color: #000;
-        }
-
-        .plans-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin: 20px 0;
-        }
-
-        .plan-card {
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            padding: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .plan-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-            border-color: #3498db;
-        }
-
-        .plan-card.selected {
-            border-color: #3498db;
-            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-            box-shadow: 0 8px 20px rgba(52, 152, 219, 0.3);
-        }
-
-        .plan-card.current-plan {
-            border-color: #27ae60;
-            background: #f0f8f4;
-            cursor: default;
-        }
-
-        .plan-header h3 {
-            margin: 0 0 10px 0;
-            color: #2c3e50;
-            font-size: 1.5em;
-        }
-
-        .plan-price {
-            font-size: 2em;
-            font-weight: bold;
-            color: #3498db;
-            margin: 10px 0;
-        }
-
-        .plan-storage {
-            font-size: 1.2em;
-            color: #7f8c8d;
-            margin: 10px 0;
-        }
-
-        .plan-features {
-            list-style: none;
-            padding: 0;
-            margin: 15px 0;
-        }
-
-        .plan-features li {
-            padding: 5px 0;
-            color: #555;
-        }
-
-        .current-badge {
-            background: #27ae60;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 0.85em;
-            margin-top: 10px;
-            text-align: center;
-        }
-
-        .storage-warning {
-            background: #f39c12 !important;
-        }
-
-        .storage-danger {
-            background: #e74c3c !important;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-    </style>
-=======
-    </script>
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
 </body>
 </html>

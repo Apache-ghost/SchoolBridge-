@@ -1,13 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<<<<<<< HEAD
-    <title>Email Verification - GUI Storage</title>
-=======
-    <title>Email Verification - VM Cloud Storage</title>
->>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
     <style>
         * {
             margin: 0;
@@ -209,7 +204,7 @@
 </head>
 <body>
     <div class="container">
-        <div class="logo">📧</div>
+        <div class="logo">ðŸ“§</div>
         <div class="title">Email Verification</div>
         <div class="subtitle">We've sent a verification code to your email</div>
         
@@ -233,19 +228,19 @@
             </div>
 
             <button type="submit" class="btn" id="verify-btn">
-                ✅ Verify Email
+                âœ… Verify Email
             </button>
         </form>
 
         <div class="resend-section">
             <div class="resend-text">Didn't receive the code?</div>
             <button type="button" class="btn btn-secondary" id="resend-btn" onclick="resendOTP()">
-                🔄 Resend Code
+                ðŸ”„ Resend Code
             </button>
             <div id="countdown" class="countdown" style="display: none;"></div>
         </div>
 
-        <a href="/register" class="back-to-login">← Back to Registration</a>
+        <a href="/register" class="back-to-login">â† Back to Registration</a>
     </div>
 
     <script>
@@ -342,7 +337,7 @@
             const form = document.getElementById('otp-form');
             
             // Show loading state
-            verifyBtn.textContent = '⏳ Verifying...';
+            verifyBtn.textContent = 'â³ Verifying...';
             verifyBtn.disabled = true;
             form.classList.add('loading');
 
@@ -361,7 +356,7 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    showMessage('✅ Email verified successfully!', 'success');
+                    showMessage('âœ… Email verified successfully!', 'success');
                     
                     // Redirect after successful verification
                     setTimeout(() => {
@@ -377,7 +372,7 @@
             }
 
             // Reset button state
-            verifyBtn.textContent = '✅ Verify Email';
+            verifyBtn.textContent = 'âœ… Verify Email';
             verifyBtn.disabled = false;
             form.classList.remove('loading');
         });
@@ -386,7 +381,7 @@
         async function resendOTP() {
             const resendBtn = document.getElementById('resend-btn');
             
-            resendBtn.textContent = '⏳ Sending...';
+            resendBtn.textContent = 'â³ Sending...';
             resendBtn.disabled = true;
 
             try {
@@ -413,7 +408,7 @@
                 showMessage('Failed to resend code. Please try again.', 'error');
             }
 
-            resendBtn.textContent = '🔄 Resend Code';
+            resendBtn.textContent = 'ðŸ”„ Resend Code';
             resendBtn.disabled = false;
         }
 

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -497,7 +497,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title">Create New Node</h3>
-                <button class="close-btn" onclick="closeCreateNodeModal()">×</button>
+                <button class="close-btn" onclick="closeCreateNodeModal()">Ã—</button>
             </div>
 
             <form id="createNodeForm" onsubmit="createNode(event)">
@@ -594,8 +594,8 @@
 
                 // Update network status
                 document.getElementById('controllerStatus').innerHTML = statusData.controller_connected 
-                    ? '<span style="color: #27ae60;">✓ Connected</span>' 
-                    : '<span style="color: #e74c3c;">✗ Disconnected</span>';
+                    ? '<span style="color: #27ae60;">âœ“ Connected</span>' 
+                    : '<span style="color: #e74c3c;">âœ— Disconnected</span>';
                 document.getElementById('activeConnections').textContent = nodesData.online_nodes || 0;
 
                 // Update node distribution
@@ -827,3 +827,4 @@
     </script>
 </body>
 </html>
+
