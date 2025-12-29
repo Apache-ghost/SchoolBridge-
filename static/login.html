@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GUI Storage - Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .auth-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .auth-header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .auth-header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .auth-header p {
+            opacity: 0.9;
+        }
+
+        .auth-form {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #34495e;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+        }
+
+        .auth-links {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .auth-links a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .auth-links a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .success-message {
+            background: #27ae60;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-header">
+            <h1>🖥️ GUI Storage</h1>
+            <p>Sign in to your account</p>
+        </div>
+        
+        <div class="auth-form">
+            <div id="message-container"></div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                
+                <div class="form-group" id="otp-group" style="display: none;">
+                    <label for="otp_code">Verification Code (sent to your email)</label>
+                    <input type="text" id="otp_code" name="otp_code" placeholder="Enter 6-digit code" maxlength="6">
+                </div>
+                
+                <button type="submit" class="btn-primary" id="login-btn">Sign In</button>
+            </form>
+            
+            <div class="auth-links">
+                <p>Don't have an account? <a href="/register">Create one</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+        
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const form = e.target;
+            const formData = new FormData(form);
+            const messageContainer = document.getElementById('message-container');
+            const loginBtn = document.getElementById('login-btn');
+            const otpGroup = document.getElementById('otp-group');
+            
+            // Show loading state
+            form.classList.add('loading');
+            messageContainer.innerHTML = '';
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Signing in...';
+            
+            try {
+                const requestData = {
+                    email: formData.get('email'),
+                    password: formData.get('password'),
+                    skip_otp: true  // Skip OTP by default for easier login
+                };
+                
+                // Include OTP code if provided
+                const otpCode = formData.get('otp_code');
+                if (otpCode && otpCode.trim()) {
+                    requestData.otp_code = otpCode.trim();
+                    requestData.skip_otp = false;
+                }
+                
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData),
+                    credentials: 'include'
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    messageContainer.innerHTML = '<div class="success-message">✅ Login successful! Redirecting...</div>';
+                    
+                    // Store user info in localStorage for the dashboard
+                    if (result.user) {
+                        localStorage.setItem('user', JSON.stringify(result.user));
+                    }
+                    
+                    // Redirect to dashboard
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 500);
+                } else if (result.require_otp) {
+                    // Show OTP input field
+                    messageContainer.innerHTML = '<div class="success-message">📧 Verification code sent to your email!</div>';
+                    otpGroup.style.display = 'block';
+                    loginBtn.textContent = '🔐 Verify & Sign In';
+                    loginBtn.disabled = false;
+                    document.getElementById('otp_code').focus();
+                } else {
+                    // Show error message
+                    const errorMsg = result.message || 'Login failed. Please check your credentials.';
+                    messageContainer.innerHTML = `<div class="error-message">❌ ${errorMsg}</div>`;
+                    otpGroup.style.display = 'none';
+                    loginBtn.textContent = 'Sign In';
+                    loginBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                messageContainer.innerHTML = '<div class="error-message">❌ Network error. Please check your connection and try again.</div>';
+                loginBtn.textContent = 'Sign In';
+                loginBtn.disabled = false;
+            }
+            
+            // Remove loading state
+            form.classList.remove('loading');
+        });
+
+        // Check if already logged in
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch(`${API_BASE}/profile`, {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    // Already logged in, redirect to dashboard
+                    window.location.href = '/dashboard';
+                }
+            } catch (error) {
+                // Not logged in, stay on login page
+            }
+        });
+    </script>
+</body>
+</html>

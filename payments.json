@@ -1,0 +1,44 @@
+[
+  {
+    "payment_id": "pay_1766999293_c6b065a45b30188a",
+    "user_email": "test@example.com",
+    "user_id": "user_test_123",
+    "amount": 4.99,
+    "currency": "USD",
+    "storage_gb": 50,
+    "payment_method": "credit_card",
+    "status": "completed",
+    "transaction_date": "2025-12-29T10:08:13.022733",
+    "description": "Storage upgrade to 50GB",
+    "receipt_url": "/api/receipts/pay_1766999293_c6b065a45b30188a",
+    "card_last4": "4242"
+  },
+  {
+    "payment_id": "pay_1767001505_cc21e0d802e30d5e",
+    "user_email": "guegouo.guiddel@ictuniversity.edu.cm",
+    "user_id": "user_1764869589_7018f531",
+    "amount": 4.99,
+    "currency": "USD",
+    "storage_gb": 50,
+    "payment_method": "simulated",
+    "status": "completed",
+    "transaction_date": "2025-12-29T10:45:05.735167",
+    "description": "Storage upgrade to 50GB",
+    "receipt_url": "/api/receipts/pay_1767001505_cc21e0d802e30d5e",
+    "card_last4": null
+  },
+  {
+    "payment_id": "pay_1767002835_09592be1bfc51277",
+    "user_email": "guegouo.guiddel@ictuniversity.edu.cm",
+    "user_id": "user_1764869589_7018f531",
+    "amount": 4.99,
+    "currency": "USD",
+    "storage_gb": 100,
+    "payment_method": "simulated",
+    "status": "completed",
+    "transaction_date": "2025-12-29T11:07:15.653801",
+    "description": "Storage upgrade to 100GB",
+    "receipt_url": "/api/receipts/pay_1767002835_09592be1bfc51277",
+    "card_last4": null
+  }
+]

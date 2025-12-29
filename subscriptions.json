@@ -1,0 +1,20 @@
+{
+  "test@example.com": {
+    "user_email": "test@example.com",
+    "storage_gb": 50,
+    "monthly_amount": 4.99,
+    "status": "active",
+    "started_at": "2025-12-29T10:08:13.023625",
+    "next_billing_date": "2026-01-28T10:08:13.023625",
+    "updated_at": "2025-12-29T10:08:13.023625"
+  },
+  "guegouo.guiddel@ictuniversity.edu.cm": {
+    "user_email": "guegouo.guiddel@ictuniversity.edu.cm",
+    "storage_gb": 100,
+    "monthly_amount": 4.99,
+    "status": "active",
+    "started_at": "2025-12-29T11:07:15.654699",
+    "next_billing_date": "2026-01-28T11:07:15.654699",
+    "updated_at": "2025-12-29T11:07:15.654699"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "node_id": "VM10",
+  "host": "localhost",
+  "port": 8084,
+  "cpu_cores": 4,
+  "cpu_speed": 2.5,
+  "ram_gb": 8,
+  "storage_gb": 500,
+  "bandwidth_mbps": 1000,
+  "mac_address": "c0:2b:6f:47:ae:ce",
+  "created_at": "2025-11-30T02:47:55.174392",
+  "status": "starting",
+  "start_requested_at": "2025-12-04T19:21:49.820752"
+}

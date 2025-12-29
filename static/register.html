@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GUI Storage - Register</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .auth-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            max-width: 450px;
+            width: 100%;
+        }
+
+        .auth-header {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .auth-header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .auth-header p {
+            opacity: 0.9;
+        }
+
+        .storage-info {
+            background: rgba(255, 255, 255, 0.2);
+            margin-top: 15px;
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+
+        .auth-form {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #34495e;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #27ae60;
+            box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
+        }
+
+        .password-requirements {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+        }
+
+        .auth-links {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .auth-links a {
+            color: #27ae60;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .auth-links a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .success-message {
+            background: #27ae60;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .validation-message {
+            font-size: 12px;
+            margin-top: 5px;
+            color: #e74c3c;
+        }
+
+        .valid {
+            color: #27ae60;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-header">
+            <h1>🖥️ GUI Storage</h1>
+            <p>Create your account</p>
+            <div class="storage-info">
+                🎁 Get 2GB free storage automatically!
+            </div>
+        </div>
+        
+        <div class="auth-form">
+            <div id="message-container"></div>
+            
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required minlength="3">
+                    <div id="username-validation" class="validation-message"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" required>
+                    <div id="email-validation" class="validation-message"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" name="phone" placeholder="+1234567890" required>
+                    <div id="phone-validation" class="validation-message"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required minlength="6">
+                    <div class="password-requirements">
+                        Minimum 6 characters
+                    </div>
+                    <div id="password-validation" class="validation-message"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required>
+                    <div id="confirm-password-validation" class="validation-message"></div>
+                </div>
+                
+                <button type="submit" class="btn-primary">Create Account</button>
+            </form>
+            
+            <div class="auth-links">
+                <p>Already have an account? <a href="/login">Sign in</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+        
+        // Form validation
+        const form = document.getElementById('registerForm');
+        const username = document.getElementById('username');
+        const email = document.getElementById('email');
+        const phone = document.getElementById('phone');
+        const password = document.getElementById('password');
+        const confirmPassword = document.getElementById('confirmPassword');
+        
+        // Real-time validation
+        username.addEventListener('input', validateUsername);
+        email.addEventListener('input', validateEmail);
+        phone.addEventListener('input', validatePhone);
+        password.addEventListener('input', validatePassword);
+        confirmPassword.addEventListener('input', validateConfirmPassword);
+        
+        function validateUsername() {
+            const value = username.value;
+            const validation = document.getElementById('username-validation');
+            
+            if (value.length < 3) {
+                validation.textContent = 'Username must be at least 3 characters';
+                validation.className = 'validation-message';
+                return false;
+            } else {
+                validation.textContent = 'Looks good!';
+                validation.className = 'validation-message valid';
+                return true;
+            }
+        }
+        
+        function validateEmail() {
+            const value = email.value;
+            const validation = document.getElementById('email-validation');
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            
+            if (!emailRegex.test(value)) {
+                validation.textContent = 'Please enter a valid email address';
+                validation.className = 'validation-message';
+                return false;
+            } else {
+                validation.textContent = 'Looks good!';
+                validation.className = 'validation-message valid';
+                return true;
+            }
+        }
+        
+        function validatePhone() {
+            const value = phone.value;
+            const validation = document.getElementById('phone-validation');
+            const phoneRegex = /^[+]?[1-9]\d{1,14}$/;
+            
+            if (!phoneRegex.test(value.replace(/[\s-()]/g, ''))) {
+                validation.textContent = 'Please enter a valid phone number';
+                validation.className = 'validation-message';
+                return false;
+            } else {
+                validation.textContent = 'Looks good!';
+                validation.className = 'validation-message valid';
+                return true;
+            }
+        }
+        
+        function validatePassword() {
+            const value = password.value;
+            const validation = document.getElementById('password-validation');
+            
+            if (value.length < 6) {
+                validation.textContent = 'Password must be at least 6 characters';
+                validation.className = 'validation-message';
+                return false;
+            } else {
+                validation.textContent = 'Looks good!';
+                validation.className = 'validation-message valid';
+                return true;
+            }
+        }
+        
+        function validateConfirmPassword() {
+            const value = confirmPassword.value;
+            const validation = document.getElementById('confirm-password-validation');
+            
+            if (value !== password.value) {
+                validation.textContent = 'Passwords do not match';
+                validation.className = 'validation-message';
+                return false;
+            } else {
+                validation.textContent = 'Passwords match!';
+                validation.className = 'validation-message valid';
+                return true;
+            }
+        }
+        
+        // Form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const messageContainer = document.getElementById('message-container');
+            
+            // Validate all fields
+            const isValid = validateUsername() && validateEmail() && validatePhone() && validatePassword() && validateConfirmPassword();
+            
+            if (!isValid) {
+                messageContainer.innerHTML = '<div class="error-message">Please fix the errors above before submitting</div>';
+                return;
+            }
+            
+            // Show loading state
+            form.classList.add('loading');
+            messageContainer.innerHTML = '';
+            
+            try {
+                const formData = new FormData(form);
+                const email = formData.get('email');
+                
+                const response = await fetch(`${API_BASE}/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: formData.get('username'),
+                        email: email,
+                        phone: formData.get('phone'),
+                        password: formData.get('password')
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    messageContainer.innerHTML = `
+                        <div class="success-message">
+                            Account created successfully!<br>
+                            You have been allocated ${result.storage_allocated}GB of storage.<br>
+                            Redirecting to login...
+                        </div>
+                    `;
+                    
+                    // Redirect to login page
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 3000);
+                } else if (result.require_otp) {
+                    // OTP verification required
+                    messageContainer.innerHTML = `
+                        <div class="success-message">
+                            📧 Verification code sent to your email!<br>
+                            Redirecting to verification page...
+                        </div>
+                    `;
+                    
+                    // Redirect to OTP verification page
+                    setTimeout(() => {
+                        window.location.href = `/verify-otp?email=${encodeURIComponent(email)}&purpose=registration`;
+                    }, 2000);
+                } else {
+                    messageContainer.innerHTML = `<div class="error-message">${result.message}</div>`;
+                }
+            } catch (error) {
+                messageContainer.innerHTML = '<div class="error-message">Registration failed. Please check your connection and try again.</div>';
+            }
+            
+            // Remove loading state
+            form.classList.remove('loading');
+        });
+
+        // Check if already logged in
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch(`${API_BASE}/profile`, {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    // Already logged in, redirect to dashboard
+                    window.location.href = '/dashboard';
+                }
+            } catch (error) {
+                // Not logged in, stay on register page
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1851 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- VM Dashboard -->
+<div class="clouddrive-container">
+    <!-- Sidebar -->
+    <div class="clouddrive-sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-desktop"></i>
+                <span>VM Manager</span>
+            </div>
+        </div>
+        
+        <div class="sidebar-nav">
+            <a href="/" class="nav-item">
+                <i class="fas fa-hdd"></i>
+                <span>CloudDrive</span>
+            </a>
+            <a href="/vm-dashboard" class="nav-item active">
+                <i class="fas fa-desktop"></i>
+                <span>My VMs</span>
+            </a>
+            <a href="/vm-shared" class="nav-item">
+                <i class="fas fa-users"></i>
+                <span>Shared VMs</span>
+            </a>
+            <a href="/vm-templates" class="nav-item">
+                <i class="fas fa-clone"></i>
+                <span>Templates</span>
+            </a>
+            <a href="/vm-snapshots" class="nav-item">
+                <i class="fas fa-camera"></i>
+                <span>Snapshots</span>
+            </a>
+            <a href="/vm-network" class="nav-item">
+                <i class="fas fa-network-wired"></i>
+                <span>Network</span>
+            </a>
+        </div>
+        
+        <!-- System Metrics -->
+        <div class="storage-info">
+            <div class="storage-header">
+                <i class="fas fa-chart-line"></i>
+                <span>System Load</span>
+            </div>
+            <div class="metrics-display">
+                <div class="metric-item">
+                    <span class="metric-label">CPU</span>
+                    <div class="metric-bar">
+                        <div class="metric-fill" style="width: {{ metrics.cpu_usage }}%" data-metric="cpu"></div>
+                    </div>
+                    <span class="metric-value">{{ "%.1f"|format(metrics.cpu_usage) }}%</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">RAM</span>
+                    <div class="metric-bar">
+                        <div class="metric-fill" style="width: {{ metrics.memory_usage }}%" data-metric="memory"></div>
+                    </div>
+                    <span class="metric-value">{{ "%.1f"|format(metrics.memory_usage) }}%</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Disk</span>
+                    <div class="metric-bar">
+                        <div class="metric-fill" style="width: {{ metrics.disk_usage }}%" data-metric="disk"></div>
+                    </div>
+                    <span class="metric-value">{{ "%.1f"|format(metrics.disk_usage) }}%</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- VM Stats -->
+        <div class="user-info">
+            <div class="vm-stats">
+                <div class="stat-item">
+                    <span class="stat-number">{{ metrics.total_vms }}</span>
+                    <span class="stat-label">Total VMs</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">{{ metrics.running_vms }}</span>
+                    <span class="stat-label">Running</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="clouddrive-main">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="breadcrumb-nav">
+                <h2><i class="fas fa-desktop"></i> Virtual Machines</h2>
+            </div>
+            
+            <div class="top-actions">
+                <button class="btn-action secondary" onclick="refreshVMs()">
+                    <i class="fas fa-sync"></i>
+                    Refresh
+                </button>
+                <button class="btn-action primary" onclick="createNewVM()">
+                    <i class="fas fa-plus"></i>
+                    New VM
+                </button>
+            </div>
+        </div>
+        
+        <!-- VM Grid -->
+        <div class="file-container">
+            {% if not user_vms %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-desktop"></i>
+                </div>
+                <h3>No Virtual Machines</h3>
+                <p>Create your first VM to get started with distributed computing</p>
+                <button class="btn-action primary" onclick="createNewVM()">
+                    <i class="fas fa-plus"></i>
+                    Create VM
+                </button>
+            </div>
+            {% else %}
+            
+            <!-- My VMs Section -->
+            <div class="section-header">
+                <h3><i class="fas fa-desktop"></i> My Virtual Machines</h3>
+                <span class="vm-count">{{ user_vms|length }} VMs</span>
+            </div>
+            
+            <div class="vm-grid">
+                {% for vm in user_vms %}
+                <div class="vm-card" data-vm-id="{{ vm.node_id }}">
+                    <div class="vm-header">
+                        <div class="vm-icon">
+                            {% if vm.status == 'running' %}
+                                <i class="fas fa-desktop text-success"></i>
+                            {% elif vm.status == 'stopped' %}
+                                <i class="fas fa-desktop text-muted"></i>
+                            {% elif vm.status == 'error' %}
+                                <i class="fas fa-desktop text-danger"></i>
+                            {% else %}
+                                <i class="fas fa-desktop text-warning"></i>
+                            {% endif %}
+                        </div>
+                        <div class="vm-status">
+                            <span class="status-badge {{ vm.status }}">{{ vm.status.title() }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="vm-body">
+                        <h4 class="vm-name">{{ vm.name }}</h4>
+                        <div class="vm-specs">
+                            <div class="spec-item">
+                                <i class="fas fa-microchip"></i>
+                                <span>{{ vm.cpu_cores }} cores</span>
+                            </div>
+                            <div class="spec-item">
+                                <i class="fas fa-memory"></i>
+                                <span>{{ vm.ram_gb }} GB RAM</span>
+                            </div>
+                            <div class="spec-item">
+                                <i class="fas fa-hdd"></i>
+                                <span>{{ vm.storage_gb }} GB</span>
+                            </div>
+                            <div class="spec-item">
+                                <i class="fab fa-{{ vm.os_type }}"></i>
+                                <span>{{ vm.os_type.title() }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="vm-info">
+                            <small class="text-muted">
+                                Created: {{ vm.created_date[:10] }}
+                                {% if vm.last_boot %}
+                                <br>Last boot: {{ vm.last_boot[:10] }}
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="vm-actions">
+                        {% if vm.status == 'stopped' %}
+                        <button class="btn-vm-action start" onclick="startVM('{{ vm.node_id }}')">
+                            <i class="fas fa-play"></i>
+                            Start
+                        </button>
+                        {% elif vm.status == 'running' %}
+                        <button class="btn-vm-action stop" onclick="stopVM('{{ vm.node_id }}')">
+                            <i class="fas fa-stop"></i>
+                            Stop
+                        </button>
+                        <button class="btn-vm-action connect" onclick="connectVM('{{ vm.node_id }}')">
+                            <i class="fas fa-terminal"></i>
+                            Console
+                        </button>
+                        {% endif %}
+                        
+                        <div class="dropdown">
+                            <button class="btn-vm-action menu" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" onclick="editVM('{{ vm.node_id }}')">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a></li>
+                                <li><a class="dropdown-item" onclick="cloneVM('{{ vm.node_id }}')">
+                                    <i class="fas fa-clone"></i> Clone
+                                </a></li>
+                                <li><a class="dropdown-item" onclick="snapshotVM('{{ vm.node_id }}')">
+                                    <i class="fas fa-camera"></i> Snapshot
+                                </a></li>
+                                <li><a class="dropdown-item" onclick="shareVM('{{ vm.node_id }}')">
+                                    <i class="fas fa-share"></i> Share
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" onclick="deleteVM('{{ vm.node_id }}')">
+                                    <i class="fas fa-trash"></i> Delete
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            {% if shared_vms %}
+            <!-- Shared VMs Section -->
+            <div class="section-header">
+                <h3><i class="fas fa-users"></i> Shared with Me</h3>
+                <span class="vm-count">{{ shared_vms|length }} VMs</span>
+            </div>
+            
+            <div class="vm-grid">
+                {% for vm in shared_vms %}
+                <div class="vm-card shared" data-vm-id="{{ vm.node_id }}">
+                    <div class="vm-header">
+                        <div class="vm-icon">
+                            <i class="fas fa-desktop text-info"></i>
+                        </div>
+                        <div class="vm-status">
+                            <span class="permission-badge">{{ vm.permission }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="vm-body">
+                        <h4 class="vm-name">{{ vm.name }}</h4>
+                        <div class="vm-owner">
+                            <small>by {{ vm.owner }}</small>
+                        </div>
+                        <div class="vm-info">
+                            <small class="text-muted">
+                                Shared: {{ vm.shared_date[:10] }}
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="vm-actions">
+                        {% if vm.permission in ['read', 'write', 'admin'] %}
+                        <button class="btn-vm-action connect" onclick="connectVM('{{ vm.node_id }}')">
+                            <i class="fas fa-terminal"></i>
+                            Connect
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            {% endif %}
+            
+            <!-- Enterprise VM Features Section -->
+            <div class="enterprise-features">
+                <div class="section-header">
+                    <h3><i class="fas fa-server"></i> Enterprise Features</h3>
+                </div>
+                
+                <!-- Feature Tabs -->
+                <div class="feature-tabs">
+                    <nav class="nav nav-pills" id="featureTabs" role="tablist">
+                        <a class="nav-link active" data-bs-toggle="pill" href="#hardwareVirt" role="tab">
+                            <i class="fas fa-microchip"></i> Hardware Virtualization
+                        </a>
+                        <a class="nav-link" data-bs-toggle="pill" href="#networking" role="tab">
+                            <i class="fas fa-network-wired"></i> Advanced Networking
+                        </a>
+                        <a class="nav-link" data-bs-toggle="pill" href="#storage" role="tab">
+                            <i class="fas fa-database"></i> Enterprise Storage
+                        </a>
+                        <a class="nav-link" data-bs-toggle="pill" href="#administration" role="tab">
+                            <i class="fas fa-cogs"></i> System Administration
+                        </a>
+                    </nav>
+                </div>
+                
+                <!-- Tab Content -->
+                <div class="tab-content" id="featureTabContent">
+                    <!-- Hardware Virtualization Tab -->
+                    <div class="tab-pane fade show active" id="hardwareVirt" role="tabpanel">
+                        <div class="feature-grid">
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-power-off"></i>
+                                </div>
+                                <h4>Boot Sequence Simulation</h4>
+                                <p>Complete POST, BIOS, and OS loading simulation with realistic boot times and hardware detection.</p>
+                                <button class="btn-feature" onclick="simulateBootSequence()">View Boot Process</button>
+                            </div>
+                            
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-cpu"></i>
+                                </div>
+                                <h4>Virtual Hardware</h4>
+                                <p>Realistic CPU, RAM, and storage specs with dynamic performance monitoring and resource allocation.</p>
+                                <button class="btn-feature" onclick="showHardwareSpecs()">Hardware Details</button>
+                            </div>
+                            
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-folder-open"></i>
+                                </div>
+                                <h4>File System Support</h4>
+                                <p>Full NTFS/FAT32/EXT4 support with formatting, defragmentation, and file system check utilities.</p>
+                                <button class="btn-feature" onclick="manageFileSystem()">File System Tools</button>
+                            </div>
+                            
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-tasks"></i>
+                                </div>
+                                <h4>Process Management</h4>
+                                <p>Virtual processes with CPU scheduling, memory allocation, and complete process lifecycle management.</p>
+                                <button class="btn-feature" onclick="showProcessManager()">Process Monitor</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Advanced Networking Tab -->
+                    <div class="tab-pane fade" id="networking" role="tabpanel">
+                        <div class="feature-grid">
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-ethernet"></i>
+                                </div>
+                                <h4>Virtual NICs</h4>
+                                <p>Automatic IP/MAC assignment with realistic network interfaces and adapter management.</p>
+                                <button class="btn-feature" onclick="configureNetworkAdapter()">Network Config</button>
+                            </div>
+                            
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-dharmachakra"></i>
+                                </div>
+                                <h4>DHCP Simulation</h4>
+                                <p>Dynamic IP allocation with lease management and automatic network discovery.</p>
+                                <button class="btn-feature" onclick="manageDHCP()">DHCP Manager</button>
+                            </div>
+                            
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-route"></i>
+                                </div>
+                                <h4>Network Discovery</h4>
+                                <p>ARP tables, ping, traceroute, and advanced network scanning capabilities.</p>
+                                <button class="btn-feature" onclick="networkDiscovery()">Discovery Tools</button>
+                            </div>
+                            
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-tachometer-alt"></i>
+                                </div>
+                                <h4>Bandwidth Control</h4>
+                                <p>Configurable network speeds, latency simulation, and traffic shaping.</p>
+                                <button class="btn-feature" onclick="bandwidthControl()">Traffic Control</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Enterprise Storage Tab -->
+                    <div class="tab-pane fade" id="storage" role="tabpanel">
+                        <div class="feature-grid">
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-hdd"></i>
+                                </div>
+                                <h4>RAID Simulation</h4>
+                                <p>RAID 0/1/5 configurations with failure simulation and automatic recovery.</p>
+                                <button class="btn-feature" onclick="configureRAID()">RAID Manager</button>
+                            </div>
+                            
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-lock"></i>
+                                </div>
+                                <h4>Disk Encryption</h4>
+                                <p>Virtual BitLocker/LUKS encryption with key management and secure storage.</p>
+                                <button class="btn-feature" onclick="encryptDisk()">Encryption Tools</button>
+                            </div>
+                            
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-camera"></i>
+                                </div>
+                                <h4>VM Snapshots</h4>
+                                <p>Complete VM state snapshots with rollback functionality and snapshot management.</p>
+                                <button class="btn-feature" onclick="manageSnapshots()">Snapshot Manager</button>
+                            </div>
+                            
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-archive"></i>
+                                </div>
+                                <h4>Backup Systems</h4>
+                                <p>Automated backups with compression, versioning, and disaster recovery.</p>
+                                <button class="btn-feature" onclick="backupManager()">Backup Center</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- System Administration Tab -->
+                    <div class="tab-pane fade" id="administration" role="tabpanel">
+                        <div class="feature-grid">
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-users-cog"></i>
+                                </div>
+                                <h4>User Management</h4>
+                                <p>Multi-user support with permissions, groups, and role-based access control.</p>
+                                <button class="btn-feature" onclick="userManager()">User Admin</button>
+                            </div>
+                            
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-shield-alt"></i>
+                                </div>
+                                <h4>Security Suite</h4>
+                                <p>Firewall rules, antivirus scanning, intrusion detection, and security monitoring.</p>
+                                <button class="btn-feature" onclick="securityCenter()">Security Dashboard</button>
+                            </div>
+                            
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <h4>Performance Monitoring</h4>
+                                <p>Real-time metrics, system logs, alerts, and comprehensive performance analytics.</p>
+                                <button class="btn-feature" onclick="performanceMonitor()">Monitoring Console</button>
+                            </div>
+                            
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-box"></i>
+                                </div>
+                                <h4>Package Management</h4>
+                                <p>Virtual package installer/updater system with dependency resolution.</p>
+                                <button class="btn-feature" onclick="packageManager()">Package Center</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create VM Modal -->
+<div class="modal fade" id="createVMModal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content modern-modal">
+            <div class="modal-header">
+                <h5><i class="fas fa-desktop"></i> Create Virtual Machine</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createVMForm">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="vmName" class="form-label">VM Name</label>
+                                <input type="text" class="form-control" id="vmName" name="name" required 
+                                       placeholder="e.g., Development Server">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="vmType" class="form-label">VM Type</label>
+                                <select class="form-select" id="vmType" name="vm_type">
+                                    <option value="standard">Standard</option>
+                                    <option value="compute">Compute Optimized</option>
+                                    <option value="memory">Memory Optimized</option>
+                                    <option value="storage">Storage Optimized</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="osType" class="form-label">Operating System</label>
+                                <select class="form-select" id="osType" name="os_type">
+                                    <option value="linux">Linux</option>
+                                    <option value="windows">Windows</option>
+                                    <option value="ubuntu">Ubuntu</option>
+                                    <option value="centos">CentOS</option>
+                                    <option value="debian">Debian</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="cpuCores" class="form-label">CPU Cores</label>
+                                <select class="form-select" id="cpuCores" name="cpu_cores">
+                                    <option value="1">1 Core</option>
+                                    <option value="2" selected>2 Cores</option>
+                                    <option value="4">4 Cores</option>
+                                    <option value="8">8 Cores</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="ramGB" class="form-label">Memory (RAM)</label>
+                                <select class="form-select" id="ramGB" name="ram_gb">
+                                    <option value="2">2 GB</option>
+                                    <option value="4" selected>4 GB</option>
+                                    <option value="8">8 GB</option>
+                                    <option value="16">16 GB</option>
+                                    <option value="32">32 GB</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="storageGB" class="form-label">Storage</label>
+                                <select class="form-select" id="storageGB" name="storage_gb">
+                                    <option value="20">20 GB</option>
+                                    <option value="50" selected>50 GB</option>
+                                    <option value="100">100 GB</option>
+                                    <option value="250">250 GB</option>
+                                    <option value="500">500 GB</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="vm-preview">
+                        <h6>Configuration Summary</h6>
+                        <div class="config-summary" id="configSummary">
+                            <!-- Updated dynamically -->
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Create VM
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Additional VM-specific styles */
+.vm-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.vm-card {
+    background: #fff;
+    border: 1px solid #e8eaed;
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.vm-card:hover {
+    box-shadow: 0 4px 12px rgba(32,33,36,0.15);
+    transform: translateY(-2px);
+}
+
+.vm-card.shared {
+    border-left: 4px solid #1a73e8;
+}
+
+.vm-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.vm-icon i {
+    font-size: 24px;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.status-badge.running { background: #e8f5e8; color: #137333; }
+.status-badge.stopped { background: #f1f3f4; color: #5f6368; }
+.status-badge.starting { background: #fef7e0; color: #f57c00; }
+.status-badge.error { background: #fce8e6; color: #d93025; }
+
+.permission-badge {
+    background: #e8f0fe;
+    color: #1a73e8;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.vm-name {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #202124;
+}
+
+.vm-specs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.spec-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #5f6368;
+}
+
+.spec-item i {
+    width: 14px;
+    font-size: 12px;
+}
+
+.vm-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #f1f3f4;
+}
+
+.btn-vm-action {
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid #dadce0;
+    background: #fff;
+    color: #5f6368;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-vm-action:hover {
+    background: #f8f9fa;
+    border-color: #5f6368;
+}
+
+.btn-vm-action.start { color: #137333; }
+.btn-vm-action.start:hover { background: #e8f5e8; border-color: #137333; }
+
+.btn-vm-action.stop { color: #d93025; }
+.btn-vm-action.stop:hover { background: #fce8e6; border-color: #d93025; }
+
+.btn-vm-action.connect { color: #1a73e8; }
+.btn-vm-action.connect:hover { background: #e8f0fe; border-color: #1a73e8; }
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 30px 0 20px 0;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #f1f3f4;
+}
+
+.section-header h3 {
+    color: #202124;
+    font-weight: 500;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.vm-count {
+    background: #f1f3f4;
+    color: #5f6368;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.metrics-display {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.metric-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.metric-label {
+    width: 30px;
+    color: #5f6368;
+}
+
+.metric-bar {
+    flex: 1;
+    height: 6px;
+    background: #f1f3f4;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.metric-fill {
+    height: 100%;
+    background: #1a73e8;
+    transition: width 0.3s ease;
+}
+
+.metric-value {
+    width: 35px;
+    text-align: right;
+    color: #202124;
+    font-weight: 500;
+}
+
+.vm-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    text-align: center;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-number {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1a73e8;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #5f6368;
+}
+
+.config-summary {
+    background: #f8f9fa;
+    padding: 16px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+/* Enterprise Features Styles */
+.enterprise-features {
+    margin-top: 40px;
+    padding: 30px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border-radius: 16px;
+}
+
+.feature-tabs {
+    margin: 20px 0;
+}
+
+.feature-tabs .nav-pills .nav-link {
+    background: none;
+    color: #5f6368;
+    border: 2px solid transparent;
+    border-radius: 12px;
+    padding: 12px 20px;
+    margin-right: 10px;
+    transition: all 0.3s ease;
+}
+
+.feature-tabs .nav-pills .nav-link.active {
+    background: #1a73e8;
+    color: white;
+    border-color: #1a73e8;
+}
+
+.feature-tabs .nav-pills .nav-link:hover {
+    background: #f1f3f4;
+    color: #1a73e8;
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin-top: 24px;
+}
+
+.feature-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    border: 1px solid #e8eaed;
+}
+
+.feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+
+.feature-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    color: white;
+    font-size: 32px;
+}
+
+.feature-card h4 {
+    color: #202124;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.feature-card p {
+    color: #5f6368;
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+
+.btn-feature {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-feature:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102,126,234,0.3);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e8eaed;
+}
+
+.section-header h3 {
+    color: #202124;
+    font-weight: 600;
+    margin: 0;
+}
+
+.vm-count {
+    background: #1a73e8;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 500;
+}
+</style>
+
+<script>
+// VM Management JavaScript
+let vmOperationInProgress = false;
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    updateConfigSummary();
+    setupFormHandlers();
+    startMetricsUpdate();
+});
+
+function setupFormHandlers() {
+    // Create VM form
+    document.getElementById('createVMForm').onsubmit = function(e) {
+        e.preventDefault();
+        createVM();
+    };
+    
+    // Update config summary when form changes
+    const formInputs = document.querySelectorAll('#createVMForm select, #createVMForm input');
+    formInputs.forEach(input => {
+        input.addEventListener('change', updateConfigSummary);
+    });
+}
+
+function createNewVM() {
+    const modal = new bootstrap.Modal(document.getElementById('createVMModal'));
+    modal.show();
+}
+
+function createVM() {
+    if (vmOperationInProgress) return;
+    
+    const formData = new FormData(document.getElementById('createVMForm'));
+    const vmConfig = Object.fromEntries(formData.entries());
+    
+    // Convert numeric values
+    vmConfig.cpu_cores = parseInt(vmConfig.cpu_cores);
+    vmConfig.ram_gb = parseInt(vmConfig.ram_gb);
+    vmConfig.storage_gb = parseInt(vmConfig.storage_gb);
+    
+    vmOperationInProgress = true;
+    
+    fetch('/api/vm/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(vmConfig)
+    })
+    .then(response => response.json())
+    .then(data => {
+        vmOperationInProgress = false;
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('createVMModal')).hide();
+            showNotification('VM created successfully!', 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showNotification('Failed to create VM: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        vmOperationInProgress = false;
+        showNotification('Error creating VM: ' + error, 'error');
+    });
+}
+
+function startVM(nodeId) {
+    if (vmOperationInProgress) return;
+    
+    vmOperationInProgress = true;
+    updateVMStatus(nodeId, 'Starting...');
+    
+    fetch(`/api/vm/${nodeId}/start`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        vmOperationInProgress = false;
+        if (data.success) {
+            showNotification('VM started successfully!', 'success');
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            showNotification('Failed to start VM: ' + data.error, 'error');
+            updateVMStatus(nodeId, 'Error');
+        }
+    })
+    .catch(error => {
+        vmOperationInProgress = false;
+        showNotification('Error starting VM: ' + error, 'error');
+        updateVMStatus(nodeId, 'Error');
+    });
+}
+
+function stopVM(nodeId) {
+    if (vmOperationInProgress) return;
+    if (!confirm('Are you sure you want to stop this VM?')) return;
+    
+    vmOperationInProgress = true;
+    updateVMStatus(nodeId, 'Stopping...');
+    
+    fetch(`/api/vm/${nodeId}/stop`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        vmOperationInProgress = false;
+        if (data.success) {
+            showNotification('VM stopped successfully!', 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showNotification('Failed to stop VM: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        vmOperationInProgress = false;
+        showNotification('Error stopping VM: ' + error, 'error');
+    });
+}
+
+function connectVM(nodeId) {
+    // Open VM terminal in new window
+    window.open(`/api/vm/${nodeId}/terminal`, '_blank', 'width=800,height=600');
+}
+
+function shareVM(nodeId) {
+    const username = prompt('Enter username to share with:');
+    if (!username) return;
+    
+    const permission = prompt('Permission level (read/write/admin):', 'read');
+    if (!['read', 'write', 'admin'].includes(permission)) {
+        showNotification('Invalid permission level', 'error');
+        return;
+    }
+    
+    fetch(`/api/vm/${nodeId}/share`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, permission })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('VM shared successfully!', 'success');
+        } else {
+            showNotification('Failed to share VM: ' + data.error, 'error');
+        }
+    });
+}
+
+function snapshotVM(nodeId) {
+    const name = prompt('Snapshot name:');
+    if (!name) return;
+    
+    const description = prompt('Description (optional):', '');
+    
+    fetch(`/api/vm/${nodeId}/snapshot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, description })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Snapshot created successfully!', 'success');
+        } else {
+            showNotification('Failed to create snapshot: ' + data.error, 'error');
+        }
+    });
+}
+
+function deleteVM(nodeId) {
+    if (!confirm('Are you sure you want to delete this VM? This action cannot be undone.')) return;
+    
+    // Implementation for VM deletion
+    showNotification('VM deletion not implemented yet', 'info');
+}
+
+function updateVMStatus(nodeId, status) {
+    const vmCard = document.querySelector(`[data-vm-id="${nodeId}"]`);
+    if (vmCard) {
+        const statusBadge = vmCard.querySelector('.status-badge');
+        if (statusBadge) {
+            statusBadge.textContent = status;
+            statusBadge.className = 'status-badge starting';
+        }
+    }
+}
+
+function updateConfigSummary() {
+    const form = document.getElementById('createVMForm');
+    const formData = new FormData(form);
+    const config = Object.fromEntries(formData.entries());
+    
+    const summary = `
+        <strong>${config.name || 'New VM'}</strong><br>
+        ${config.vm_type} • ${config.os_type}<br>
+        ${config.cpu_cores} CPU • ${config.ram_gb} GB RAM • ${config.storage_gb} GB Storage
+    `;
+    
+    document.getElementById('configSummary').innerHTML = summary;
+}
+
+function refreshVMs() {
+    location.reload();
+}
+
+function startMetricsUpdate() {
+    // Update metrics every 5 seconds
+    setInterval(() => {
+        fetch('/api/vm/network-status')
+        .then(response => response.json())
+        .then(data => {
+            // Update network status display
+            console.log('Network status:', data);
+        })
+        .catch(error => console.log('Network status update failed'));
+    }, 5000);
+}
+
+function showNotification(message, type) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+        <span>${message}</span>
+    `;
+    
+    // Add to page
+    document.body.appendChild(notification);
+    
+    // Show notification
+    setTimeout(() => notification.classList.add('show'), 100);
+    
+    // Hide and remove after 3 seconds
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => document.body.removeChild(notification), 300);
+    }, 3000);
+}
+
+// Enterprise VM Features Functions
+
+// Hardware Virtualization Features
+function simulateBootSequence() {
+    showModalDialog('Boot Sequence Simulation', `
+        <div class="boot-simulation">
+            <h5>🔌 Power-On Self-Test (POST)</h5>
+            <div class="progress mb-3">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+            </div>
+            <ul class="boot-steps">
+                <li>✅ CPU Detection: Virtual CloudVM CPU @ 2.8GHz</li>
+                <li>✅ Memory Test: 4096MB RAM detected and tested</li>
+                <li>✅ Storage: 50GB Virtual Disk detected</li>
+                <li>✅ Network: 1 Gbps Virtual NIC initialized</li>
+                <li>✅ BIOS: CloudVM BIOS v2.1 - Boot sequence complete</li>
+            </ul>
+            <p class="text-success"><i class="fas fa-check"></i> Boot sequence completed in 15.3 seconds</p>
+        </div>
+    `);
+}
+
+function showHardwareSpecs() {
+    showModalDialog('Virtual Hardware Specifications', `
+        <div class="hardware-specs">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6><i class="fas fa-microchip"></i> Processor</h6>
+                    <ul>
+                        <li>Type: CloudVM Virtual CPU</li>
+                        <li>Cores: 4 (2 threads per core)</li>
+                        <li>Speed: 2.8 GHz base, 3.5 GHz boost</li>
+                        <li>Cache: 8MB L3 cache</li>
+                        <li>Architecture: x86_64</li>
+                    </ul>
+                    
+                    <h6><i class="fas fa-memory"></i> Memory</h6>
+                    <ul>
+                        <li>Total: 4096 MB</li>
+                        <li>Available: 3456 MB</li>
+                        <li>Type: DDR4-2666</li>
+                        <li>ECC: Enabled</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6><i class="fas fa-hdd"></i> Storage</h6>
+                    <ul>
+                        <li>Primary: 50 GB Virtual Disk</li>
+                        <li>Interface: NVMe PCIe 3.0</li>
+                        <li>Read Speed: 3,200 MB/s</li>
+                        <li>Write Speed: 1,800 MB/s</li>
+                        <li>IOPS: 450,000 read / 350,000 write</li>
+                    </ul>
+                    
+                    <h6><i class="fas fa-network-wired"></i> Network</h6>
+                    <ul>
+                        <li>Adapter: CloudVM Virtual NIC</li>
+                        <li>Speed: 1 Gbps</li>
+                        <li>MAC: 52:54:00:12:34:56</li>
+                        <li>Driver: virtio-net</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    `);
+}
+
+function manageFileSystem() {
+    showModalDialog('File System Management', `
+        <div class="filesystem-manager">
+            <div class="row">
+                <div class="col-md-4">
+                    <h6>Format Disk</h6>
+                    <select class="form-select mb-2" id="fsType">
+                        <option value="NTFS">NTFS</option>
+                        <option value="EXT4">EXT4</option>
+                        <option value="FAT32">FAT32</option>
+                    </select>
+                    <button class="btn btn-primary btn-sm" onclick="formatDisk()">Format</button>
+                </div>
+                <div class="col-md-4">
+                    <h6>Defragmentation</h6>
+                    <p class="small">Fragmentation: 23%</p>
+                    <button class="btn btn-warning btn-sm" onclick="defragmentDisk()">Defragment</button>
+                </div>
+                <div class="col-md-4">
+                    <h6>File System Check</h6>
+                    <p class="small">Last check: 3 days ago</p>
+                    <button class="btn btn-success btn-sm" onclick="fsckDisk()">Check & Repair</button>
+                </div>
+            </div>
+            <div class="mt-4">
+                <h6>File System Information</h6>
+                <table class="table table-sm">
+                    <tr><td>Type</td><td>NTFS</td></tr>
+                    <tr><td>Total Size</td><td>50.0 GB</td></tr>
+                    <tr><td>Used Space</td><td>18.7 GB (37%)</td></tr>
+                    <tr><td>Free Space</td><td>31.3 GB (63%)</td></tr>
+                    <tr><td>Cluster Size</td><td>4096 bytes</td></tr>
+                </table>
+            </div>
+        </div>
+    `);
+}
+
+function showProcessManager() {
+    showModalDialog('Process Manager', `
+        <div class="process-manager">
+            <div class="d-flex justify-content-between mb-3">
+                <h6>Running Processes</h6>
+                <button class="btn btn-sm btn-primary" onclick="refreshProcesses()">Refresh</button>
+            </div>
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>PID</th>
+                        <th>Name</th>
+                        <th>User</th>
+                        <th>CPU%</th>
+                        <th>Memory</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1001</td>
+                        <td>systemd</td>
+                        <td>root</td>
+                        <td>0.1%</td>
+                        <td>25MB</td>
+                        <td><button class="btn btn-danger btn-xs">Kill</button></td>
+                    </tr>
+                    <tr>
+                        <td>1532</td>
+                        <td>apache2</td>
+                        <td>www-data</td>
+                        <td>2.3%</td>
+                        <td>45MB</td>
+                        <td><button class="btn btn-danger btn-xs">Kill</button></td>
+                    </tr>
+                    <tr>
+                        <td>2047</td>
+                        <td>mysql</td>
+                        <td>mysql</td>
+                        <td>1.8%</td>
+                        <td>156MB</td>
+                        <td><button class="btn btn-danger btn-xs">Kill</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    `);
+}
+
+// Advanced Networking Features
+function configureNetworkAdapter() {
+    showModalDialog('Network Adapter Configuration', `
+        <div class="network-config">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Interface Configuration</h6>
+                    <div class="mb-2">
+                        <label class="form-label">Interface Name</label>
+                        <input type="text" class="form-control" value="eth0" readonly>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">MAC Address</label>
+                        <input type="text" class="form-control" value="52:54:00:12:34:56" readonly>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">IP Address</label>
+                        <input type="text" class="form-control" value="192.168.1.150">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Subnet Mask</label>
+                        <input type="text" class="form-control" value="255.255.255.0">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>Network Statistics</h6>
+                    <table class="table table-sm">
+                        <tr><td>Status</td><td><span class="text-success">Connected</span></td></tr>
+                        <tr><td>Speed</td><td>1000 Mbps</td></tr>
+                        <tr><td>Duplex</td><td>Full</td></tr>
+                        <tr><td>Bytes Sent</td><td>2.3 GB</td></tr>
+                        <tr><td>Bytes Received</td><td>8.7 GB</td></tr>
+                        <tr><td>Packets Sent</td><td>1,234,567</td></tr>
+                        <tr><td>Packets Received</td><td>3,456,789</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `);
+}
+
+function manageDHCP() {
+    showModalDialog('DHCP Manager', `
+        <div class="dhcp-manager">
+            <h6>DHCP Server Configuration</h6>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">IP Pool Start</label>
+                    <input type="text" class="form-control" value="192.168.1.100">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">IP Pool End</label>
+                    <input type="text" class="form-control" value="192.168.1.200">
+                </div>
+            </div>
+            
+            <h6>Active Leases</h6>
+            <table class="table table-sm">
+                <thead>
+                    <tr><th>IP Address</th><th>MAC Address</th><th>Hostname</th><th>Lease Expires</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>192.168.1.101</td>
+                        <td>52:54:00:ab:cd:ef</td>
+                        <td>cloudvm-001</td>
+                        <td>23h 45m</td>
+                    </tr>
+                    <tr>
+                        <td>192.168.1.102</td>
+                        <td>52:54:00:12:34:56</td>
+                        <td>cloudvm-002</td>
+                        <td>22h 12m</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    `);
+}
+
+function networkDiscovery() {
+    showModalDialog('Network Discovery Tools', `
+        <div class="network-discovery">
+            <div class="row">
+                <div class="col-md-4">
+                    <h6>Ping Test</h6>
+                    <input type="text" class="form-control mb-2" placeholder="IP or hostname" value="8.8.8.8">
+                    <button class="btn btn-primary btn-sm" onclick="runPing()">Ping</button>
+                </div>
+                <div class="col-md-4">
+                    <h6>Traceroute</h6>
+                    <input type="text" class="form-control mb-2" placeholder="Destination" value="google.com">
+                    <button class="btn btn-primary btn-sm" onclick="runTraceroute()">Trace Route</button>
+                </div>
+                <div class="col-md-4">
+                    <h6>Port Scanner</h6>
+                    <input type="text" class="form-control mb-2" placeholder="Target IP" value="192.168.1.1">
+                    <button class="btn btn-primary btn-sm" onclick="scanPorts()">Scan Ports</button>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <h6>ARP Table</h6>
+                <table class="table table-sm">
+                    <thead>
+                        <tr><th>IP Address</th><th>MAC Address</th><th>Interface</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>192.168.1.1</td><td>aa:bb:cc:dd:ee:ff</td><td>eth0</td></tr>
+                        <tr><td>192.168.1.101</td><td>52:54:00:ab:cd:ef</td><td>eth0</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `);
+}
+
+function bandwidthControl() {
+    showModalDialog('Bandwidth Control', `
+        <div class="bandwidth-control">
+            <h6>Traffic Shaping Configuration</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <label class="form-label">Upload Limit</label>
+                    <select class="form-select">
+                        <option>Unlimited</option>
+                        <option>1 Mbps</option>
+                        <option>10 Mbps</option>
+                        <option>100 Mbps</option>
+                        <option>1 Gbps</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Download Limit</label>
+                    <select class="form-select">
+                        <option>Unlimited</option>
+                        <option>1 Mbps</option>
+                        <option>10 Mbps</option>
+                        <option>100 Mbps</option>
+                        <option selected>1 Gbps</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <h6>Network Usage (Real-time)</h6>
+                <div class="progress mb-2">
+                    <div class="progress-bar bg-success" style="width: 35%"></div>
+                </div>
+                <small>Upload: 2.5 Mbps | Download: 15.7 Mbps</small>
+            </div>
+        </div>
+    `);
+}
+
+// Enterprise Storage Features
+function configureRAID() {
+    showModalDialog('RAID Configuration', `
+        <div class="raid-config">
+            <h6>RAID Setup</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <label class="form-label">RAID Level</label>
+                    <select class="form-select mb-2">
+                        <option value="0">RAID 0 (Striping)</option>
+                        <option value="1" selected>RAID 1 (Mirroring)</option>
+                        <option value="5">RAID 5 (Distributed Parity)</option>
+                        <option value="10">RAID 10 (Striped Mirrors)</option>
+                    </select>
+                    
+                    <label class="form-label">Number of Disks</label>
+                    <input type="number" class="form-control" value="2" min="2" max="8">
+                </div>
+                <div class="col-md-6">
+                    <h6>Current RAID Status</h6>
+                    <table class="table table-sm">
+                        <tr><td>Level</td><td>RAID 1</td></tr>
+                        <tr><td>Disks</td><td>2 active</td></tr>
+                        <tr><td>Capacity</td><td>25 GB (50% efficiency)</td></tr>
+                        <tr><td>Status</td><td><span class="text-success">Healthy</span></td></tr>
+                        <tr><td>Sync</td><td>100% complete</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `);
+}
+
+function encryptDisk() {
+    showModalDialog('Disk Encryption', `
+        <div class="disk-encryption">
+            <h6>BitLocker/LUKS Encryption</h6>
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                Disk encryption protects your data with AES-256 encryption
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">Encryption Algorithm</label>
+                <select class="form-select">
+                    <option selected>AES-256-XTS</option>
+                    <option>AES-128-CBC</option>
+                    <option>ChaCha20-Poly1305</option>
+                </select>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-control" placeholder="Enter encryption password">
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">Confirm Password</label>
+                <input type="password" class="form-control" placeholder="Confirm password">
+            </div>
+            
+            <div class="alert alert-warning">
+                <strong>Warning:</strong> Encryption will take 30-120 minutes depending on disk size. VM will be unavailable during encryption.
+            </div>
+        </div>
+    `);
+}
+
+function manageSnapshots() {
+    showModalDialog('Snapshot Manager', `
+        <div class="snapshot-manager">
+            <div class="d-flex justify-content-between mb-3">
+                <h6>VM Snapshots</h6>
+                <button class="btn btn-success btn-sm">Create Snapshot</button>
+            </div>
+            
+            <table class="table">
+                <thead>
+                    <tr><th>Name</th><th>Date</th><th>Size</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Initial Setup</td>
+                        <td>2025-11-20 14:30</td>
+                        <td>1.2 GB</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary">Restore</button>
+                            <button class="btn btn-sm btn-danger">Delete</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>After Updates</td>
+                        <td>2025-11-22 09:15</td>
+                        <td>1.8 GB</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary">Restore</button>
+                            <button class="btn btn-sm btn-danger">Delete</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    `);
+}
+
+function backupManager() {
+    showModalDialog('Backup Center', `
+        <div class="backup-manager">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Backup Schedule</h6>
+                    <div class="mb-2">
+                        <label class="form-label">Frequency</label>
+                        <select class="form-select">
+                            <option>Daily</option>
+                            <option selected>Weekly</option>
+                            <option>Monthly</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Retention</label>
+                        <select class="form-select">
+                            <option>7 days</option>
+                            <option selected>30 days</option>
+                            <option>90 days</option>
+                            <option>1 year</option>
+                        </select>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" checked>
+                        <label class="form-check-label">Compression enabled</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>Recent Backups</h6>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>2025-11-25 02:00</span>
+                            <span class="text-success">✓ Success</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>2025-11-18 02:00</span>
+                            <span class="text-success">✓ Success</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>2025-11-11 02:00</span>
+                            <span class="text-danger">✗ Failed</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    `);
+}
+
+// System Administration Features
+function userManager() {
+    showModalDialog('User Management', `
+        <div class="user-manager">
+            <div class="d-flex justify-content-between mb-3">
+                <h6>User Accounts</h6>
+                <button class="btn btn-success btn-sm">Add User</button>
+            </div>
+            
+            <table class="table">
+                <thead>
+                    <tr><th>Username</th><th>Groups</th><th>Status</th><th>Last Login</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>admin</td>
+                        <td>sudo, wheel</td>
+                        <td><span class="badge bg-success">Active</span></td>
+                        <td>2025-11-25 08:30</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary">Edit</button>
+                            <button class="btn btn-sm btn-warning">Disable</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>user1</td>
+                        <td>users</td>
+                        <td><span class="badge bg-success">Active</span></td>
+                        <td>2025-11-24 16:45</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary">Edit</button>
+                            <button class="btn btn-sm btn-warning">Disable</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    `);
+}
+
+function securityCenter() {
+    showModalDialog('Security Center', `
+        <div class="security-center">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Firewall Status</h6>
+                    <div class="alert alert-success">
+                        <i class="fas fa-shield-alt"></i>
+                        Firewall is <strong>ACTIVE</strong>
+                    </div>
+                    <ul class="list-group">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>SSH (22)</span>
+                            <span class="text-success">Allow</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>HTTP (80)</span>
+                            <span class="text-success">Allow</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>HTTPS (443)</span>
+                            <span class="text-success">Allow</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6>Security Scan Results</h6>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Last Scan:</span>
+                            <span>2025-11-25 06:00</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-success" style="width: 95%"></div>
+                        </div>
+                        <small class="text-success">System Security: 95% (Excellent)</small>
+                    </div>
+                    
+                    <h6>Threat Detection</h6>
+                    <ul class="list-group">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Failed Logins (24h)</span>
+                            <span class="badge bg-warning">3</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Blocked IPs</span>
+                            <span class="badge bg-danger">12</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Malware Detected</span>
+                            <span class="badge bg-success">0</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    `);
+}
+
+function performanceMonitor() {
+    showModalDialog('Performance Monitor', `
+        <div class="performance-monitor">
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <h6>CPU Usage</h6>
+                        <div class="metric-value">23%</div>
+                        <div class="metric-trend text-success">↓ -5%</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <h6>Memory</h6>
+                        <div class="metric-value">67%</div>
+                        <div class="metric-trend text-warning">↑ +12%</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <h6>Disk I/O</h6>
+                        <div class="metric-value">45%</div>
+                        <div class="metric-trend text-info">→ Stable</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <h6>Network</h6>
+                        <div class="metric-value">12%</div>
+                        <div class="metric-trend text-success">↓ -8%</div>
+                    </div>
+                </div>
+            </div>
+            
+            <h6>System Alerts</h6>
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                Memory usage above 65% - Consider adding more RAM
+            </div>
+            
+            <h6>Performance History</h6>
+            <div class="chart-placeholder">
+                <div class="bg-light p-4 text-center">
+                    📊 Performance charts would be rendered here
+                </div>
+            </div>
+        </div>
+    `);
+}
+
+function packageManager() {
+    showModalDialog('Package Manager', `
+        <div class="package-manager">
+            <div class="d-flex justify-content-between mb-3">
+                <h6>Installed Packages</h6>
+                <button class="btn btn-primary btn-sm">Check Updates</button>
+            </div>
+            
+            <table class="table">
+                <thead>
+                    <tr><th>Package</th><th>Version</th><th>Status</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>apache2</td>
+                        <td>2.4.52</td>
+                        <td><span class="text-warning">Update Available</span></td>
+                        <td><button class="btn btn-sm btn-success">Update</button></td>
+                    </tr>
+                    <tr>
+                        <td>mysql-server</td>
+                        <td>8.0.32</td>
+                        <td><span class="text-success">Up to date</span></td>
+                        <td><button class="btn btn-sm btn-danger">Remove</button></td>
+                    </tr>
+                    <tr>
+                        <td>php</td>
+                        <td>8.1.15</td>
+                        <td><span class="text-warning">Update Available</span></td>
+                        <td><button class="btn btn-sm btn-success">Update</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    `);
+}
+
+// Helper function to show modal dialogs
+function showModalDialog(title, content) {
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.innerHTML = `
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">${title}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    ${content}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+    
+    // Remove modal from DOM when hidden
+    modal.addEventListener('hidden.bs.modal', () => {
+        document.body.removeChild(modal);
+    });
+}
+</script>
+
+<style>
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #fff;
+    padding: 16px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-left: 4px solid #ccc;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 9999;
+    transform: translateX(400px);
+    transition: transform 0.3s ease;
+    max-width: 300px;
+}
+
+.notification.show {
+    transform: translateX(0);
+}
+
+.notification.success { border-left-color: #137333; color: #137333; }
+.notification.error { border-left-color: #d93025; color: #d93025; }
+.notification.info { border-left-color: #1a73e8; color: #1a73e8; }
+</style>
+{% endblock %}

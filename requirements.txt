@@ -1,0 +1,13 @@
+# Virtual Machine Network Simulation Dependencies
+grpcio
+grpcio-tools
+protobuf
+pickle-mixin
+
+# Web API Dependencies
+Flask==2.3.2
+Flask-CORS==4.0.0
+Werkzeug==2.3.6
+
+# Firebase Admin SDK for Firestore integration
+firebase-admin
