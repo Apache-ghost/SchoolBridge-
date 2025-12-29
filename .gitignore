@@ -1,0 +1,69 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Storage and uploads
+cloud_storage/
+node_storage/
+web_uploads/
+temp_chunks/
+
+# User data
+users.json
+sessions.json
+payments.json
+subscriptions.json
+
+# Firebase credentials
+firebase_service_account.json
+serviceaccount.json
+
+# Images
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+.cache/
+
+# Generated protobuf files
+*_pb2.py
+*_pb2_grpc.py
