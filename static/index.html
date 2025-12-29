@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<<<<<<< HEAD
     <title>GUI Storage - Dashboard</title>
+=======
+    <title>VM Cloud Storage - Dashboard</title>
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
     <style>
         * {
             margin: 0;
@@ -543,10 +547,17 @@
     <nav class="navbar">
         <div class="navbar-content">
             <div class="navbar-brand">
+<<<<<<< HEAD
                 🖥️ GUI Storage
             </div>
             <div class="navbar-user">
                 <div class="storage-indicator" onclick="openPaymentModal()" style="cursor: pointer;" title="Click to upgrade storage">
+=======
+                🌐 VM Cloud Storage
+            </div>
+            <div class="navbar-user">
+                <div class="storage-indicator">
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
                     <div id="storage-text">Loading...</div>
                     <div class="storage-bar">
                         <div class="storage-fill" id="storage-fill"></div>
@@ -558,7 +569,10 @@
                     </div>
                     <div class="dropdown-menu" id="user-dropdown">
                         <a href="#" onclick="showProfile()">👤 Profile</a>
+<<<<<<< HEAD
                         <a href="#" onclick="openPaymentModal(); event.stopPropagation();">💎 Upgrade Storage</a>
+=======
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
                         <a href="#" onclick="showSettings()">⚙️ Settings</a>
                         <a href="#" onclick="logout()">🚪 Logout</a>
                     </div>
@@ -586,11 +600,16 @@
         <div id="dashboard-tab" class="tab-content active">
             <div class="card">
                 <div class="card-title">
+<<<<<<< HEAD
                     🏠 Welcome to GUI Storage
+=======
+                    🏠 Welcome to VM Cloud Storage
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
                 </div>
                 <p>Your personal cloud storage with 2GB of space. Upload files, manage VM nodes, and access your data from anywhere.</p>
             </div>
 
+<<<<<<< HEAD
             <!-- Storage Upgrade Card -->
             <div id="upgrade-card" class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; display: none;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -605,6 +624,8 @@
                 </div>
             </div>
 
+=======
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-icon">📁</div>
@@ -616,11 +637,14 @@
                     <div class="stat-number" id="storage-used">0 MB</div>
                     <div class="stat-label">Storage Used</div>
                 </div>
+<<<<<<< HEAD
                 <div class="stat-card" onclick="openPaymentModal()" style="cursor: pointer; border: 2px solid #3498db;" title="Click to upgrade">
                     <div class="stat-icon">💎</div>
                     <div class="stat-number" id="storage-allocated">2 GB</div>
                     <div class="stat-label">Storage Plan</div>
                 </div>
+=======
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
                 <div class="stat-card">
                     <div class="stat-icon">🖥️</div>
                     <div class="stat-number" id="total-nodes">0</div>
@@ -751,7 +775,10 @@
             checkAuthentication();
             loadUserProfile();
             loadDashboardStats();
+<<<<<<< HEAD
             checkStorageStatus(); // Check storage and show upgrade prompts if needed
+=======
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
             
             // Set up node form handler
             document.getElementById('node-form').addEventListener('submit', handleNodeCreate);
@@ -920,7 +947,11 @@
                     if (result.success) {
                         showMessage(`File "${file.name}" uploaded successfully!`, 'success');
                     } else {
+<<<<<<< HEAD
                         showMessage(`Failed to upload "${file.name}": ${result.error || result.message || 'Unknown error'}`, 'error');
+=======
+                        showMessage(`Failed to upload "${file.name}": ${result.message}`, 'error');
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
                     }
                 } catch (error) {
                     showMessage(`Failed to upload "${file.name}": ${error.message}`, 'error');
@@ -1269,6 +1300,7 @@
                 dropdown.style.display = 'none';
             }
         });
+<<<<<<< HEAD
 
         // ========== PAYMENT SYSTEM ==========
         let selectedPlan = null;
@@ -1568,5 +1600,8 @@
             50% { opacity: 0.7; }
         }
     </style>
+=======
+    </script>
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
 </body>
 </html>

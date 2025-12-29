@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<<<<<<< HEAD
     <title>GUI Storage - My Files</title>
+=======
+    <title>VM Cloud Storage - My Files</title>
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
     <style>
         * {
             margin: 0;
@@ -540,7 +544,11 @@
     <nav class="navbar">
         <div class="navbar-content">
             <div class="navbar-brand">
+<<<<<<< HEAD
                 🖥️ GUI Storage
+=======
+                🌐 VM Cloud Storage
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
             </div>
             <ul class="navbar-nav">
                 <li><a href="/dashboard" class="nav-link">Dashboard</a></li>
@@ -549,7 +557,11 @@
                 <li><a href="/upload" class="nav-link">Upload</a></li>
             </ul>
             <div class="navbar-user">
+<<<<<<< HEAD
                 <div class="storage-indicator" onclick="openPaymentModal()" style="cursor: pointer;" title="Click to upgrade storage">
+=======
+                <div class="storage-indicator">
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
                     <div id="storage-text">Loading...</div>
                     <div class="storage-bar">
                         <div class="storage-fill" id="storage-fill"></div>
@@ -561,7 +573,10 @@
                     </div>
                     <div class="dropdown-menu" id="user-dropdown">
                         <a href="#" onclick="showProfile()">👤 Profile</a>
+<<<<<<< HEAD
                         <a href="#" onclick="openPaymentModal(); event.stopPropagation();">💎 Upgrade Storage</a>
+=======
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
                         <a href="#" onclick="showSettings()">⚙️ Settings</a>
                         <a href="#" onclick="logout()">🚪 Logout</a>
                     </div>
@@ -643,6 +658,7 @@
         </div>
     </div>
 
+<<<<<<< HEAD
     <!-- Payment/Upgrade Modal -->
     <div id="payment-modal" class="modal">
         <div class="modal-content" style="max-width: 700px;">
@@ -825,6 +841,8 @@
         }
     </style>
 
+=======
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
     <script>
         const API_BASE = 'http://localhost:8080/api';
         let currentUser = null;
@@ -1196,6 +1214,7 @@
             }
             document.getElementById('context-menu').style.display = 'none';
         }
+<<<<<<< HEAD
 
         // ========== PAYMENT AND STORAGE UPGRADE FUNCTIONS ==========
         
@@ -1410,6 +1429,8 @@
         // Check storage status on load and periodically
         setInterval(checkStorageStatus, 30000); // Every 30 seconds
         setTimeout(checkStorageStatus, 1000); // Initial check after 1 second
+=======
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
     </script>
 </body>
 </html>

@@ -10,5 +10,9 @@
   "mac_address": "c0:2b:6f:47:ae:ce",
   "created_at": "2025-11-30T02:47:55.174392",
   "status": "starting",
+<<<<<<< HEAD
   "start_requested_at": "2025-12-04T19:21:49.820752"
+=======
+  "start_requested_at": "2025-11-30T02:47:55.802167"
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
 }

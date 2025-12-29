@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<<<<<<< HEAD
     <title>GUI Storage - Login</title>
+=======
+    <title>VM Cloud Storage - Login</title>
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
     <style>
         * {
             margin: 0;
@@ -135,7 +139,11 @@
 <body>
     <div class="auth-container">
         <div class="auth-header">
+<<<<<<< HEAD
             <h1>🖥️ GUI Storage</h1>
+=======
+            <h1>🌐 VM Cloud Storage</h1>
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
             <p>Sign in to your account</p>
         </div>
         
@@ -182,21 +190,33 @@
             // Show loading state
             form.classList.add('loading');
             messageContainer.innerHTML = '';
+<<<<<<< HEAD
             loginBtn.disabled = true;
             loginBtn.textContent = 'Signing in...';
+=======
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
             
             try {
                 const requestData = {
                     email: formData.get('email'),
+<<<<<<< HEAD
                     password: formData.get('password'),
                     skip_otp: true  // Skip OTP by default for easier login
+=======
+                    password: formData.get('password')
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
                 };
                 
                 // Include OTP code if provided
                 const otpCode = formData.get('otp_code');
+<<<<<<< HEAD
                 if (otpCode && otpCode.trim()) {
                     requestData.otp_code = otpCode.trim();
                     requestData.skip_otp = false;
+=======
+                if (otpCode) {
+                    requestData.otp_code = otpCode;
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
                 }
                 
                 const response = await fetch(`${API_BASE}/login`, {
@@ -210,6 +230,7 @@
                 
                 const result = await response.json();
                 
+<<<<<<< HEAD
                 if (response.ok && result.success) {
                     messageContainer.innerHTML = '<div class="success-message">✅ Login successful! Redirecting...</div>';
                     
@@ -222,11 +243,24 @@
                     setTimeout(() => {
                         window.location.href = '/dashboard';
                     }, 500);
+=======
+                if (result.success) {
+                    messageContainer.innerHTML = '<div class="success-message">Login successful! Redirecting...</div>';
+                    
+                    // Store user info in localStorage for the dashboard
+                    localStorage.setItem('user', JSON.stringify(result.user));
+                    
+                    // Redirect to dashboard
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1500);
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
                 } else if (result.require_otp) {
                     // Show OTP input field
                     messageContainer.innerHTML = '<div class="success-message">📧 Verification code sent to your email!</div>';
                     otpGroup.style.display = 'block';
                     loginBtn.textContent = '🔐 Verify & Sign In';
+<<<<<<< HEAD
                     loginBtn.disabled = false;
                     document.getElementById('otp_code').focus();
                 } else {
@@ -242,6 +276,17 @@
                 messageContainer.innerHTML = '<div class="error-message">❌ Network error. Please check your connection and try again.</div>';
                 loginBtn.textContent = 'Sign In';
                 loginBtn.disabled = false;
+=======
+                    document.getElementById('otp_code').focus();
+                } else {
+                    messageContainer.innerHTML = `<div class="error-message">${result.message}</div>`;
+                    // Hide OTP field if login failed
+                    otpGroup.style.display = 'none';
+                    loginBtn.textContent = 'Sign In';
+                }
+            } catch (error) {
+                messageContainer.innerHTML = '<div class="error-message">Login failed. Please check your connection and try again.</div>';
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
             }
             
             // Remove loading state

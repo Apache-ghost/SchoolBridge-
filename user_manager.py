@@ -28,10 +28,16 @@ class UserManager:
     
     def __init__(self, users_db_path='users.json'):
         self.users_db_path = users_db_path
+<<<<<<< HEAD
         self.sessions_db_path = 'sessions.json'
         self.users = self.load_users()
         self.sessions = self.load_sessions()  # Persistent session storage
         self.otp_codes = {}  # In-memory OTP storage (OTP codes don't need persistence)
+=======
+        self.users = self.load_users()
+        self.sessions = {}  # In-memory session storage
+        self.otp_codes = {}  # In-memory OTP storage
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
         self.DEFAULT_STORAGE_GB = 2  # 2GB per user
         
         # Email configuration - read from environment variables to avoid hardcoding secrets
@@ -55,6 +61,7 @@ class UserManager:
             except json.JSONDecodeError:
                 return {}
         return {}
+<<<<<<< HEAD
 
     def load_sessions(self):
         """Load sessions from JSON database"""
@@ -72,10 +79,14 @@ class UserManager:
                 return {}
         return {}
 
+=======
+    
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
     def save_users(self):
         """Save users to JSON database"""
         with open(self.users_db_path, 'w') as f:
             json.dump(self.users, f, indent=2)
+<<<<<<< HEAD
 
     def save_sessions(self, sessions=None):
         """Save sessions to JSON database"""
@@ -83,6 +94,8 @@ class UserManager:
             sessions = self.sessions
         with open(self.sessions_db_path, 'w') as f:
             json.dump(sessions, f, indent=2)
+=======
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
     
     def hash_password(self, password):
         """Hash password with salt"""
@@ -153,7 +166,10 @@ class UserManager:
             'created_at': datetime.now().isoformat(),
             'last_login': None,
             'is_active': True,
+<<<<<<< HEAD
             'is_admin': False,  # New users are not admins by default
+=======
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
             'files': []
         }
         
@@ -195,9 +211,14 @@ class UserManager:
             'username': user['username'],
             'user_id': user['user_id'],
             'created_at': time.time(),
+<<<<<<< HEAD
             'expires_at': time.time() + 315360000  # 10 years (365*10 days)
         }
         self.save_sessions()  # Persist session
+=======
+            'expires_at': time.time() + 86400  # 24 hours
+        }
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
         
         return {
             'success': True,
@@ -233,6 +254,7 @@ class UserManager:
         """Logout user by removing session"""
         if session_token in self.sessions:
             del self.sessions[session_token]
+<<<<<<< HEAD
             self.save_sessions()  # Persist changes
         return {'success': True, 'message': 'Logged out successfully'}
 
@@ -273,6 +295,9 @@ class UserManager:
             return {'success': False, 'message': 'Invalid password'}
         
         return {'success': True, 'message': 'Admin access granted'}
+=======
+        return {'success': True, 'message': 'Logged out successfully'}
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
     
     def generate_otp(self):
         """Generate a cryptographically secure 6-digit OTP code"""
@@ -291,7 +316,11 @@ class UserManager:
             msg['To'] = email
             
             if purpose == 'verification':
+<<<<<<< HEAD
                 msg['Subject'] = 'GUI Storage - Email Verification'
+=======
+                msg['Subject'] = 'VM Cloud Storage - Email Verification'
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
                 html_body = f"""
                 <html>
                 <head>
@@ -315,7 +344,11 @@ class UserManager:
                         </div>
                         
                         <h2>Email Verification Required</h2>
+<<<<<<< HEAD
                         <p>Welcome to GUI Storage! To complete your registration, please verify your email address using the code below:</p>
+=======
+                        <p>Welcome to VM Cloud Storage! To complete your registration, please verify your email address using the code below:</p>
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
                         
                         <div class="otp-box">
                             <div>Your Verification Code</div>
@@ -341,7 +374,11 @@ class UserManager:
                         </ul>
                         
                         <div class="footer">
+<<<<<<< HEAD
                             <p>This is an automated message from GUI Storage<br>
+=======
+                            <p>This is an automated message from VM Cloud Storage<br>
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
                             © 2024 VM Simulation System</p>
                         </div>
                     </div>
@@ -349,7 +386,11 @@ class UserManager:
                 </html>
                 """
             else:  # login verification
+<<<<<<< HEAD
                 msg['Subject'] = 'GUI Storage - Login Verification'
+=======
+                msg['Subject'] = 'VM Cloud Storage - Login Verification'
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
                 html_body = f"""
                 <html>
                 <head>
@@ -369,11 +410,19 @@ class UserManager:
                     <div class="container">
                         <div class="header">
                             <div class="logo">🔐</div>
+<<<<<<< HEAD
                             <div class="title">GUI Storage</div>
                         </div>
                         
                         <h2>Login Verification</h2>
                         <p>Someone is trying to access your GUI Storage account. If this was you, use the verification code below to complete your login:</p>
+=======
+                            <div class="title">VM Cloud Storage</div>
+                        </div>
+                        
+                        <h2>Login Verification</h2>
+                        <p>Someone is trying to access your VM Cloud Storage account. If this was you, use the verification code below to complete your login:</p>
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
                         
                         <div class="otp-box">
                             <div>Your Login Code</div>
@@ -396,7 +445,11 @@ class UserManager:
                         </ul>
                         
                         <div class="footer">
+<<<<<<< HEAD
                             <p>This is an automated security message from GUI Storage<br>
+=======
+                            <p>This is an automated security message from VM Cloud Storage<br>
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
                             © 2024 VM Simulation System</p>
                         </div>
                     </div>
@@ -519,6 +572,7 @@ class UserManager:
             user['storage_used_bytes'] = new_usage
         elif operation == 'remove':
             user['storage_used_bytes'] = max(0, user['storage_used_bytes'] - file_size)
+<<<<<<< HEAD
 
         self.save_users()
         return True
@@ -536,6 +590,9 @@ class UserManager:
 
         user = self.users[user_email]
         user['storage_allocated_gb'] = new_allocation_gb
+=======
+        
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
         self.save_users()
         return True
     
@@ -657,9 +714,14 @@ class FirestoreUserManager(UserManager):
             'username': user['username'],
             'user_id': user['user_id'],
             'created_at': time.time(),
+<<<<<<< HEAD
             'expires_at': time.time() + 315360000  # 10 years (365*10 days)
         }
         self.save_sessions()  # Persist session
+=======
+            'expires_at': time.time() + 86400
+        }
+>>>>>>> dcc23283299fd52299056f72a0ebb8c36529738e
         return {
             'success': True,
             'message': 'Login successful',
